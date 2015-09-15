@@ -1,0 +1,7 @@
+{
+    "beta" : 0.15801764,
+    "epsilon" : 0.05932479,
+    "num_leapfrog_steps" : 1,
+    "num_look_ahead_steps" : 10,
+    "display" : 0
+}

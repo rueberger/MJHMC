@@ -1,0 +1,32 @@
+{
+    "language"        : "PYTHON",
+    "main-file"       : "LAHMC_objective.py",
+    "experiment-name" : "LAHMC_rm_1",
+    "likelihood"      : "GAUSSIAN",
+    "variables" : {
+        "num_leapfrog_steps" : {
+            "type" : "INT",
+            "size" : 1,
+            "min"  : 1,
+            "max"  : 25
+        },
+        "epsilon" : {
+            "type" : "FLOAT",
+            "size" : 1,
+            "min"  : 0.001,
+            "max"  : 3
+        },
+	"beta" : {
+	    "type" : "FLOAT",
+	    "size" : 1,
+	    "min"  : 0.01,
+	    "max" : 0.9999999
+	},
+	 "num_look_ahead_steps" : {
+	     "type" : "INT",
+	     "size" : 1,
+	     "min" : 1,
+	     "max" : 10
+	}
+    }
+}
