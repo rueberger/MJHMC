@@ -44,10 +44,10 @@ class HMCBase(object):
         """
 
         if isinstance(distribution, Distribution):
-            self.ndims = Xinit.shape[0]
-            self.nbatch = Xinit.shape[1]
-            self.energy_func = E
-            self.grad_func = dEdX
+            self.ndims = distribution.Xinit.shape[0]
+            self.nbatch = distribution.Xinit.shape[1]
+            self.energy_func = distribution.E
+            self.grad_func = distribution.dEdX
         else:
             assert Xinit is not None
             assert E is not None
