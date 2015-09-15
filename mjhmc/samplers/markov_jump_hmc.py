@@ -48,6 +48,7 @@ class HMCBase(object):
             self.nbatch = distribution.Xinit.shape[1]
             self.energy_func = distribution.E
             self.grad_func = distribution.dEdX
+            self.state = HMCState(distribution.Xinit.copy(), self)
         else:
             assert Xinit is not None
             assert E is not None
@@ -56,11 +57,13 @@ class HMCBase(object):
             self.nbatch = Xinit.shape[1]
             self.energy_func = E
             self.grad_func = dEdX
+            self.state = HMCState(Xinit.copy(), self)
 
         self.num_leapfrog_steps = num_leapfrog_steps
         self.epsilon = epsilon
         self.beta = beta or alpha**(1./(self.epsilon*self.num_leapfrog_steps))
-        self.state = HMCState(Xinit.copy(), self)
+
+
 
         self.n_burn_in = 500
 
