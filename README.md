@@ -3,9 +3,9 @@ Python implementation of Markov Jump HMC
 
 Markov Jump HMC is described in the paper
 
-> Berger, Andrew and Mudigonda, Mayur and DeWeese, Michael R. and Sohl-Dickstein, Jascha<br>
+> A. Berger, M. Mudigonda, M. R. DeWeese and J. Sohl-Dickstein <br>
 > A Markov Jump Process for More Efficient Hamiltonian Monte Carlo <br>
-> http://arxiv.org/abs/1509.03808
+> *arXiv preprint [arXiv:1509.03808](http://arxiv.org/abs/1509.03808)*, 2015
 
 ## Example Python Code
 
@@ -32,3 +32,16 @@ X = sampler.sample(num_steps = 10)
 # perform another 10 sampling steps
 X = sampler.sample(num_steps = 10)
 ```
+
+## Dependencies
+### Required
+* numpy
+* scipy
+* pandas
+
+## Optional
+* matplotlib
+* nosetests
+* seaborn (for making pretty plots)
+* spearmint (for hyperparameter optimization)
+
