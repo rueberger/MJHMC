@@ -30,10 +30,10 @@ def obj_func(sampler, distr, job_id, **kwargs):
     y = ac_df['autocorrelation'].values
     if use_exp:
         # wtf fit is mutating input somehow
-        r1 = fit(normed_n.copy(), y.copy())[0]
+        a, _ = fit(normed_n.copy(), y.copy())[0]
         if debug:
             plot_fit(normed_n, y, r1, job_id, kwargs)
-        return -r1
+        return a
     else:
         if np.isnan(np.sum(ac_df.autocorrelation.values)):
             return 11 * num_target_grad_evals
@@ -48,6 +48,8 @@ def obj_func(sampler, distr, job_id, **kwargs):
                            job_id,
                            kwargs, score)
         return score or 5 * num_target_grad_evals
+
+
 
 def min_idx(ac_df, target):
     ac_df.index = ac_df['num grad']
@@ -77,7 +79,6 @@ def fit(t, y):
     else:
         return 1E2
 
-# def curve(n, r1, r2, s1, s2):
-def curve(n, r):
-    # return abs(s1) * np.exp(-r1 * n) + abs(s2) * np.exp(-r2 * n)
-    return np.exp(-r, n)
+
+def curve(n, a, b):
+    return np.exp(a * n) * np.cos(b * n)
