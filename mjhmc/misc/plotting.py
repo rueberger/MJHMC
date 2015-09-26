@@ -26,13 +26,13 @@ def plot_search_ac(t, ac, job_id, params, score):
         params['beta'], params['epsilon'], params['num_leapfrog_steps']))
     plt.savefig("job_{}_ac.png".format(job_id))
 
-def plot_fit(t, y, r1, job_id, params):
+def plot_fit(t, y, a, b, job_id, params):
     plt.plot(t, y, label='observed')
     # fitted = abs(s1) * np.exp(-r1 * t) + abs(s2) * np.exp(-r2 * t)
-    fitted = np.exp(-r1 * t)
+    fitted = np.exp(a * t) * np.cos(b * t)
     plt.plot(t, fitted, label="fittted")
     plt.title("R: {}, beta: {}, epsilon: {}, M: {}".format(
-        r1, params['beta'], params['epsilon'], params['num_leapfrog_steps']))
+        a, params['beta'], params['epsilon'], params['num_leapfrog_steps']))
     plt.legend()
     plt.savefig("job_{}_fit.png".format(job_id))
 

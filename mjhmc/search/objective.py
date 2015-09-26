@@ -10,7 +10,7 @@ grad_evals = {
 }
 
 debug = True
-use_exp = False
+use_exp = True
 
 
 def obj_func(sampler, distr, job_id, **kwargs):
@@ -30,9 +30,9 @@ def obj_func(sampler, distr, job_id, **kwargs):
     y = ac_df['autocorrelation'].values
     if use_exp:
         # wtf fit is mutating input somehow
-        a, _ = fit(normed_n.copy(), y.copy())[0]
+        a, b = fit(normed_n.copy(), y.copy())[0]
         if debug:
-            plot_fit(normed_n, y, r1, job_id, kwargs)
+            plot_fit(normed_n, y, a, b, job_id, kwargs)
         return a
     else:
         if np.isnan(np.sum(ac_df.autocorrelation.values)):
