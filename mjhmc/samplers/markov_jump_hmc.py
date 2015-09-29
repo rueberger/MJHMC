@@ -313,6 +313,6 @@ class MarkovJumpHMC(ContinuousTimeHMC):
         cumul_t = np.cumsum(dwell_t)
         # pretty sure there's a way to do the whole batch at once
         for idx, r in enumerate(np.random.random(n_samples) * total_t):
-            sample_idx = np.where(cumul_t < r)[0][-1]
+            sample_idx = np.where(cumul_t > r)[0][0]
             resamples[:, idx] = samples[:, sample_idx]
         return resamples
