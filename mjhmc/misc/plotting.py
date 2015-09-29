@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
-from mjhmc.samplers.markov_jump_hmc import Control, ContinuousTimeHMC, MarkovJumpHMC
-from mjhmc.samplers.generic_discrete import Gibbs, Continuous, IsingState
+
+from mjhmc.samplers.markov_jump_hmc import HMCBase, ContinuousTimeHMC, MarkovJumpHMC
 from .autocor import calculate_autocorrelation
 
 import numpy as np
@@ -43,11 +43,11 @@ def hist_1d(distr, nsamples=1000, nbins=250):
     distr is (an unitialized) class from distributions
     """
     distribution = distr(ndims=1)
-    control = Control(distribution.Xinit, distribution.E, distribution.dEdX)
+    control = HMCBase(distribution.Xinit, distribution.E, distribution.dEdX)
     experimental = ContinuousTimeHMC(distribution.Xinit, distribution.E, distribution.dEdX)
 
-    plt.hist(control.sample(nsamples)[0], nbins, normed=True, label="Standard Control", alpha=.5)
-    plt.hist(experimental.sample(nsamples)[0], nbins, normed=True, label="Continuous-time Control",alpha=.5)
+    plt.hist(control.sample(nsamples)[0], nbins, normed=True, label="Standard HMCBase", alpha=.5)
+    plt.hist(experimental.sample(nsamples)[0], nbins, normed=True, label="Continuous-time HMCBase",alpha=.5)
     plt.legend()
 
 def gauss_1d(nsamples=1000, nbins=250):
@@ -65,7 +65,7 @@ def gauss_2d(nsamples=1000):
     1d gaussian sampled from each sampler visualized as a joint 2d gaussian
     """
     gaussian = misc.distributions.TestGaussian(ndims=1)
-    control = Control(gaussian.Xinit, gaussian.E, gaussian.dEdX)
+    control = HMCBase(gaussian.Xinit, gaussian.E, gaussian.dEdX)
     experimental = ContinuousTimeHMC(gaussian.Xinit, gaussian.E, gaussian.dEdX)
 
     with sns.axes_style("white"):
@@ -133,25 +133,11 @@ def plot_autocorrelation(distribution, ndims=2,
     set to be deprecated
     """
     distr = distribution(ndims, nbatch)
-    d_ac = calculate_autocorrelation(Control, distr, num_steps, sample_steps)
+    d_ac = calculate_autocorrelation(HMCBase, distr, num_steps, sample_steps)
     c_ac = calculate_autocorrelation(ContinuousTimeHMC, distr, num_steps, sample_steps)
     d_ac.index = d_ac['num grad']
     c_ac.index = c_ac['num grad']
     # combine plots, maybe join possible after all
     d_ac['autocorrelation'].plot(label='discrete')
     c_ac['autocorrelation'].plot(label='continuous')
-    plt.legend()
-
-def plot_ac_ising(J=None, ndims=10, nbatch=100, num_steps=1000):
-    """
-    Autocorrelation for the ising model
-    if J is none, generates one randomly
-    """
-    ising = IsingState(ndims, nbatch, J)
-    g = Gibbs(ising)
-    c = Continuous(ising)
-    g_ac = autocorrelation(g.sample(num_steps, True))
-    c_ac = autocorrelation(c.sample(num_steps, True))
-    plt.plot(g_ac['num energy'], g_ac['autocorrelation'], label="Gibbs")
-    plt.plot(c_ac['num energy'], c_ac['autocorrelation'], label="Continuous")
     plt.legend()
