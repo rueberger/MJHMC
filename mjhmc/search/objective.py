@@ -5,12 +5,11 @@ from mjhmc.misc.plotting import plot_fit, plot_search_ac
 
 grad_evals = {
     'Gaussian' : int(2E5),
-    'RoughWell' : int(2E6),
+    'RoughWell' : int(1E3),
     'MultimodalGaussian' : int(2E5)
 }
 
 debug = True
-use_exp = True
 
 
 def obj_func(sampler, distr, job_id, **kwargs):
@@ -23,31 +22,17 @@ def obj_func(sampler, distr, job_id, **kwargs):
     }
     kwargs = unpack_params(kwargs)
     kwargs.update(default_args)
+
     ac_df = calculate_autocorrelation(sampler, distr, **kwargs)
-    n = ac_df['num grad'].values.astype(int)
+    n_grad_evals = ac_df['num grad'].values.astype(int)
     # necessary to keep curve_fit from borking
-    normed_n = n / (0.5 * num_target_grad_evals)
-    y = ac_df['autocorrelation'].values
-    if use_exp:
-        # wtf fit is mutating input somehow
-        a, b = fit(normed_n.copy(), y.copy())[0]
-        if debug:
-            plot_fit(normed_n, y, a, b, job_id, kwargs)
-        return a
-    else:
-        if np.isnan(np.sum(ac_df.autocorrelation.values)):
-            return 11 * num_target_grad_evals
-        for trial, target in enumerate(np.arange(0, 1, 0.1)):
-            score = min_idx(ac_df, target)
-            if score is not None:
-                score += trial * num_target_grad_evals * 0.5
-                break
-        if debug:
-            plot_search_ac(ac_df['num grad'].values.astype(int),
-                           ac_df.autocorrelation.values,
-                           job_id,
-                           kwargs, score)
-        return score or 5 * num_target_grad_evals
+    normed_n_grad_evals = n_grad_evals / (0.5 * num_target_grad_evals)
+    autocor = ac_df['autocorrelation'].values
+    exp_coef, cos_coef = fit(normed_n_grad_evals.copy(), autocor.copy())
+    if debug:
+        plot_fit(normed_n_grad_evals, autocor, exp_coef, cos_coef, job_id, kwargs)
+    return exp_coef
+
 
 
 
@@ -74,7 +59,9 @@ def unpack_params(params):
 def fit(t, y):
     # very fast way to check for nan
     if not np.isnan(np.sum(y)):
-        opt_params, opt_cov = curve_fit(curve, t[:-50], y[:-50])
+        # used to truncate last 50 values for noise purposes
+        # might still be worth doing?
+        opt_params = curve_fit(curve, t, y)[0]
         return opt_params
     else:
         return 1E2
