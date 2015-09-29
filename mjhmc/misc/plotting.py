@@ -18,7 +18,7 @@ import numpy as np
 sns.set_palette("deep", desat=.6)
 sns.set_context(rc={"figure.figsize": (8, 4)})
 
-# interactive mode for ipython usage
+#pylint: disable=too-many-arguments
 
 def plot_search_ac(t, ac, job_id, params, score):
     plt.plot(t, ac)
@@ -26,13 +26,26 @@ def plot_search_ac(t, ac, job_id, params, score):
         params['beta'], params['epsilon'], params['num_leapfrog_steps']))
     plt.savefig("job_{}_ac.png".format(job_id))
 
-def plot_fit(t, y, a, b, job_id, params):
-    plt.plot(t, y, label='observed')
-    # fitted = abs(s1) * np.exp(-r1 * t) + abs(s2) * np.exp(-r2 * t)
-    fitted = np.exp(a * t) * np.cos(b * t)
-    plt.plot(t, fitted, label="fittted")
+def plot_fit(grad_evals, autocor, exp_coef, cos_coef, job_id, params):
+    """ Debug plot for hyperparameter search
+    Saves a plot of the autocorrelation and the fitted complex exponential of the form
+    ac(t) = exp(a * t) * cos(b * t)
+
+    :param grad_evals: array of grad evals. Use as x-axis
+    :param autocor: array of autocor. Of same shape as grad_evals
+    :param exp_coef: float. Parameter a for fitted func
+    :param cos_coef: float. Parameter b for fitted func
+    :param job_id: the id of the Spearmint job that tested these params
+    :param params: the set of parameters for this job
+    :returns: None; saves a plot in the search directory
+    :rtype: None
+    """
+
+    plt.plot(grad_evals, autocor, label='observed')
+    fitted = np.exp(exp_coef * grad_evals) * np.cos(cos_coef * grad_evals)
+    plt.plot(grad_evals, fitted, label="fittted")
     plt.title("R: {}, beta: {}, epsilon: {}, M: {}".format(
-        a, params['beta'], params['epsilon'], params['num_leapfrog_steps']))
+        exp_coef, params['beta'], params['epsilon'], params['num_leapfrog_steps']))
     plt.legend()
     plt.savefig("job_{}_fit.png".format(job_id))
 
