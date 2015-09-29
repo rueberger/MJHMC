@@ -1,5 +1,5 @@
 import unittest
-from mjhmc.samplers.markov_jump_hmc import ContinuousTimeHMC, Control, MarkovJumpHMC, HMC, ControlHMC
+from mjhmc.samplers.markov_jump_hmc import ContinuousTimeHMC, HMCBase, MarkovJumpHMC, HMC, ControlHMC
 from mjhmc.misc.distributions import TestGaussian, Gaussian
 import numpy as np
 from mjhmc.misc.utils import overrides
@@ -14,7 +14,7 @@ class TestControl(unittest.TestCase):
 
     def setUp(self):
         np.random.seed(n_seed)
-        self.sampler_to_test = Control
+        self.sampler_to_test = HMCBase
 
     def test_1d_gaussian(self):
         """
