@@ -288,3 +288,31 @@ class MarkovJumpHMC(ContinuousTimeHMC):
         self.l_count += len(l_idx)
         self.f_count += len(f_idx)
         self.r_count += len(r_idx)
+
+
+    @overrides(ContinuousTimeHMC)
+    def sample(self, n_samples=1000):
+        """ Runs sampler and returns a list of n_samples (resampled to be fair)
+
+        :param n_samples: number of samples_k to generated
+        :rtype: array
+        """
+        samples_k = []
+        dwell_t_k = []
+        resamples = np.zeros((2, n_samples))
+        self.sampling_iteration()
+        samples_k.append(self.state.copy().X)
+        for _ in xrange(n_samples):
+            dwell_t_k.append(self.dwelling_times.copy())
+            self.sampling_iteration()
+            samples_k.append(self.state.copy().X)
+
+        dwell_t = np.concatenate(dwell_t_k)
+        samples = np.concatenate(samples_k[:-1], axis=1)
+        total_t = np.sum(dwell_t)
+        cumul_t = np.cumsum(dwell_t)
+        # pretty sure there's a way to do the whole batch at once
+        for idx, r in enumerate(np.random.random(n_samples) * total_t):
+            sample_idx = np.where(cumul_t < r)[0][-1]
+            resamples[:, idx] = samples[:, sample_idx]
+        return resamples
