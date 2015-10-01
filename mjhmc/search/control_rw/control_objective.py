@@ -1,6 +1,6 @@
-from search.objective import obj_func
-from samplers.markov_jump_hmc import ControlHMC
-from misc.distributions import RoughWell
+from mjhmc.search.objective import obj_func
+from mjhmc.samplers.markov_jump_hmc import ControlHMC
+from mjhmc.misc.distributions import RoughWell
 
 def main(job_id, params):
     print "job id: {}, params: {}".format(job_id, params)
