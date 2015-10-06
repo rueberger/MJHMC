@@ -180,7 +180,15 @@ class ContinuousTimeHMC(HMCBase):
     """Base class for all markov jump HMC samplers
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, resample=True, **kwargs):
+        """ Initalizer method for continuous-time samplers
+
+        :param resample: boolean flag whether to resample or not. ALWAYS set to true unless you
+           have a specific reason not to. Produced samples will be biased if resample is false
+        :returns: the constructed instance
+        :rtype: ContinuousTimeHMC
+        """
+
         super(ContinuousTimeHMC, self).__init__(*args, **kwargs)
         # transformation from discrete beta to insure matching autocorrelation
         # maybe assert that beta is less than 1 if necessary
@@ -190,6 +198,8 @@ class ContinuousTimeHMC(HMCBase):
 
         # the last dwelling times
         self.dwelling_times = np.zeros(self.nbatch)
+
+        self.resample = resample
 
     @overrides(HMCBase)
     def sampling_iteration(self):
@@ -232,6 +242,50 @@ class ContinuousTimeHMC(HMCBase):
         self.fl_count  += len(fl_idx)
         self.f_count += len(f_idx)
         self.r_count += len(r_idx)
+
+    @overrides(HMCBase)
+    def sample(self, n_samples=1000):
+        """ Runs sampler and returns a list of n_samples (resampled to be fair)
+
+        :param n_samples: number of samples_k to generated
+        :rtype: array
+        """
+        if self.resample:
+            samples_k = []
+            dwell_t_k = []
+            sample_order = {}
+            resamples = []
+            ordered_resamples = [[] for _ in xrange(n_samples)]
+
+            self.sampling_iteration()
+            samples_k.append(self.state.copy().X)
+            sample_order[str(samples_k[-1])] = 0
+            for idx in xrange(n_samples):
+                dwell_t_k.append(self.dwelling_times.copy())
+                self.sampling_iteration()
+                samples_k.append(self.state.copy().X)
+                # BROKEN! need to account for the batch size too
+                sample_order[str(samples_k[-1])] = idx + 1
+
+            dwell_t = np.concatenate(dwell_t_k)
+            samples = np.concatenate(samples_k[:-1], axis=1)
+            total_t = np.sum(dwell_t)
+            cumul_t = np.cumsum(dwell_t)
+            # pretty sure there's a way to do the whole batch at once
+            for idx, r in enumerate(np.random.random(n_samples) * total_t):
+                sample_idx = np.where(cumul_t > r)[0][0]
+                ord_idx = sample_order[str(samples[:, sample_idx])]
+                ordered_resamples[ord_idx].append(samples[:, sample_idx])
+            for ord_set in ordered_resamples:
+                resamples.extend(ord_set)
+            return np.array(resamples)
+        else:
+            samples = []
+            for _ in xrange(n_samples):
+                self.sampling_iteration()
+                samples.append(self.state.copy().X)
+            return np.concatenate(samples, axis=1)
+
 
     def transition_rates(self, Z1, Z2):
         """
@@ -288,31 +342,3 @@ class MarkovJumpHMC(ContinuousTimeHMC):
         self.l_count += len(l_idx)
         self.f_count += len(f_idx)
         self.r_count += len(r_idx)
-
-
-    @overrides(ContinuousTimeHMC)
-    def sample(self, n_samples=1000):
-        """ Runs sampler and returns a list of n_samples (resampled to be fair)
-
-        :param n_samples: number of samples_k to generated
-        :rtype: array
-        """
-        samples_k = []
-        dwell_t_k = []
-        resamples = np.zeros((2, n_samples))
-        self.sampling_iteration()
-        samples_k.append(self.state.copy().X)
-        for _ in xrange(n_samples):
-            dwell_t_k.append(self.dwelling_times.copy())
-            self.sampling_iteration()
-            samples_k.append(self.state.copy().X)
-
-        dwell_t = np.concatenate(dwell_t_k)
-        samples = np.concatenate(samples_k[:-1], axis=1)
-        total_t = np.sum(dwell_t)
-        cumul_t = np.cumsum(dwell_t)
-        # pretty sure there's a way to do the whole batch at once
-        for idx, r in enumerate(np.random.random(n_samples) * total_t):
-            sample_idx = np.where(cumul_t > r)[0][0]
-            resamples[:, idx] = samples[:, sample_idx]
-        return resamples
