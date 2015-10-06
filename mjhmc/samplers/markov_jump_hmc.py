@@ -180,7 +180,7 @@ class ContinuousTimeHMC(HMCBase):
     """Base class for all markov jump HMC samplers
     """
 
-    def __init__(self, *args, resample=True, **kwargs):
+    def __init__(self, *args, **kwargs):
         """ Initalizer method for continuous-time samplers
 
         :param resample: boolean flag whether to resample or not. ALWAYS set to true unless you
@@ -188,7 +188,7 @@ class ContinuousTimeHMC(HMCBase):
         :returns: the constructed instance
         :rtype: ContinuousTimeHMC
         """
-
+        self.resample = kwargs.pop('resample', True)
         super(ContinuousTimeHMC, self).__init__(*args, **kwargs)
         # transformation from discrete beta to insure matching autocorrelation
         # maybe assert that beta is less than 1 if necessary
@@ -199,7 +199,7 @@ class ContinuousTimeHMC(HMCBase):
         # the last dwelling times
         self.dwelling_times = np.zeros(self.nbatch)
 
-        self.resample = resample
+
 
     @overrides(HMCBase)
     def sampling_iteration(self):
