@@ -15,11 +15,11 @@ import ipdb
 searches = [
     ["control_mm_gauss", False],
     ["control_log_gauss", False],
-    ["control_rw", False],
+    ["control_rw", True],
     ["MJHMC_mm_gauss", False],
     ["MJHMC_log_gauss", False],
-    ["MJHMC_rw", False],
-    ["LAHMC_mm_gauss", True]]
+    ["MJHMC_rw", True],
+    ["LAHMC_mm_gauss", False]]
 
 
 def find(directory, lahmc):
@@ -34,8 +34,17 @@ def find(directory, lahmc):
     ii = 0
     for fname in files:
         for line in open(fname,'r'):
-            if re.search('\'main\'',line):
-                results[ii, 0] = np.float32(line.split(':')[1].split('}')[0])
+            if re.search('u\'main\':',line):
+                try:
+                    results[ii, 0] = np.float32(line.split(':')[2].split('}')[0])
+                    print('able to split on main')
+                    print('Printing the actual data ......')
+                    print line
+                except:
+                    results[ii, 0] = np.float32(line.split(':')[1].split('}')[0])
+                    print('Unable to split on main')
+                    print('Printing the actual data ****')
+                    print line
             if re.search('epsilon',line):
                 try:
                     results[ii, 1] = np.float32(line.split('\'epsilon\': array([')[1].split('])')[0])
@@ -65,9 +74,10 @@ def write_best(results, directory):
         json.dump(params, d)
 
 def write_all():
-    for directory, lahmc in searches:
-        results = find("{}/output/".format(directory), lahmc)
-        write_best(results, directory)
+    for directory, flag in searches:
+        if flag == True:
+            results = find("{}/output/".format(directory), lahmc=False)
+            write_best(results, directory)
 
 def make_standard(data):
 
