@@ -44,7 +44,7 @@ def plot_fit(grad_evals, autocor, exp_coef, cos_coef, job_id, params):
     plt.plot(grad_evals, autocor, label='observed')
     fitted = np.exp(exp_coef * grad_evals) * np.cos(cos_coef * grad_evals)
     plt.plot(grad_evals, fitted, label="fittted")
-    plt.title("R: {}, beta: {}, epsilon: {}, M: {}".format(
+    plt.title("Score: {}, beta: {}, epsilon: {}, M: {}".format(
         exp_coef, params['beta'], params['epsilon'], params['num_leapfrog_steps']))
     plt.legend()
     plt.savefig("job_{}_fit.pdf".format(job_id))
