@@ -1,6 +1,6 @@
 import unittest
 import numpy as np
-from misc.utils import min_idx
+from mjhmc.misc.utils import min_idx
 
 n_seed = 1
 list_length = 100

@@ -1,5 +1,5 @@
 import unittest
-from search.objective import fit
+from mjhmc.search.objective import fit
 import numpy as np
 
 n_seed = 1
