@@ -10,6 +10,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from mjhmc.misc.autocor import calculate_autocorrelation
 from mjhmc.misc.plotting import plot_fit, plot_search_ac
+from mjhmc.samplers.markov_jump_hmc import ContinuousTimeHMC
 
 grad_evals = {
     'Gaussian' : int(2E5),
@@ -45,7 +46,7 @@ def obj_func_helper(sampler, distr, unpack, kwargs):
     :rtype: tuple
 
     """
-    num_target_grad_evals =  grad_evals[type(distr).__name__]
+    num_target_grad_evals = grad_evals[type(distr).__name__]
     default_args = {
         "num_grad_steps": num_target_grad_evals,
         "sample_steps": 1,
@@ -54,6 +55,8 @@ def obj_func_helper(sampler, distr, unpack, kwargs):
     }
     if unpack:
         kwargs = unpack_params(kwargs)
+    if isinstance(sampler, ContinuousTimeHMC):
+        default_args["resample"] = False
     kwargs.update(default_args)
 
     print "Calculating autocorrelation for {} grad evals".format(num_target_grad_evals)
