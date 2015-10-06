@@ -59,7 +59,7 @@ def obj_func_helper(sampler, distr, unpack, kwargs):
     print "Calculating autocorrelation for {} grad evals".format(num_target_grad_evals)
     ac_df = calculate_autocorrelation(sampler, distr, **kwargs)
     n_grad_evals = ac_df['num grad'].values.astype(int)
-    # necessary to keep curve_fit from borking
+    # necessary to keep curve_fit from borking: THIS IS VERY IMPORTANT
     normed_n_grad_evals = n_grad_evals / (0.5 * num_target_grad_evals)
     autocor = ac_df['autocorrelation'].values
     print "Fitting curve"
@@ -87,15 +87,50 @@ def unpack_params(params):
         unpacked_params[key] = item[0]
     return unpacked_params
 
-def fit(t, y):
+def fit(t_data, y_data):
+    """ Fit a complex exponential to y_data
+
+    :param t_data: array of values for t-axis (x-axis)
+    :param y_data: array of values for y-axis. of the same shape as t-data
+    :returns: fitted parameters: (exp_coef, cos_coef)
+    :rtype: tuple
+    """
     # very fast way to check for nan
-    if not np.isnan(np.sum(y)):
-        # used to truncate last 50 values for noise purposes
-        # might still be worth doing?
-        opt_params = curve_fit(curve, t, y)[0]
+    if not np.isnan(np.sum(y_data)):
+        p_0 = estimate_params(t_data, y_data)
+        opt_params = curve_fit(curve, t_data, y_data, p0=p_0, maxfev=1000)[0]
         return opt_params
     else:
-        return 1E2
+        return 1E3, 0
+
+def estimate_params(t_data, y_data):
+    """ Estimate the parameters to the complex exponential fit
+    Would be exact if derivatives were
+
+    :param t_data: array of values for t-axis (x-axis)
+    :param y_data: array of values for y-axis. of the same shape as t-data
+    :returns: estimated parameters
+    :rtype: tuple
+    """
+    dydt_0 = (y_data[0] - y_data[1]) / float(t_data[0] - t_data[1])
+    exp_coef = dydt_0
+
+    zero_idx = np.where(y_data == 0)[0]
+    # candidate for improvement: does not handle arrays that contain 0 properly
+    zero_crossings = np.where(np.diff(np.sign(y_data)) != 0)[0]
+    if len(zero_idx) != 0 and len(zero_crossings) != 0:
+        first_zero_idx = min(zero_crossings[0], zero_idx[0])
+    elif len(zero_crossings) != 0:
+        first_zero_idx = zero_crossings[0]
+    elif len(zero_idx) != 0:
+        raise ValueError("zeros should be found if and only if a zero crossing is found")
+    else:
+        return exp_coef, 0
+
+    dydt_zero_cross = (y_data[first_zero_idx] - y_data[first_zero_idx + 1]) / float(t_data[first_zero_idx] - t_data[first_zero_idx + 1])
+    cos_coef = - (dydt_zero_cross / np.exp(exp_coef * (first_zero_idx + 0.5)))
+    return exp_coef, cos_coef
+
 
 
 def curve(n, a, b):
