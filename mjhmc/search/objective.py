@@ -55,7 +55,7 @@ def obj_func_helper(sampler, distr, unpack, kwargs):
     }
     if unpack:
         kwargs = unpack_params(kwargs)
-    if isinstance(sampler, ContinuousTimeHMC):
+    if sampler.__name__ == 'MarkovJumpHMC':
         default_args["resample"] = False
     kwargs.update(default_args)
 
