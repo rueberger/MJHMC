@@ -62,3 +62,5 @@ _region_.tex
 # ignore debug plots
 job_*_fit.png
 job_*_ac.png
+validation.pdf
+job_*_fit.pdf
