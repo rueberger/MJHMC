@@ -47,7 +47,7 @@ def plot_fit(grad_evals, autocor, exp_coef, cos_coef, job_id, params):
     plt.title("R: {}, beta: {}, epsilon: {}, M: {}".format(
         exp_coef, params['beta'], params['epsilon'], params['num_leapfrog_steps']))
     plt.legend()
-    plt.savefig("job_{}_fit.png".format(job_id))
+    plt.savefig("job_{}_fit.pdf".format(job_id))
 
 
 def hist_1d(distr, nsamples=1000, nbins=250):
