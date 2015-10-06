@@ -18,20 +18,20 @@ class TestObjetive(unittest.TestCase):
         """
         Tests to see that objective function is monotonic
         """
-        t = np.arange(self.t_max)
+        t = np.arange(self.t_max) / float(self.t_max)
         x_1 = np.exp(-t)
         x_2 = np.exp(-2 * t)
         x_3 = np.exp(-3 * t)
         self.assertTrue(
-            fit(t, x_1) > fit(t, x_2),
+            fit(t, x_1)[0] > fit(t, x_2)[0],
             msg="Monotonicity failure"
         )
         self.assertTrue(
-            fit(t, x_2) > fit(t, x_3),
+            fit(t, x_2)[0] > fit(t, x_3)[0],
             msg="Monotonicity failure"
         )
         self.assertTrue(
-            fit(t, x_1) > fit(t, x_3),
+            fit(t, x_1)[0] > fit(t, x_3)[0],
             msg="Monotonicity failure"
         )
 
@@ -39,32 +39,33 @@ class TestObjetive(unittest.TestCase):
         """
         Monotonicity plus varying amount of noise
         """
-        t = np.arange(self.t_max)
-        x_1 = np.exp(-t) + np.random.randn(self.t_max)
-        x_2 = np.exp(-2 * t) + np.random.randn(self.t_max)
-        x_3 = np.exp(-3 * t) + np.random.randn(self.t_max)
+        perc_noise = 0.01
+        t = np.arange(self.t_max) / float(self.t_max)
+        x_1 = np.exp(-t) + np.random.randn(self.t_max) * perc_noise
+        x_2 = np.exp(-2 * t) + np.random.randn(self.t_max) * perc_noise
+        x_3 = np.exp(-3 * t) + np.random.randn(self.t_max) * perc_noise
         self.assertTrue(
-            fit(t, x_1) > fit(t, x_2),
-            msg="Noisy monotonicity failure"
+            fit(t, x_1)[0] > fit(t, x_2)[0],
+            msg="Monotonicity failure"
         )
         self.assertTrue(
-            fit(t, x_2) > fit(t, x_3),
-            msg="Noisy monotonicity failure"
+            fit(t, x_2)[0] > fit(t, x_3)[0],
+            msg="Monotonicity failure"
         )
         self.assertTrue(
-            fit(t, x_1) > fit(t, x_3),
-            msg="Noisy monotonicity failure"
+            fit(t, x_1)[0] > fit(t, x_3)[0],
+            msg="Monotonicity failure"
         )
 
     def TestErroneous(self):
         """
         Test weird shapes, like flat lines other things
         """
-        t = np.arange(self.t_max)
+        t = np.arange(self.t_max) / float(self.t_max)
         x_1 = np.exp(-t) + np.random.randn(self.t_max)
         x_flat = np.ones(self.t_max)
         self.assertTrue(
-            fit(t, x_flat) > fit(t, x_1),
+            fit(t, x_flat)[0] > fit(t, x_1)[0],
             msg="Constant better than exponential"
         )
 
@@ -78,11 +79,11 @@ class TestObjetive(unittest.TestCase):
         x_1_noise = np.exp(-t) + 0.1 * np.random.randn(1E5)
         x_2_noise = np.exp(-2 * t) + 0.1 * np.random.randn(1E5)
         self.assertTrue(
-            fit(t, x_1) > fit(t, x_2),
+            fit(t, x_1)[0] > fit(t, x_2)[0],
             msg="Long trial monotonicity failure"
         )
         self.assertTrue(
-            fit(t, x_1_noise) > fit(t, x_2_noise),
+            fit(t, x_1_noise)[0] > fit(t, x_2_noise)[0],
             msg="Long trial noisy monotonicity failure"
         )
 
@@ -97,7 +98,7 @@ class TestObjetive(unittest.TestCase):
         x_nan = np.exp(-2 * t)
         x_nan[nan_idx] = np.nan
         self.assertTrue(
-            fit(t, x_nan) > fit(t, x_1),
+            fit(t, x_nan)[0] > fit(t, x_1)[0],
             msg="Nan fit failure"
         )
 
@@ -106,8 +107,8 @@ class TestObjetive(unittest.TestCase):
         """
         Test that a bunch of noise at the end doesn't bork everything
         """
-        t = np.arange(self.t_max)
-        x_1 = np.exp(-t)
+        t = np.arange(self.t_max) / float(self.t_max)
+        x_1 = np.exp(-2 * t)
         x_rand_end = np.ones(self.t_max)
         x_rand_end[-3:] = 10 * np.random.randn(3)
         x_pos_end = np.ones(self.t_max)
@@ -115,14 +116,14 @@ class TestObjetive(unittest.TestCase):
         x_neg_end = np.ones(self.t_max)
         x_neg_end[-3:] *= -100
         self.assertTrue(
-            fit(t, x_rand_end) > fit(t, x_1),
+            fit(t, x_rand_end)[0] > fit(t, x_1)[0],
             msg="Random end noise does better than exponential"
         )
         self.assertTrue(
-            fit(t, x_pos_end) > fit(t, x_1),
+            fit(t, x_pos_end)[0] > fit(t, x_1)[0],
             msg="Positive end noise wins"
         )
         self.assertTrue(
-            fit(t, x_neg_end) > fit(t, x_1),
+            fit(t, x_neg_end)[0] > fit(t, x_1)[0],
             msg="Negative end noise wins"
         )
