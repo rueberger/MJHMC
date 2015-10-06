@@ -21,36 +21,40 @@ def obj_func(sampler, distr, job_id, **kwargs):
     :returns: the score
     :rtype: float
     """
-    cos_coef, normed_n_grad_evals, exp_coef, autocor, kwargs = obj_func_helper(sampler, distr, kwargs)
+    cos_coef, normed_n_grad_evals, exp_coef, autocor, kwargs = obj_func_helper(sampler, distr, True, kwargs)
     if debug:
         plot_fit(normed_n_grad_evals, autocor, exp_coef, cos_coef, job_id, kwargs)
     return exp_coef
 
-def obj_func_helper(sampler, distr, kwargs):
+def obj_func_helper(sampler, distr, unpack, kwargs):
     """ Helper function for the objective function
 
     :param sampler: sampler being tested. instance of mjhmc.samplers.markov_jump_hmc.HMCBase
     :param distr: distribution being used. instance of mjhmc.misc.distributions.Distribution
+    :param unpack: boolean flag of whether to unpack params or not.
     :param kwargs: dictionary of kwargs passed from parent function
     :returns: parameters of fitted curves, graph data for computed autocorrelation, kwargs
     :rtype: tuple
 
     """
-     num_target_grad_evals =  grad_evals[type(distr).__name__]
+    num_target_grad_evals =  grad_evals[type(distr).__name__]
     default_args = {
         "num_grad_steps": num_target_grad_evals,
         "sample_steps": 1,
         "num_steps": None,
         "half_window": True
     }
-    kwargs = unpack_params(kwargs)
+    if unpack:
+        kwargs = unpack_params(kwargs)
     kwargs.update(default_args)
 
+    print "Calculating autocorrelation for {} grad evals".format(num_target_grad_evals)
     ac_df = calculate_autocorrelation(sampler, distr, **kwargs)
     n_grad_evals = ac_df['num grad'].values.astype(int)
     # necessary to keep curve_fit from borking
     normed_n_grad_evals = n_grad_evals / (0.5 * num_target_grad_evals)
     autocor = ac_df['autocorrelation'].values
+    print "Fitting curve"
     exp_coef, cos_coef = fit(normed_n_grad_evals.copy(), autocor.copy())
     return cos_coef, normed_n_grad_evals, exp_coef, autocor, kwargs
 
