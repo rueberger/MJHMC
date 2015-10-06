@@ -1,3 +1,11 @@
+"""
+This module contains the objective function used by Spearmint
+  when searching for good hyperparameters.
+In short, the objective function is the Re(r) where
+  r is a complex number such that exp(r * t) is the
+  best fit to the autocorrelation
+"""
+
 import numpy as np
 from scipy.optimize import curve_fit
 from mjhmc.misc.autocor import calculate_autocorrelation
