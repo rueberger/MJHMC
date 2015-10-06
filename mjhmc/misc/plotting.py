@@ -26,7 +26,7 @@ def plot_search_ac(t, ac, job_id, params, score):
         params['beta'], params['epsilon'], params['num_leapfrog_steps']))
     plt.savefig("job_{}_ac.png".format(job_id))
 
-def plot_fit(grad_evals, autocor, exp_coef, cos_coef, job_id, params):
+def plot_fit(grad_evals, autocor, exp_coef, cos_coef, job_id, params, save=True):
     """ Debug plot for hyperparameter search
     Saves a plot of the autocorrelation and the fitted complex exponential of the form
     ac(t) = exp(a * t) * cos(b * t)
@@ -37,17 +37,19 @@ def plot_fit(grad_evals, autocor, exp_coef, cos_coef, job_id, params):
     :param cos_coef: float. Parameter b for fitted func
     :param job_id: the id of the Spearmint job that tested these params
     :param params: the set of parameters for this job
-    :returns: None; saves a plot in the search directory
-    :rtype: None
+    :returns: the rendered figure
+    :rtype: plt.figure()
     """
-
+    fig = plt.figure()
     plt.plot(grad_evals, autocor, label='observed')
     fitted = np.exp(exp_coef * grad_evals) * np.cos(cos_coef * grad_evals)
     plt.plot(grad_evals, fitted, label="fittted")
     plt.title("Score: {}, beta: {}, epsilon: {}, M: {}".format(
         exp_coef, params['beta'], params['epsilon'], params['num_leapfrog_steps']))
     plt.legend()
-    plt.savefig("job_{}_fit.pdf".format(job_id))
+    if save:
+        plt.savefig("job_{}_fit.pdf".format(job_id))
+    return fig
 
 
 def hist_1d(distr, nsamples=1000, nbins=250):
