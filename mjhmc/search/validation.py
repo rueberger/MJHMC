@@ -10,17 +10,19 @@ from mjhmc.misc.plotting import plot_fit
 
 from matplotlib.backends.backend_pdf import PdfPages
 
-def plot_all_best():
+def plot_all_best(custom_params=None):
     """ Creates a plot with the autocorrelation and fit for each distribution and sampler
-    Saves all plots to a pdf
 
+    :param custom_params: dictionary of custom params will be used on all distributions
+      and samplers. if None uses the current best params for each
     :returns: None
     :rtype: None
+
     """
     distributions = [
-        RoughWell(nbatch=200),
-        Gaussian(ndims=10, nbatch=200),
-        MultimodalGaussian(ndims=5, separation=1)
+        RoughWell(nbatch=200)
+        # Gaussian(ndims=10, nbatch=200),
+        # MultimodalGaussian(ndims=5, separation=1)
     ]
     samplers = [
         ControlHMC,
@@ -29,7 +31,10 @@ def plot_all_best():
     with PdfPages("validation.pdf") as pdf:
         for distribution in distributions:
             # [control, mjhmc, lahmc]
-            params = load_params(distribution)
+            if custom_params is None:
+                params = load_params(distribution)
+            else:
+                params = [custom_params] * 3
             active_params = params[:-1]
             for sampler, hparams in zip(samplers, active_params):
                 print "Now running for {} on {}".format(sampler, distribution)
