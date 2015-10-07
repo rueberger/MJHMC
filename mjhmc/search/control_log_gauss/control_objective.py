@@ -1,6 +1,6 @@
-from search.objective import obj_func
-from samplers.markov_jump_hmc import ControlHMC
-from misc.distributions import Gaussian
+from mjhmc.search.objective import obj_func
+from mjhmc.samplers.markov_jump_hmc import ControlHMC
+from mjhmc.misc.distributions import Gaussian
 
 
 def main(job_id, params):
