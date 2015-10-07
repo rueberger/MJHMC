@@ -33,11 +33,13 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
     # mjhmc_params = {'beta': 0.5, 'epsilon': 1, "num_leapfrog_steps": 1}
 #    mjhmc_params = {'beta': 0.999, 'epsilon': 1.01, "num_leapfrog_steps": 2}
     plt.clf()
+    print('Calculating AutoCorrelation for ControlHMC')
     control_ac = calculate_autocorrelation(ControlHMC, distribution,
                                            num_steps=max_steps,
                                            sample_steps=sample_steps,
                                            half_window=True,
                                            **control_params)
+    print('Calculating AutoCorrelation for MJHMC')
     mjhmc_ac = calculate_autocorrelation(MarkovJumpHMC, distribution,
                                          num_steps=max_steps,
                                          sample_steps=sample_steps,
@@ -48,6 +50,7 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
     #                                      sample_steps=sample_steps,
     #                                      half_window=True,
     #                                      **lahmc_params)
+    print('Calculating AutoCorrelation for NUTS')
     nuts_df = sample_nuts_to_df(distribution, 100000, n_burn_in=10000)
     nuts_ac = autocorrelation(nuts_df, half_window=True)
 
@@ -111,7 +114,7 @@ def plot_best(distribution, num_steps=100000):
     """
 #    assert distribution.nbatch == 1
     control_params, mjhmc_params, lahmc_params = load_params(distribution)
-    plot_ac(distribution, control_params, mjhmc_params, lahmc_params, num_steps, truncate=True, truncate_at=0.1)
+    plot_ac(distribution, control_params, mjhmc_params, lahmc_params, num_steps, truncate=False, truncate_at=0.1)
 
 def plot_std(distribution):
     # change this!!!
