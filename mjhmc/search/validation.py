@@ -9,6 +9,7 @@ from mjhmc.misc.distributions import RoughWell, Gaussian, MultimodalGaussian
 from mjhmc.misc.plotting import plot_fit
 
 from matplotlib.backends.backend_pdf import PdfPages
+import matplotlib.pyplot as plt
 
 def plot_all_best(custom_params=None):
     """ Creates a plot with the autocorrelation and fit for each distribution and sampler
@@ -49,3 +50,22 @@ def plot_all_best(custom_params=None):
                                save=False
                            )
                 pdf.savefig(fig)
+
+def plot_comparison(samplers, params, distribution):
+    """ Plot a comparison between samplers and params
+
+    :param samplers: list of samplers to test
+    :param params: respective list of parameters for each sampler
+    :param distribution: distribution to compare on
+    :returns: None
+    :rtype: None
+    """
+    for sampler, hparams in zip(samplers, params):
+        _, n_grad_evals, _, autocor, _ = obj_func_helper(
+            sampler, distribution.reset(), False, hparams)
+        plt.plot(n_grad_evals, autocor,
+                 label="B: {}, eps: {}, M: {}".format(hparams['beta'],
+                                                      hparams['epsilon'],
+                                                      hparams['num_leapfrog_steps']))
+    plt.legend()
+    plt.savefig('comparison.pdf')
