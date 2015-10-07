@@ -100,7 +100,8 @@ def fit(t_data, y_data):
     """
     # very fast way to check for nan
     if not np.isnan(np.sum(y_data)):
-        p_0 = estimate_params(t_data, y_data)
+        # p_0 = estimate_params(t_data, y_data)
+        p_0 = None
         opt_params = curve_fit(curve, t_data, y_data, p0=p_0, maxfev=1000)[0]
         return opt_params
     else:
