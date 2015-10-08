@@ -107,14 +107,14 @@ def load_params(distribution):
     lahmc_params = None
     return control_params, mjhmc_params, lahmc_params
 
-def plot_best(distribution, num_steps=100000):
+def plot_best(distribution, num_steps=100000, **kwargs):
     """
     plot ac with the best parameters for control and mjhmc and compare to nuts
     nbatch must be 1 for nuts comparison
     """
 #    assert distribution.nbatch == 1
     control_params, mjhmc_params, lahmc_params = load_params(distribution)
-    plot_ac(distribution, control_params, mjhmc_params, lahmc_params, num_steps, truncate=False, truncate_at=0.1)
+    plot_ac(distribution, control_params, mjhmc_params, lahmc_params, num_steps, **kwargs)
 
 def plot_std(distribution):
     # change this!!!
