@@ -1,5 +1,8 @@
 import numpy as np
 from .utils import overrides
+import theano.tensor as T
+import theano 
+from scipy.sparse import rand
 
 class Distribution(object):
     """
@@ -151,3 +154,56 @@ class TestGaussian(Distribution):
     @overrides(Distribution)
     def init_X(self):
         self.Xinit = np.random.randn(self.ndims, self.nbatch)
+
+class ProductOfT(Distribution):
+
+    def __init__(self,ndims=36,nbasis=72,nbatch=100,logalpha=None,W=None,b=None):
+        """ Product of T experts, assumes a fixed W that is sparse and alpha that is 
+        """
+        self.ndims=ndims
+        self.nbasis=nbasis
+        self.nbatch=nbatch
+        if W is  None:
+           rand_val = rand(ndims,nbasis/2,density=0.25)
+           W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
+        self.W = theano.shared(np.array(W,dtype='float32'),'W')
+        if logalpha is None:
+            logalpha = np.random.randn(nbasis,)
+        self.logalpha = theano.shared(np.array(logalpha,dtype='float32'),'alpha') 
+        if b is None:
+            b = np.zeros((nbasis,))
+        self.b = theano.shared(np.array(b,dtype='float32'),'b')
+        X = T.matrix()
+        E = self.E_def(X)
+        self.dEdX = T.grad(E,X)
+        #@overrides(Distribution)
+        self.E_val=theano.function([X],E,allow_input_downcast=True)
+        #@overrides(Distribution)
+        self.dEdX_val = theano.function([X],self.dEdX,allow_input_downcast=True)
+        super(ProductOfT,self).__init__(ndims,nbatch)
+
+    def E_def(self,X):
+            """
+            energy for a POE with student's-t expert in terms of:
+                    samples [# samples]x[# dimensions] X
+                    receptive fields [# dimensions]x[# experts] W
+                    biases [# experts] b
+                    expert weighting [# experts] alpha
+            """
+            self.b = self.b.reshape((1,-1))
+            alpha = T.exp(self.logalpha).reshape((1,-1))
+            E_perexpert = alpha*T.log(1 + (T.dot(X.T,self.W) + self.b)**2)
+            E = T.sum(E_perexpert)
+            return E
+ 
+    """
+    @overrides(Distribution)
+    def dEdX_val(self,X):
+        dEdX = np.sum(((2*self.alpha*(self.W.T,X))/(1+(self.W.T,X)**2))*self.W,axis=0)
+        return dEdX
+    """
+
+    @overrides(Distribution)
+    def init_X(self):
+        self.Xinit = np.random.randn(self.ndims,self.nbatch)
+
