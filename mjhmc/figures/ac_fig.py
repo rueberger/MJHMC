@@ -22,16 +22,12 @@ std_param1 = {'epsilon': 1, 'beta': 0.1, 'num_leapfrog_steps': 10}
 std_param2 = {'epsilon': 1, 'beta': .8, 'num_leapfrog_steps': 10}
 
 def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=3000,
-            sample_steps=1, truncate=False, truncate_at=0.0):
+            sample_steps=1, truncate=False, truncate_at=0.0, nuts=False):
     """
     distribution is an instantiated distribution object
     runs the sampler for max steps and then truncates the output to autocorrelation 0.5
     throws an error if ac 0.5 is not reached
     """
-    # control_params = {'beta': 0.5, 'epsilon': 1, "num_leapfrog_steps": 1}
-#    control_params = {'beta': 0.999, 'epsilon': 1.01, "num_leapfrog_steps": 2}
-    # mjhmc_params = {'beta': 0.5, 'epsilon': 1, "num_leapfrog_steps": 1}
-#    mjhmc_params = {'beta': 0.999, 'epsilon': 1.01, "num_leapfrog_steps": 2}
     plt.clf()
     print('Calculating AutoCorrelation for ControlHMC')
     control_ac = calculate_autocorrelation(ControlHMC, distribution,
@@ -39,6 +35,7 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
                                            sample_steps=sample_steps,
                                            half_window=True,
                                            **control_params)
+
     print('Calculating AutoCorrelation for MJHMC')
     mjhmc_ac = calculate_autocorrelation(MarkovJumpHMC, distribution,
                                          num_steps=max_steps,
@@ -46,43 +43,45 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
                                          half_window=True,
                                          resample=False,
                                          **mjhmc_params)
+
     # lahmc_ac = calculate_autocorrelation(LAHMC, distribution,
     #                                      num_steps=max_steps,
     #                                      sample_steps=sample_steps,
     #                                      half_window=True,
     #                                      **lahmc_params)
-    print('Calculating AutoCorrelation for NUTS')
-    nuts_df = sample_nuts_to_df(distribution, 100000, n_burn_in=10000)
-    nuts_ac = autocorrelation(nuts_df, half_window=True)
+
+    if nuts:
+        print('Calculating AutoCorrelation for NUTS')
+        nuts_df = sample_nuts_to_df(distribution, 100000, n_burn_in=10000)
+        nuts_ac = autocorrelation(nuts_df, half_window=True)
 
    # find idx with autocorrelation closest to truncate_at
     if truncate:
         control_trunc = control_ac.loc[:, 'autocorrelation'] < truncate_at
         mjhmc_trunc = mjhmc_ac.loc[:, 'autocorrelation'] < truncate_at
-        nuts_trunc = nuts_ac.loc[:, 'autocorrelation'] < truncate_at
-#        lahmc_trunc = lahmc_ac.loc[:, 'autocorrelation'] < truncate_at
-        # error if we haven't hit autocorrelation truncate_at
-#        assert len(control_trunc[control_trunc]) != 0
-#        assert len(mjhmc_trunc[mjhmc_trunc]) != 0
-  #      assert len(mjhmc_trunc[nuts_trunc]) != 0
-#        assert len(lahmc_trunc[lahmc_trunc]) != 0
-        trunc_idx = max(control_trunc[control_trunc].index[0],
-                        mjhmc_trunc[mjhmc_trunc].index[0])
-                        # nuts_trunc[nuts_trunc].index[0])
-#                        lahmc_trunc[lahmc_trunc].index[0])
+        if nuts:
+            nuts_trunc = nuts_ac.loc[:, 'autocorrelation'] < truncate_at
+            trunc_idx = max(control_trunc[control_trunc].index[0],
+                            mjhmc_trunc[mjhmc_trunc].index[0],
+                            nuts_trunc[nuts_trunc].index[0])
+            nuts_ac = nuts_ac.loc[:trunc_idx]
+        else:
+            trunc_idx = max(control_trunc[control_trunc].index[0],
+                            mjhmc_trunc[mjhmc_trunc].index[0])
         control_ac = control_ac.loc[:trunc_idx]
         mjhmc_ac = mjhmc_ac.loc[:trunc_idx]
-        nuts_ac = nuts_ac.loc[:trunc_idx]
-#        lahmc_ac = lahmc_ac.loc[:trunc_idx]
+
 
     control_ac.index = control_ac['num grad']
     mjhmc_ac.index = control_ac['num grad']
-    nuts_ac.index = nuts_ac['num grad']
-#    lahmc_ac.index = lahmc_ac['num grad']
+    if nuts:
+        nuts_ac.index = nuts_ac['num grad']
+        nuts_ac['autocorrelation'].plot(label='NUTS')
+
+
     control_ac['autocorrelation'].plot(label='Control HMC')
     mjhmc_ac['autocorrelation'].plot(label='Markov Jump HMC')
-    nuts_ac['autocorrelation'].plot(label='NUTS')
- #   lahmc_ac['autocorrelation'].plot(label="LAHMC")
+
     plt.xlabel("Gradient Evaluations")
     plt.ylabel("Autocorrelation")
     plt.title("{}D {}".format(distribution.ndims, type(distribution).__name__))
