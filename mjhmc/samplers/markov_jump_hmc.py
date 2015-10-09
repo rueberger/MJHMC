@@ -253,31 +253,23 @@ class ContinuousTimeHMC(HMCBase):
         if self.resample:
             samples_k = []
             dwell_t_k = []
-            sample_order = {}
             resamples = []
-            ordered_resamples = [[] for _ in xrange(n_samples)]
 
             self.sampling_iteration()
             samples_k.append(self.state.copy().X)
-            sample_order[str(samples_k[-1])] = 0
-            for idx in xrange(n_samples):
+            for _ in xrange(n_samples):
                 dwell_t_k.append(self.dwelling_times.copy())
                 self.sampling_iteration()
                 samples_k.append(self.state.copy().X)
-                # BROKEN! need to account for the batch size too
-                sample_order[str(samples_k[-1])] = idx + 1
 
             dwell_t = np.concatenate(dwell_t_k)
             samples = np.concatenate(samples_k[:-1], axis=1)
             total_t = np.sum(dwell_t)
             cumul_t = np.cumsum(dwell_t)
             # pretty sure there's a way to do the whole batch at once
-            for idx, r in enumerate(np.random.random(n_samples) * total_t):
+            for idx, r in enumerate(np.sort(np.random.random(n_samples)) * total_t):
                 sample_idx = np.where(cumul_t > r)[0][0]
-                ord_idx = sample_order[str(samples[:, sample_idx])]
-                ordered_resamples[ord_idx].append(samples[:, sample_idx])
-            for ord_set in ordered_resamples:
-                resamples.extend(ord_set)
+
             return np.array(resamples)
         else:
             samples = []
@@ -329,6 +321,8 @@ class MarkovJumpHMC(ContinuousTimeHMC):
 
         # cache current state as FLF state for next L transition
         self.state.cache_flf_state(l_idx, self.state)
+        # cache FL as FLF state for for particles that made transition to F
+        self.state.cache_flf_state(f_idx, l_state.F())
 
         # update accepted proposed states
         self.state.update(l_idx, l_state)
@@ -337,7 +331,7 @@ class MarkovJumpHMC(ContinuousTimeHMC):
 
         # clear flf cache for particles that transition to R, F
         self.state.clear_flf_cache(r_idx)
-        self.state.clear_flf_cache(f_idx)
+
 
         self.l_count += len(l_idx)
         self.f_count += len(f_idx)
