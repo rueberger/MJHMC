@@ -2,6 +2,8 @@
 This module contains a script for generating the product of experts image patch figure
 """
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')  # no displayed figures -- need to call before loading pylab
 import matplotlib.pyplot as plt
 import seaborn as sns
 import itertools
@@ -63,6 +65,30 @@ def generate_figure(samples_per_frame=100, n_frames=3):
     return frames, names, frame_grads
 
 
+def plot_imgs(imgs, samp_names, step_nums, vmin = -2, vmax = 2):
+    for samp_i in range(nsamplers):
+        for step_i in range(nsteps):
+            plt.subplot(nsamplers, nsteps, 1 + step_i + samp_i*nsteps)
+
+            ptch = imgs[samp_i][step_i]
+            img_w = np.sqrt(np.prod(ptch.shape))
+            ptch = ptch.reshape((img_w, img_w))
+
+            ptch -= vmin
+            ptch /= vmax-vmin
+            plt.imshow(ptch, interpolation='nearest', cmap=cm.Greys_r )
+            plt.axis('off')
+
+            if step_i == 0:
+                plt.ylabel(samp_names[samp_i])
+            if samp_i == 0:
+                plt.title("%d"%step_nums[step_i])
+
+    plt.savefig('poe_samples.pdf')
+    plt.close()
+
+
+
 def plot_concat_imgs(imgs, border_thickness=2, axis=None, normalize=False):
     """ concatenate the imgs together into one big image separated by borders
 
@@ -98,3 +124,5 @@ def plot_concat_imgs(imgs, border_thickness=2, axis=None, normalize=False):
         axis.imshow(concat_rf, interpolation='none', aspect='auto')
     else:
         plt.imshow(concat_rf, interpolation='none', aspect='auto')
+
+
