@@ -16,7 +16,7 @@ grad_evals = {
     'Gaussian' : int(2E5),
     'RoughWell' : int(5E4),
     'MultimodalGaussian' : int(2E5),
-    'ProductOfT' : int(5E4)
+    'ProductOfT' : int(1E4)
 }
 
 debug = True
