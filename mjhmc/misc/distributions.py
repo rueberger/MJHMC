@@ -175,7 +175,7 @@ class ProductOfT(Distribution):
         self.b = theano.shared(np.array(b,dtype='float32'),'b')
         X = T.matrix()
         E = self.E_def(X)
-        dEdX = T.grad(E,X)
+        dEdX = T.grad(T.sum(E),X)
         #@overrides(Distribution)
         self.E_val=theano.function([X],E,allow_input_downcast=True)
         #@overrides(Distribution)
@@ -183,18 +183,18 @@ class ProductOfT(Distribution):
         super(ProductOfT,self).__init__(ndims,nbatch)
 
     def E_def(self,X):
-            """
-            energy for a POE with student's-t expert in terms of:
-                    samples [# samples]x[# dimensions] X
-                    receptive fields [# dimensions]x[# experts] W
-                    biases [# experts] b
-                    expert weighting [# experts] alpha
-            """
-            self.b = self.b.reshape((1,-1))
-            alpha = T.exp(self.logalpha).reshape((1,-1))
-            E_perexpert = alpha*T.log(1 + (T.dot(X.T,self.W) + self.b)**2)
-            E = T.sum(E_perexpert)
-            return E
+        """
+        energy for a POE with student's-t expert in terms of:
+                samples [# samples]x[# dimensions] X
+                receptive fields [# dimensions]x[# experts] W
+                biases [# experts] b
+                expert weighting [# experts] alpha
+        """
+        self.b = self.b.reshape((1,-1))
+        alpha = T.exp(self.logalpha).reshape((1,-1))
+        E_perexpert = alpha*T.log(1 + (T.dot(X.T,self.W) + self.b)**2)
+        E = T.sum(E_perexpert, axis=1).reshape((1,-1))
+        return E
 
     """
     @overrides(Distribution)
