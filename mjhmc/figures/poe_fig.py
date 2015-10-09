@@ -8,6 +8,10 @@ import itertools
 from scipy.sparse import rand
 
 from mjhmc.misc.distributions import ProductOfT
+from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
+from mjhmc.samplers.hmc_state import HMCState
+
+from nuts import nuts6
 
 plt.ion()
 
@@ -15,31 +19,48 @@ plt.ion()
 # for deterministic params for poet
 np.random.seed(2015)
 
-def generate_figure(samplers, samples_per_frame=100, n_frames=None):
+mjhmc_params = {'epsilon' : 0.127, 'beta' : .01,'num_leapfrog_steps' : 1}
+control_params = {'epsilon' : 0.065, 'beta' : 0.01, 'num_leapfrog_steps' : 1}
+
+def generate_figure(samples_per_frame=100, n_frames=3):
     """ Generates the figure
 
-    :param samplers: list of samplers to run on
     :param samples_per_frame: number of sample steps between each frame
     :param n_frames: number of frames to draw
     :returns: None
     :rtype: None
     """
-    # will need to set distribution x_init so that all start in same state
-    n_frames = n_frames or len(samplers)
+    n_samples = samples_per_frame * n_frames
     ndims = 36
     nbasis = 72
+
     rand_val = rand(ndims,nbasis/2,density=0.25)
     W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
     logalpha = np.random.randn(nbasis, 1)
-
     poe = ProductOfT(nbatch=1, W=W, logalpha=logalpha)
-    frames = []
-    for _, sampler in enumerate(samplers):
-        samples = sampler(distribution=poe.reset()).sample(samples_per_frame * n_frames)
-        for f_idx in xrange(n_frames):
-            s_idx = f_idx * samples_per_frame
-            frames.append(samples[:, s_idx].reshape(np.sqrt(poe.ndims), np.sqrt(poe.ndims)))
-    plot_concat_imgs(frames)
+
+    # NUTS
+    nuts_init = poe.Xinit[:, 0]
+    nuts_samples = nuts6(poe.reset(), n_samples, int(1E4), nuts_init)
+    nuts_frames = [nuts_samples[:, f_idx * samples_per_frame] for f_idx in xrange(0, n_frames)]
+    x_init = nuts_samples[:, 0].reshape(ndims, 1)
+
+    # MJHMC
+    mjhmc = MarkovJumpHMC(distribution=poe.reset(), **mjhmc_params)
+    mjhmc.state = HMCState(x_init.copy(), mjhmc)
+    mjhmc_samples = mjhmc.sample(n_samples)
+    mjhmc_frames = [mjhmc_samples[:, f_idx * samples_per_frame] for f_idx in xrange(0, n_frames)]
+
+    # control HMC
+    hmc = ControlHMC(distribution=poe.reset(), **control_params)
+    hmc.state = HMCState(x_init.copy(), hmc)
+    hmc_samples = hmc.sample(n_samples)
+    hmc_frames = [hmc_samples[:, f_idx * samples_per_frame] for f_idx in xrange(0, n_frames)]
+
+    frames = [mjhmc_frames, hmc_frames, nuts_frames]
+    names = ['MJHMC', 'ControlHMC', 'NUTS']
+    frame_grads = [f_idx * samples_per_frame for f_idx in xrange(0, n_frames)]
+    return frames, names, frame_grads
 
 
 def plot_concat_imgs(imgs, border_thickness=2, axis=None, normalize=False):
