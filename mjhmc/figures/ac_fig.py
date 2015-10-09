@@ -62,8 +62,8 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
         if nuts:
             nuts_trunc = nuts_ac.loc[:, 'autocorrelation'] < truncate_at
             trunc_idx = max(control_trunc[control_trunc].index[0],
-                            mjhmc_trunc[mjhmc_trunc].index[0],
-                            nuts_trunc[nuts_trunc].index[0])
+                            mjhmc_trunc[mjhmc_trunc].index[0])
+                            # nuts_trunc[nuts_trunc].index[0])
             nuts_ac = nuts_ac.loc[:trunc_idx]
         else:
             trunc_idx = max(control_trunc[control_trunc].index[0],
