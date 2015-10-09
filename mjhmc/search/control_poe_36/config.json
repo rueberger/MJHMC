@@ -13,7 +13,7 @@
         "epsilon" : {
             "type" : "FLOAT",
             "size" : 1,
-            "min"  : 0.001,
+            "min"  : 0.00001,
             "max"  : 10
         },
 	"beta" : {
