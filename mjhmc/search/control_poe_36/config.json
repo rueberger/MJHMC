@@ -1,7 +1,7 @@
 {
     "language"        : "PYTHON",
     "main-file"       : "mjhmc_objective.py",
-    "experiment-name" : "Control_POE_36_v1",
+    "experiment-name" : "Control_POE_36_fixed_params",
     "likelihood"      : "GAUSSIAN",
     "variables" : {
         "num_leapfrog_steps" : {
