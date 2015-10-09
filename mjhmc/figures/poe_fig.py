@@ -45,9 +45,10 @@ def generate_figure_samples(samples_per_frame, n_frames, nuts_burnin = int(1e4))
     # NUTS
     print "NUTS"
     nuts_init = poe.Xinit[:, 0]
-    nuts_samples = nuts6(poe.reset(), n_samples, nuts_burnin, nuts_init)
-    nuts_frames = [nuts_samples[:, f_idx * samples_per_frame] for f_idx in xrange(0, n_frames)]
-    x_init = nuts_samples[:, 0].reshape(ndims, 1)
+    nuts_samples = nuts6(poe.reset(), n_samples, nuts_burnin, nuts_init)[0]
+    nuts_frames = [nuts_samples[f_idx * samples_per_frame, :] for f_idx in xrange(0, n_frames)]
+    x_init = nuts_samples[0, :].reshape(ndims, 1)
+
 
     # MJHMC
     print "MJHMC"
@@ -141,4 +142,3 @@ if False:
     nuts_burnin = 10
     frames, names, frame_grads = generate_figure_samples(samples_per_frame, n_frames, nuts_burnin=nuts_burnin)
     plot_imgs(frames, names, frame_grads)
-
