@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')  # no displayed figures -- need to call before loading pylab
 import matplotlib.pyplot as plt
-import seaborn as sns
+# import seaborn as sns
 import itertools
 from scipy.sparse import rand
 
@@ -24,7 +24,8 @@ np.random.seed(2015)
 mjhmc_params = {'epsilon' : 0.127, 'beta' : .01,'num_leapfrog_steps' : 1}
 control_params = {'epsilon' : 0.065, 'beta' : 0.01, 'num_leapfrog_steps' : 1}
 
-def generate_figure(samples_per_frame=100, n_frames=3):
+
+def generate_figure_samples(samples_per_frame, n_frames, nuts_burnin = int(1e4)):
     """ Generates the figure
 
     :param samples_per_frame: number of sample steps between each frame
@@ -42,18 +43,21 @@ def generate_figure(samples_per_frame=100, n_frames=3):
     poe = ProductOfT(nbatch=1, W=W, logalpha=logalpha)
 
     # NUTS
+    print "NUTS"
     nuts_init = poe.Xinit[:, 0]
-    nuts_samples = nuts6(poe.reset(), n_samples, int(1E4), nuts_init)
+    nuts_samples = nuts6(poe.reset(), n_samples, nuts_burnin, nuts_init)
     nuts_frames = [nuts_samples[:, f_idx * samples_per_frame] for f_idx in xrange(0, n_frames)]
     x_init = nuts_samples[:, 0].reshape(ndims, 1)
 
     # MJHMC
+    print "MJHMC"
     mjhmc = MarkovJumpHMC(distribution=poe.reset(), **mjhmc_params)
     mjhmc.state = HMCState(x_init.copy(), mjhmc)
     mjhmc_samples = mjhmc.sample(n_samples)
     mjhmc_frames = [mjhmc_samples[:, f_idx * samples_per_frame] for f_idx in xrange(0, n_frames)]
 
     # control HMC
+    print "Control"
     hmc = ControlHMC(distribution=poe.reset(), **control_params)
     hmc.state = HMCState(x_init.copy(), hmc)
     hmc_samples = hmc.sample(n_samples)
@@ -128,4 +132,10 @@ def plot_concat_imgs(imgs, border_thickness=2, axis=None, normalize=False):
     else:
         plt.imshow(concat_rf, interpolation='none', aspect='auto')
 
+if False:
+    samples_per_frame = 2
+    n_frames = 2
+    nuts_burnin = 10
+    frames, names, frame_grads = generate_figure_samples(samples_per_frame, n_frames, nuts_burnin=nuts_burnin)
+    plot_imgs(frames, names, frame_grads)
 
