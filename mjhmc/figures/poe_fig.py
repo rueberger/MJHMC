@@ -70,6 +70,8 @@ def generate_figure_samples(samples_per_frame, n_frames, nuts_burnin = int(1e4))
 
 
 def plot_imgs(imgs, samp_names, step_nums, vmin = -2, vmax = 2):
+    plt.figure(figsize=(5,4))
+
     nsamplers = len(samp_names)
     nsteps = len(step_nums)
 
@@ -91,6 +93,7 @@ def plot_imgs(imgs, samp_names, step_nums, vmin = -2, vmax = 2):
             if samp_i == 0:
                 plt.title("%d"%step_nums[step_i])
 
+    plt.tight_layout()
     plt.savefig('poe_samples.pdf')
     plt.close()
 
