@@ -66,6 +66,9 @@ def generate_figure(samples_per_frame=100, n_frames=3):
 
 
 def plot_imgs(imgs, samp_names, step_nums, vmin = -2, vmax = 2):
+    nsamplers = len(samp_names)
+    nsteps = len(step_nums)
+
     for samp_i in range(nsamplers):
         for step_i in range(nsteps):
             plt.subplot(nsamplers, nsteps, 1 + step_i + samp_i*nsteps)
