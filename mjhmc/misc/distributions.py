@@ -1,7 +1,7 @@
 import numpy as np
 from .utils import overrides
 import theano.tensor as T
-import theano 
+import theano
 from scipy.sparse import rand
 
 class Distribution(object):
@@ -158,7 +158,7 @@ class TestGaussian(Distribution):
 class ProductOfT(Distribution):
 
     def __init__(self,ndims=36,nbasis=72,nbatch=100,logalpha=None,W=None,b=None):
-        """ Product of T experts, assumes a fixed W that is sparse and alpha that is 
+        """ Product of T experts, assumes a fixed W that is sparse and alpha that is
         """
         self.ndims=ndims
         self.nbasis=nbasis
@@ -169,7 +169,7 @@ class ProductOfT(Distribution):
         self.W = theano.shared(np.array(W,dtype='float32'),'W')
         if logalpha is None:
             logalpha = np.random.randn(nbasis,)
-        self.logalpha = theano.shared(np.array(logalpha,dtype='float32'),'alpha') 
+        self.logalpha = theano.shared(np.array(logalpha,dtype='float32'),'alpha')
         if b is None:
             b = np.zeros((nbasis,))
         self.b = theano.shared(np.array(b,dtype='float32'),'b')
@@ -195,7 +195,7 @@ class ProductOfT(Distribution):
             E_perexpert = alpha*T.log(1 + (T.dot(X.T,self.W) + self.b)**2)
             E = T.sum(E_perexpert)
             return E
- 
+
     """
     @overrides(Distribution)
     def dEdX_val(self,X):
@@ -207,3 +207,42 @@ class ProductOfT(Distribution):
     def init_X(self):
         self.Xinit = np.random.randn(self.ndims,self.nbatch)
 
+
+class ProductOfT2(Distribution):
+
+    def __init__(self,ndims=36,nbasis=72,nbatch=100,logalpha=None,W=None):
+        """ Product of T experts, assumes a fixed W that is sparse and alpha that is*
+        """
+        if W is  None:
+           rand_val = rand(ndims,nbasis/2,density=0.25)
+           self.W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
+        else:
+           self.W = W
+
+        self.logalpha = logalpha or np.random.randn(nbasis, 1)
+        self.alpha = np.exp(self.logalpha)
+        super(ProductOfT2,self).__init__(ndims,nbatch)
+        '''
+        E = \sum_i f( \sum_j W_ij x_j )
+        f(u) = alpha log( 1 + u^2 )
+        alpha = 1, or 2, or something*
+        '''
+
+    def f(self,u):
+        return self.alpha*np.log(1 + u**2)
+
+    @overrides(Distribution)
+    def E_val(self,X):
+        E = np.sum(self.f(np.dot(self.W.T,X)))
+        return E
+
+    @overrides(Distribution)
+    def dEdX_val(self,X):
+        num = (2*self.alpha * np.dot(self.W.T,X))
+        denom = (1 + np.dot(self.W.T,X)**2)
+        dEdX = np.sum(np.dot((num / denom), self.W.T), axis=0)
+        return dEdX
+
+    @overrides(Distribution)
+    def init_X(self):
+        self.Xinit = np.random.randn(self.ndims,self.nbatch)
