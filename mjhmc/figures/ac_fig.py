@@ -94,7 +94,8 @@ def load_params(distribution):
     dist_to_extension = {
         'RoughWell' : "rw",
         'Gaussian' : 'log_gauss',
-        'MultimodalGaussian' : 'mm_gauss'
+        'MultimodalGaussian' : 'mm_gauss',
+        'ProductOfT' : 'poe_36'
     }
     file_name = "params.json"
     extension = dist_to_extension[type(distribution).__name__]
