@@ -253,7 +253,7 @@ class ContinuousTimeHMC(HMCBase):
         if self.resample:
             samples_k = []
             dwell_t_k = []
-            resamples = []
+            resamples = np.zeros((2, n_samples * self.nbatch))
 
             self.sampling_iteration()
             samples_k.append(self.state.copy().X)
@@ -269,8 +269,8 @@ class ContinuousTimeHMC(HMCBase):
             # pretty sure there's a way to do the whole batch at once
             for idx, r in enumerate(np.sort(np.random.random(n_samples)) * total_t):
                 sample_idx = np.where(cumul_t > r)[0][0]
-
-            return np.array(resamples)
+                resamples[:, idx] = samples[:, sample_idx]
+            return resamples
         else:
             samples = []
             for _ in xrange(n_samples):
