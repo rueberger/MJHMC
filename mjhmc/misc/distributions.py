@@ -240,7 +240,7 @@ class ProductOfT2(Distribution):
     def dEdX_val(self,X):
         num = (2*self.alpha * np.dot(self.W.T,X))
         denom = (1 + np.dot(self.W.T,X)**2)
-        dEdX = np.sum(np.dot((num / denom).T, self.W.T), axis=0)
+        dEdX = np.sum(np.dot((num / denom), self.W.T), axis=0)
         return dEdX
 
     @overrides(Distribution)
