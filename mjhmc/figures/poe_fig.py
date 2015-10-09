@@ -5,10 +5,15 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import itertools
+from scipy.sparse import rand
 
 from mjhmc.misc.distributions import ProductOfT
 
 plt.ion()
+
+
+# for deterministic params for poet
+np.random.seed(2015)
 
 def generate_figure(samplers, samples_per_frame=100, n_frames=None):
     """ Generates the figure
@@ -21,7 +26,13 @@ def generate_figure(samplers, samples_per_frame=100, n_frames=None):
     """
     # will need to set distribution x_init so that all start in same state
     n_frames = n_frames or len(samplers)
-    poe = ProductOfT(nbatch=1)
+    ndims = 36
+    nbasis = 72
+    rand_val = rand(ndims,nbasis/2,density=0.25)
+    W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
+    logalpha = np.random.randn(nbasis, 1)
+
+    poe = ProductOfT(nbatch=1, W=W, logalpha=logalpha)
     frames = []
     for _, sampler in enumerate(samplers):
         samples = sampler(distribution=poe.reset()).sample(samples_per_frame * n_frames)
