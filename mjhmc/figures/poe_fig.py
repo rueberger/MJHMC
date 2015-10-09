@@ -20,11 +20,11 @@ plt.ion()
 
 
 # for deterministic params for poet
-np.random.seed(2015)
+np.random.seed(1234)
 
 mjhmc_params = {'epsilon' : 0.127, 'beta' : .01,'num_leapfrog_steps' : 1}
 control_params = {'epsilon' : 0.065, 'beta' : 0.01, 'num_leapfrog_steps' : 1}
-mjhmc_params = control_params
+# mjhmc_params = control_params
 
 def generate_figure_samples(samples_per_frame, n_frames, burnin = int(1e4)):
     """ Generates the figure
@@ -54,25 +54,32 @@ def generate_figure_samples(samples_per_frame, n_frames, burnin = int(1e4)):
 
     ## burnin
     print "MJHMC burnin"
-    x_init = poe.Xinit[:, [0]]
+    x_init = poe.Xinit #[:, [0]]
     mjhmc = MarkovJumpHMC(distribution=poe.reset(), **mjhmc_params)
     mjhmc.state = HMCState(x_init.copy(), mjhmc)
     mjhmc_samples = mjhmc.sample(burnin)
+    print mjhmc_samples.shape
     x_init = mjhmc_samples[:, [0]]
-
-    # MJHMC
-    print "MJHMC"
-    mjhmc = MarkovJumpHMC(distribution=poe.reset(), **mjhmc_params)
-    mjhmc.state = HMCState(x_init.copy(), mjhmc)
-    mjhmc_samples = mjhmc.sample(n_samples)
-    mjhmc_frames = [mjhmc_samples[:, f_idx * samples_per_frame] for f_idx in xrange(0, n_frames)]
 
     # control HMC
     print "Control"
     hmc = ControlHMC(distribution=poe.reset(), **control_params)
     hmc.state = HMCState(x_init.copy(), hmc)
     hmc_samples = hmc.sample(n_samples)
-    hmc_frames = [hmc_samples[:, f_idx * samples_per_frame] for f_idx in xrange(0, n_frames)]
+    hmc_frames = [hmc_samples[:, f_idx * samples_per_frame].copy() for f_idx in xrange(0, n_frames)]
+
+    # MJHMC
+    print "MJHMC"
+    mjhmc = MarkovJumpHMC(distribution=poe.reset(), resample=False, **mjhmc_params)
+    mjhmc.state = HMCState(x_init.copy(), mjhmc)
+    mjhmc_samples = mjhmc.sample(n_samples)
+    mjhmc_frames = [mjhmc_samples[:, f_idx * samples_per_frame].copy() for f_idx in xrange(0, n_frames)]
+
+    print mjhmc.r_count, hmc.r_count
+    print mjhmc.l_count, hmc.l_count
+    print mjhmc.f_count, hmc.f_count
+    print mjhmc.fl_count, hmc.fl_count
+
 
     frames = [mjhmc_frames, hmc_frames]
     names = ['MJHMC', 'ControlHMC']
@@ -110,7 +117,7 @@ def plot_imgs(imgs, samp_names, step_nums, vmin = -2, vmax = 2):
         for step_i in range(nsteps):
             plt.subplot(nsamplers+1, nsteps+1, 2 + step_i + (samp_i+1)*(nsteps+1))
 
-            ptch = imgs[samp_i][step_i]
+            ptch = imgs[samp_i][step_i].copy()
             img_w = np.sqrt(np.prod(ptch.shape))
             ptch = ptch.reshape((img_w, img_w))
 
@@ -163,7 +170,7 @@ def plot_concat_imgs(imgs, border_thickness=2, axis=None, normalize=False):
 
 if False:
     sys.path.append('/Library/Python/2.7/site-packages')
-    samples_per_frame = 1000
+    samples_per_frame = 100
     n_frames = 5
     burnin = 1000
     frames, names, frame_grads = generate_figure_samples(samples_per_frame, n_frames, burnin=burnin)
