@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')  # no displayed figures -- need to call before loading pylab
 import matplotlib.pyplot as plt
+import matplotlib.cm as cm
 # import seaborn as sns
 import itertools
 from scipy.sparse import rand
@@ -23,9 +24,9 @@ np.random.seed(2015)
 
 mjhmc_params = {'epsilon' : 0.127, 'beta' : .01,'num_leapfrog_steps' : 1}
 control_params = {'epsilon' : 0.065, 'beta' : 0.01, 'num_leapfrog_steps' : 1}
+mjhmc_params = control_params
 
-
-def generate_figure_samples(samples_per_frame, n_frames, nuts_burnin = int(1e4)):
+def generate_figure_samples(samples_per_frame, n_frames, burnin = int(1e4)):
     """ Generates the figure
 
     :param samples_per_frame: number of sample steps between each frame
@@ -42,13 +43,22 @@ def generate_figure_samples(samples_per_frame, n_frames, nuts_burnin = int(1e4))
     logalpha = np.random.randn(nbasis, 1)
     poe = ProductOfT(nbatch=1, W=W, logalpha=logalpha)
 
-    # NUTS
-    print "NUTS"
-    nuts_init = poe.Xinit[:, 0]
-    nuts_samples = nuts6(poe.reset(), n_samples, nuts_burnin, nuts_init)[0]
-    nuts_frames = [nuts_samples[f_idx * samples_per_frame, :] for f_idx in xrange(0, n_frames)]
-    x_init = nuts_samples[0, :].reshape(ndims, 1)
+    ## NUTS uses a different number of grad evals for each update step!!
+    ## makes it very hard to compare against others w/ same number of update steps
+    # # NUTS
+    # print "NUTS"
+    # nuts_init = poe.Xinit[:, 0]
+    # nuts_samples = nuts6(poe.reset(), n_samples, nuts_burnin, nuts_init)[0]
+    # nuts_frames = [nuts_samples[f_idx * samples_per_frame, :] for f_idx in xrange(0, n_frames)]
+    # x_init = nuts_samples[0, :].reshape(ndims, 1)
 
+    ## burnin
+    print "MJHMC burnin"
+    x_init = poe.Xinit[:, [0]]
+    mjhmc = MarkovJumpHMC(distribution=poe.reset(), **mjhmc_params)
+    mjhmc.state = HMCState(x_init.copy(), mjhmc)
+    mjhmc_samples = mjhmc.sample(burnin)
+    x_init = mjhmc_samples[:, [0]]
 
     # MJHMC
     print "MJHMC"
@@ -64,21 +74,41 @@ def generate_figure_samples(samples_per_frame, n_frames, nuts_burnin = int(1e4))
     hmc_samples = hmc.sample(n_samples)
     hmc_frames = [hmc_samples[:, f_idx * samples_per_frame] for f_idx in xrange(0, n_frames)]
 
-    frames = [mjhmc_frames, hmc_frames, nuts_frames]
-    names = ['MJHMC', 'ControlHMC', 'NUTS']
+    frames = [mjhmc_frames, hmc_frames]
+    names = ['MJHMC', 'ControlHMC']
     frame_grads = [f_idx * samples_per_frame for f_idx in xrange(0, n_frames)]
     return frames, names, frame_grads
 
 
 def plot_imgs(imgs, samp_names, step_nums, vmin = -2, vmax = 2):
-    plt.figure(figsize=(5,4))
+    plt.figure(figsize=(5.5,3.6))
 
     nsamplers = len(samp_names)
     nsteps = len(step_nums)
 
+    plt.subplot(nsamplers+1, nsteps+1, 1)
+    plt.axis('off')
+    plt.text(0.9, -0.1, "# grads",
+        horizontalalignment='right',
+        verticalalignment='bottom')
+
+    for step_i in range(nsteps):
+        plt.subplot(nsamplers+1, nsteps+1, 2 + step_i)
+        plt.axis('off')
+        plt.text(0.5, -0.1, "%d"%step_nums[step_i],
+            horizontalalignment='center',
+            verticalalignment='bottom')
+    for samp_i in range(nsamplers):
+        plt.subplot(nsamplers+1, nsteps+1, 1 + (samp_i+1)*(nsteps+1))
+        plt.axis('off')
+        plt.text(0.9, 0.5, samp_names[samp_i],
+            horizontalalignment='right',
+            verticalalignment='center')
+
+
     for samp_i in range(nsamplers):
         for step_i in range(nsteps):
-            plt.subplot(nsamplers, nsteps, 1 + step_i + samp_i*nsteps)
+            plt.subplot(nsamplers+1, nsteps+1, 2 + step_i + (samp_i+1)*(nsteps+1))
 
             ptch = imgs[samp_i][step_i]
             img_w = np.sqrt(np.prod(ptch.shape))
@@ -89,12 +119,7 @@ def plot_imgs(imgs, samp_names, step_nums, vmin = -2, vmax = 2):
             plt.imshow(ptch, interpolation='nearest', cmap=cm.Greys_r )
             plt.axis('off')
 
-            if step_i == 0:
-                plt.ylabel(samp_names[samp_i])
-            if samp_i == 0:
-                plt.title("%d"%step_nums[step_i])
-
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.savefig('poe_samples.pdf')
     plt.close()
 
@@ -137,8 +162,9 @@ def plot_concat_imgs(imgs, border_thickness=2, axis=None, normalize=False):
         plt.imshow(concat_rf, interpolation='none', aspect='auto')
 
 if False:
-    samples_per_frame = 2
-    n_frames = 2
-    nuts_burnin = 10
-    frames, names, frame_grads = generate_figure_samples(samples_per_frame, n_frames, nuts_burnin=nuts_burnin)
+    sys.path.append('/Library/Python/2.7/site-packages')
+    samples_per_frame = 1000
+    n_frames = 5
+    burnin = 1000
+    frames, names, frame_grads = generate_figure_samples(samples_per_frame, n_frames, burnin=burnin)
     plot_imgs(frames, names, frame_grads)
