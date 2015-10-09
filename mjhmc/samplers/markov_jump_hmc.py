@@ -322,7 +322,7 @@ class MarkovJumpHMC(ContinuousTimeHMC):
         # cache current state as FLF state for next L transition
         self.state.cache_flf_state(l_idx, self.state)
         # cache FL as FLF state for for particles that made transition to F
-        self.state.cache_flf_state(f_idx, l_state.F())
+#        self.state.cache_flf_state(f_idx, l_state.F())
 
         # update accepted proposed states
         self.state.update(l_idx, l_state)
@@ -331,6 +331,7 @@ class MarkovJumpHMC(ContinuousTimeHMC):
 
         # clear flf cache for particles that transition to R, F
         self.state.clear_flf_cache(r_idx)
+        self.state.clear_flf_cache(f_idx)
 
 
         self.l_count += len(l_idx)
