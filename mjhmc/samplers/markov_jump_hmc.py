@@ -253,7 +253,7 @@ class ContinuousTimeHMC(HMCBase):
         if self.resample:
             samples_k = []
             dwell_t_k = []
-            resamples = np.zeros((2, n_samples * self.nbatch))
+            resamples = np.zeros((self.ndims, n_samples * self.nbatch))
 
             self.sampling_iteration()
             samples_k.append(self.state.copy().X)
