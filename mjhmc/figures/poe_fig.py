@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use('Agg')  # no displayed figures -- need to call before loading pylab
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
-# import seaborn as sns
+import seaborn as sns
 import itertools
 from scipy.sparse import rand
 
@@ -54,11 +54,9 @@ def generate_figure_samples(samples_per_frame, n_frames, burnin = int(1e4)):
 
     ## burnin
     print "MJHMC burnin"
-    x_init = poe.Xinit[:, [0]]
     mjhmc = MarkovJumpHMC(distribution=poe.reset(), **mjhmc_params)
-    mjhmc.state = HMCState(x_init.copy(), mjhmc)
-    mjhmc_samples = mjhmc.sample(burnin)
-    x_init = mjhmc_samples[:, [0]]
+    mjhmc_samples_bi = mjhmc.sample(burnin)
+    x_init = mjhmc_samples_bi[:, [0]]
 
     # MJHMC
     print "MJHMC"
@@ -168,3 +166,14 @@ if False:
     burnin = 1000
     frames, names, frame_grads = generate_figure_samples(samples_per_frame, n_frames, burnin=burnin)
     plot_imgs(frames, names, frame_grads)
+
+def ac_plot():
+    from mjhmc.figures.ac_fig import plot_ac
+    ndims = 36
+    nbasis = 72
+
+    rand_val = rand(ndims,nbasis/2,density=0.25)
+    W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
+    logalpha = np.random.randn(nbasis, 1)
+    poe = ProductOfT(nbatch=1, W=W, logalpha=logalpha)
+    plot_ac(poe, control_params, mjhmc_params, None, max_steps=int(5E4), truncate=True)
