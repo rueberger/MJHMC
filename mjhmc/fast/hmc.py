@@ -164,3 +164,13 @@ def metropolis_hastings_accept(energy_prev, energy_next, s_rng):
     return (TT.exp(ediff) - s_rng.uniform(size=energy_prev.shape)) >= 0
 
 
+def wrapper_hmc()
+    """
+    This should be the wrapper call that calls the various HMC definitions
+
+    Parameters:
+      Potential Energy -- function handle that captures the interest distrbution 
+      Number of Leap Frog Steps -- L (10)
+      Momentum corruption parameter -- beta (0.1)
+      Leapfrog Integrator step length -- epsilon (0.1)
+    """
