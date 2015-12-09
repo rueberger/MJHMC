@@ -15,6 +15,8 @@ def simulate_dynamics(initial_pos, initial_vel, stepsize, n_steps, energy_fn):
         Initial velocity of particles
     stepsize: shared theano scalar
         Scalar value controlling amount by which to move
+    n_steps: shared theano scalar 
+        Scalar value controlling number of steps for which to run the integrator
     energy_fn: python function
         Python function, operating on symbolic theano variables, used to
         compute the potential energy at a given position.
@@ -51,7 +53,7 @@ def simulate_dynamics(initial_pos, initial_vel, stepsize, n_steps, energy_fn):
             Dictionary of updates for the Scan Op
         """
         # from pos(t) and vel(t-stepsize/2), compute vel(t+stepsize/2)
-        dE_dpos = TT.grad(energy_fn(pos).sum(), pos)
+        dE_dpos = T.grad(energy_fn(pos).sum(), pos)
         new_vel = vel - step * dE_dpos
         # from vel(t+stepsize/2) compute pos(t+stepsize)
         new_pos = pos + step * new_vel
@@ -59,7 +61,8 @@ def simulate_dynamics(initial_pos, initial_vel, stepsize, n_steps, energy_fn):
 
     # compute velocity at time-step: t + stepsize/2
     initial_energy = energy_fn(initial_pos)
-    dE_dpos = TT.grad(initial_energy.sum(), initial_pos)
+    import IPython; IPython.embed()
+    dE_dpos = T.grad(initial_energy.sum(), initial_pos)
     vel_half_step = initial_vel - 0.5 * stepsize * dE_dpos
 
     # compute position at time-step: t + stepsize
@@ -89,7 +92,7 @@ def simulate_dynamics(initial_pos, initial_vel, stepsize, n_steps, energy_fn):
     # (n_steps - 1 / 2) * stepsize) We therefore perform one more half-step
     # to return vel(t + n_steps * stepsize)
     energy = energy_fn(final_pos)
-    final_vel = final_vel - 0.5 * stepsize * TT.grad(energy.sum(), final_pos)
+    final_vel = final_vel - 0.5 * stepsize * T.grad(energy.sum(), final_pos)
 
     # return new proposal state
     return final_pos, final_vel
@@ -113,7 +116,7 @@ def kinetic_energy(vel):
         Vector whose i-th entry is the kinetic entry associated with vel[i].
 
     """
-    return 0.5 * (vel ** 2).sum(axis=1)
+    return 0.5 * (vel ** 2).sum(axis=0)
 
 def hamiltonian(pos, vel, energy_fn):
     """
@@ -161,10 +164,13 @@ def metropolis_hastings_accept(energy_prev, energy_next, s_rng):
         True if move is accepted, False otherwise
     """
     ediff = energy_prev - energy_next
-    return (TT.exp(ediff) - s_rng.uniform(size=energy_prev.shape)) >= 0
+    return (T.exp(ediff) - s_rng.uniform(size=energy_prev.shape)) >= 0
 
+def MJHMC_accept():
 
-def wrapper_hmc()
+    return
+
+def wrapper_hmc(pos,L=10, beta = 0.1, epsilon = 0.1):
     """
     This should be the wrapper call that calls the various HMC definitions
 
