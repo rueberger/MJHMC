@@ -61,7 +61,6 @@ def simulate_dynamics(initial_pos, initial_vel, stepsize, n_steps, energy_fn):
 
     # compute velocity at time-step: t + stepsize/2
     initial_energy = energy_fn(initial_pos)
-    import IPython; IPython.embed()
     dE_dpos = T.grad(initial_energy.sum(), initial_pos)
     vel_half_step = initial_vel - 0.5 * stepsize * dE_dpos
 
@@ -170,7 +169,134 @@ def MJHMC_accept():
 
     return
 
-def wrapper_hmc(pos,L=10, beta = 0.1, epsilon = 0.1):
+def hmc_move(s_rng, positions, energy_fn, stepsize=0.1, n_steps=1):
+    """
+    This function performs one-step of Hybrid Monte-Carlo sampling. We start by
+    sampling a random velocity from a univariate Gaussian distribution, perform
+    `n_steps` leap-frog updates using Hamiltonian dynamics and accept-reject
+    using Metropolis-Hastings.
+
+    Parameters
+    ----------
+    s_rng: theano shared random stream
+        Symbolic random number generator used to draw random velocity and
+        perform accept-reject move.
+    positions: shared theano matrix
+        Symbolic matrix whose rows are position vectors.
+    energy_fn: python function
+        Python function, operating on symbolic theano variables, used to
+        compute the potential energy at a given position.
+    stepsize:  shared theano scalar
+        Shared variable containing the stepsize to use for `n_steps` of HMC
+        simulation steps.
+    n_steps: integer
+        Number of HMC steps to perform before proposing a new position.
+
+    Returns
+    -------
+    rval1: boolean
+        True if move is accepted, False otherwise
+    rval2: theano matrix
+        Matrix whose rows contain the proposed "new position"
+    """
+    # sample random velocity
+    initial_vel = s_rng.normal(size=positions.shape)
+
+    final_pos, final_vel = simulate_dynamics(
+        initial_pos=positions,
+        initial_vel=initial_vel,
+        stepsize=stepsize,
+        n_steps=n_steps,
+        energy_fn=energy_fn
+    )
+    # accept/reject the proposed move based on the joint distribution
+    accept = metropolis_hastings_accept(
+        energy_prev=hamiltonian(positions, initial_vel, energy_fn),
+        energy_next=hamiltonian(final_pos, final_vel, energy_fn),
+        s_rng=s_rng
+    )
+    return accept, final_pos
+
+
+def hmc_updates(positions, stepsize, final_pos, accept):
+    """def hmc_updates(positions, stepsize, avg_acceptance_rate, final_pos, accept,
+                target_acceptance_rate, stepsize_inc, stepsize_dec,
+                stepsize_min, stepsize_max, avg_acceptance_slowness):
+    This function is executed after `n_steps` of HMC sampling
+    (`hmc_move` function). It creates the updates dictionary used by
+    the `simulate` function. It takes care of updating: the position
+    (if the move is accepted), the stepsize (to track a given target
+    acceptance rate) and the average acceptance rate (computed as a
+    moving average).
+
+    Parameters
+    ----------
+    positions: shared variable, theano matrix
+        Shared theano matrix whose rows contain the old position
+    stepsize: shared variable, theano scalar
+        Shared theano scalar containing current step size
+    avg_acceptance_rate: shared variable, theano scalar
+        Shared theano scalar containing the current average acceptance rate
+    final_pos: shared variable, theano matrix
+        Shared theano matrix whose rows contain the new position
+    accept: theano scalar
+        Boolean-type variable representing whether or not the proposed HMC move
+        should be accepted or not.
+    target_acceptance_rate: float
+        The stepsize is modified in order to track this target acceptance rate.
+    stepsize_inc: float
+        Amount by which to increment stepsize when acceptance rate is too high.
+    stepsize_dec: float
+        Amount by which to decrement stepsize when acceptance rate is too low.
+    stepsize_min: float
+        Lower-bound on `stepsize`.
+    stepsize_min: float
+        Upper-bound on `stepsize`.
+    avg_acceptance_slowness: float
+        Average acceptance rate is computed as an exponential moving average.
+        (1-avg_acceptance_slowness) is the weight given to the newest
+        observation.
+
+    Returns
+    -------
+    rval1: dictionary-like
+        A dictionary of updates to be used by the `HMC_Sampler.simulate`
+        function.  The updates target the position, stepsize and average
+        acceptance rate.
+
+    """
+
+    ## POSITION UPDATES ##
+    # broadcast `accept` scalar to tensor with the same dimensions as
+    # final_pos.
+    import IPython; IPython.embed()
+    accept_matrix = accept.dimshuffle(0, *(('x',) * (final_pos.ndim - 1)))
+    # if accept is True, update to `final_pos` else stay put
+    new_positions = T.switch(accept_matrix, final_pos, positions)
+    ## ACCEPT RATE UPDATES ##
+    # perform exponential moving average
+    '''
+    mean_dtype = theano.scalar.upcast(accept.dtype, avg_acceptance_rate.dtype)
+    new_acceptance_rate = T.add(
+        avg_acceptance_slowness * avg_acceptance_rate,
+        (1.0 - avg_acceptance_slowness) * accept.mean(dtype=mean_dtype))
+    ## STEPSIZE UPDATES ##
+    # if acceptance rate is too low, our sampler is too "noisy" and we reduce
+    # the stepsize. If it is too high, our sampler is too conservative, we can
+    # get away with a larger stepsize (resulting in better mixing).
+    _new_stepsize = T.switch(avg_acceptance_rate > target_acceptance_rate,
+                              stepsize * stepsize_inc, stepsize * stepsize_dec)
+    # maintain stepsize in [stepsize_min, stepsize_max]
+    new_stepsize = T.clip(_new_stepsize, stepsize_min, stepsize_max)
+    return [(positions, new_positions),
+            (stepsize, new_stepsize),
+            (avg_acceptance_rate, new_acceptance_rate)]
+    '''
+    return [(positions, new_positions)]
+
+
+def wrapper_hmc(s_rng,energy_fn,dim=np.array([2,1]),L=10, beta = 0.1, epsilon = 0.1):
+
     """
     This should be the wrapper call that calls the various HMC definitions
 
@@ -179,4 +305,20 @@ def wrapper_hmc(pos,L=10, beta = 0.1, epsilon = 0.1):
       Number of Leap Frog Steps -- L (10)
       Momentum corruption parameter -- beta (0.1)
       Leapfrog Integrator step length -- epsilon (0.1)
+      nsamples -- The number of samples to be generated (100)
+    Returns:
+      samples -- Samples generated 
     """
+    pos = np.random.randn(dim[0],dim[1]).astype('float32')
+    vel = np.random.randn(dim[0],dim[1]).astype('float32')
+    pos = theano.shared(pos,name='pos')
+    vel = theano.shared(vel,name='vel')
+    epsilon = theano.shared(epsilon,name='epsilon')
+    L = theano.shared(L,'L')
+    #pos, vel = simulate_dynamics(initial_pos=pos,initial_vel=vel,stepsize=epsilon,n_steps=L,energy_fn=energy_fn)
+    accept, final_pos = hmc_move(s_rng=s_rng, positions=pos, energy_fn=energy_fn,stepsize=epsilon,n_steps=L)
+    #Simulate updates
+    simulate_updates = hmc_updates(positions=pos,stepsize=epsilon,final_pos=final_pos,accept=accept)
+    simulate = theano.function([],[],updates=simulate_updates)
+
+    return simulate
