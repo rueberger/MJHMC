@@ -54,7 +54,7 @@ def find(directory, lahmc):
                     ipdb.set_trace()
                 if lahmc:
                     results[ii, 4] = np.float32(line.split('\'num_look_ahead_steps\': array([')[1].split('])')[0])
-                ii = ii +1
+        ii = ii +1
     return results
 
 def write_best(results, directory):
