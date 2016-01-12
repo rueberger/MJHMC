@@ -54,18 +54,12 @@ def generate_figure_samples(samples_per_frame, n_frames, burnin = int(1e4)):
 
     ## burnin
     print "MJHMC burnin"
-<<<<<<< HEAD
-    mjhmc = MarkovJumpHMC(distribution=poe.reset(), **mjhmc_params)
-    mjhmc_samples_bi = mjhmc.sample(burnin)
-    x_init = mjhmc_samples_bi[:, [0]]
-=======
     x_init = poe.Xinit #[:, [0]]
     mjhmc = MarkovJumpHMC(distribution=poe.reset(), **mjhmc_params)
     mjhmc.state = HMCState(x_init.copy(), mjhmc)
     mjhmc_samples = mjhmc.sample(burnin)
     print mjhmc_samples.shape
     x_init = mjhmc_samples[:, [0]]
->>>>>>> f1078f0ff0f1a98e92e53d5d28ff86b2a3766026
 
     # control HMC
     print "Control"
