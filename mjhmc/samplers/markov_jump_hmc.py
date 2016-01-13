@@ -139,7 +139,7 @@ class HMCBase(object):
         self.f_count += len(F_idx - FL_idx)
         self.fl_count += len(FL_idx - F_idx)
 
-    def sample(self, nsamples=1000):
+    def sample(self, n_samples=1000):
         """
         Draws nsamples, returns them all
         """
