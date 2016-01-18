@@ -10,7 +10,7 @@ import re
 import glob
 import numpy as np
 import json
-import ipdb
+
 
 searches = [
     ["control_mm_gauss", True],
@@ -25,34 +25,44 @@ searches = [
 ]
 
 
-def find(directory, lahmc):
+def find(directory, lahmc=False):
+    """ finds all of the hyperparameters and their scores for a Spearmint search by scanning
+    through the output logs
+
+    :param directory: the directory of the output logs to scan through
+    :param lahmc: boolean flag, true for lahmc
+    :returns: An array of valid hyperparameters and their scores
+    :rtype: float32 array of shape (num_valid_parameters, num_parameters + 1)
+            for lahmc, num_parameters = 4, for all other samplers num_parameters = 3
+    """
     #List files
     files = glob.glob(directory + '*')
+    if len(files) == 0:
+        return None
     #Result array
     if lahmc:
         results = np.zeros((len(files),5),dtype='float32')
     else:
         results = np.zeros((len(files),4),dtype='float32')
-    #Counter
-    ii = 0
-    for fname in files:
+    for idx, fname in enumerate(files):
         for line in open(fname,'r'):
             if re.search('u\'main\':',line):
-                try:
-                    results[ii, 0] = np.float32(line.split('}]')[0].split(':')[1])
-                except:
-                    print('Unable to split on main')
-                    print line
+                split_line = line.split('}]')
+                if len(split_line) != 0:
+                    uncast_param = split_line[0].split(':')[1]
+                    results[idx, 0] = np.float32(uncast_param)
+                else:
+                    continue
             if re.search('epsilon',line):
-                try:
-                    results[ii, 1] = np.float32(line.split('array([')[1].split('])')[0])
-                    results[ii, 2] = np.float32(line.split('array([')[2].split('])')[0])
-                    results[ii, 3] = np.float32(line.split('array([')[3].split('])')[0])
-                except:
-                    ipdb.set_trace()
+                for param_idx in xrange(4):
+                    split_line = line.split('array([')
+                    if len(split_line) != 0:
+                        uncast_param = split_line[1].split('])')[0]
+                        results[idx, param_idx] = np.float32(uncast_param)
+                    else:
+                        continue
                 if lahmc:
-                    results[ii, 4] = np.float32(line.split('\'num_look_ahead_steps\': ')[1].split(',')[0])
-                ii = ii +1
+                    results[idx, 4] = np.float32(line.split('\'num_look_ahead_steps\': ')[1].split(',')[0])
     return results
 
 def write_best(results, directory):
@@ -75,8 +85,8 @@ def write_all():
     for directory, flag in searches:
         if flag == True:
             results = find("{}/output/".format(directory), lahmc=False)
-            write_best(results, directory)
-
-def make_standard(data):
-
-    return smaller_mat
+            if results == None:
+                print "No output found for {}".format(directory)
+            else:
+                write_best(results, directory)
+                print "Parameters succesfully updated for {}".format(directory)
