@@ -13,7 +13,7 @@ import json
 
 
 # format is [search_directory, num_hyperparameters ]
-searches = [
+SEARCHES = [
     ["control_mm_gauss", 3],
     ["control_log_gauss", 3],
     ["control_rw", 3],
@@ -69,6 +69,15 @@ def find(directory, num_params=3):
         return np.array(results)
 
 def write_best(results, directory):
+    """ Finds the best in a set of a results, writes a json of the best
+    parameters to file in directory
+
+    :param results: array of results; the output of find()
+    :param directory: directory of the search
+    :returns: None, writes json to file
+    :rtype: None
+    """
+
     # occurs when search is running sometimes
     results = results[results[:, -1] != 0]
     min_idx = np.argmin(results[:, 0])
@@ -84,10 +93,18 @@ def write_best(results, directory):
         json.dump(params, d)
 
 def write_all():
-    for directory, num_params in searches:
+    """ Searches through all of output logs in the directories in SEARCHES
+    if suitable output is found, params.json is written in the respective directory
+    it contains the best hyperparameters found in the output logs
+
+    :returns: None, writes params.json in search directories containing valid output logs
+    :rtype: None
+    """
+
+    for directory, num_params in SEARCHES:
         results = find("{}/output/".format(directory), num_params)
         if results == None:
-            print "No output found for {}".format(directory)
+            print "No valid output found for {}".format(directory)
         else:
             write_best(results, directory)
             print "Parameters succesfully updated for {}".format(directory)
