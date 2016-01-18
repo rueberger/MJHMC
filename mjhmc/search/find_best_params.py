@@ -13,13 +13,16 @@ import json
 import ipdb
 
 searches = [
-    ["control_mm_gauss", False],
-    ["control_log_gauss", False],
+    ["control_mm_gauss", True],
+    ["control_log_gauss", True],
     ["control_rw", True],
-    ["MJHMC_mm_gauss", False],
-    ["MJHMC_log_gauss", False],
+    ["MJHMC_mm_gauss", True],
+    ["MJHMC_log_gauss", True],
     ["MJHMC_rw", True],
-    ["LAHMC_mm_gauss", False]]
+    ["LAHMC_mm_gauss", True],
+    ["MJHMC_poe_36", True],
+    ["control_poe_36", True]
+]
 
 
 def find(directory, lahmc):
