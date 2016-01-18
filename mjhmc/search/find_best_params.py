@@ -29,41 +29,44 @@ def find(directory, lahmc=False):
     """ finds all of the hyperparameters and their scores for a Spearmint search by scanning
     through the output logs
 
+    no gaurantees if you run this on a debug log; clean out the output directory before starting
+    new experiments
+
     :param directory: the directory of the output logs to scan through
     :param lahmc: boolean flag, true for lahmc
     :returns: An array of valid hyperparameters and their scores
     :rtype: float32 array of shape (num_valid_parameters, num_parameters + 1)
             for lahmc, num_parameters = 4, for all other samplers num_parameters = 3
     """
-    #List files
+    results = []
     files = glob.glob(directory + '*')
     if len(files) == 0:
         return None
-    #Result array
-    if lahmc:
-        results = np.zeros((len(files),5),dtype='float32')
-    else:
-        results = np.zeros((len(files),4),dtype='float32')
-    for idx, fname in enumerate(files):
+    for fname in files:
+        result = []
         for line in open(fname,'r'):
             if re.search('u\'main\':',line):
                 split_line = line.split('}]')
                 if len(split_line) != 0:
                     uncast_param = split_line[0].split(':')[1]
-                    results[idx, 0] = np.float32(uncast_param)
+                    result.append(np.float32(uncast_param))
                 else:
                     continue
             if re.search('epsilon',line):
-                for param_idx in xrange(4):
+                for _ in xrange(4):
                     split_line = line.split('array([')
                     if len(split_line) != 0:
                         uncast_param = split_line[1].split('])')[0]
-                        results[idx, param_idx] = np.float32(uncast_param)
+                        result.append(np.float32(uncast_param))
                     else:
                         continue
                 if lahmc:
-                    results[idx, 4] = np.float32(line.split('\'num_look_ahead_steps\': ')[1].split(',')[0])
-    return results
+                    result.append(np.float32(line.split('\'num_look_ahead_steps\': ')[1].split(',')[0]))
+            if len(result) >= 4:
+                results.append(result)
+
+    if len(results) != 0:
+        return np.array(results)
 
 def write_best(results, directory):
     # occurs when search is running sometimes
