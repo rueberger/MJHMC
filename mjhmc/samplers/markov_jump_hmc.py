@@ -145,7 +145,7 @@ class HMCBase(object):
         """
         # to do: unroll samples
         samples = []
-        for _ in xrange(nsamples):
+        for _ in xrange(n_samples):
             self.sampling_iteration()
             samples.append(self.state.copy().X)
         return np.concatenate(samples, axis=1)
