@@ -1,6 +1,6 @@
 {
     "language"        : "PYTHON",
-    "main-file"       : "mjhmc_objective.py",
+    "main-file"       : "control_objective.py",
     "experiment-name" : "Control_POE_100_1",
     "likelihood"      : "GAUSSIAN",
     "variables" : {
