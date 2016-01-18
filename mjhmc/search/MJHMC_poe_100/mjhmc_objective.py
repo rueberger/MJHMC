@@ -14,5 +14,5 @@ def main(job_id, params):
     W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
     logalpha = np.random.randn(nbasis, 1)
     print "job id: {}, params: {}".format(job_id, params)
-    return obj_func(MarkovJumpHMC, ProductOfT(nbatch=100, W=W, logalpha=logalpha), job_id, **params)
+    return obj_func(MarkovJumpHMC, ProductOfT(nbatch=25, W=W, logalpha=logalpha), job_id, **params)
  
