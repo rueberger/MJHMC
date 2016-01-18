@@ -168,21 +168,22 @@ def plot_concat_imgs(imgs, border_thickness=2, axis=None, normalize=False):
     else:
         plt.imshow(concat_rf, interpolation='none', aspect='auto')
 
-if False:
-    sys.path.append('/Library/Python/2.7/site-packages')
-    samples_per_frame = 100
-    n_frames = 5
-    burnin = 1000
-    frames, names, frame_grads = generate_figure_samples(samples_per_frame, n_frames, burnin=burnin)
-    plot_imgs(frames, names, frame_grads)
-
 def ac_plot():
-    from mjhmc.figures.ac_fig import plot_ac
+    """ Plots the autocorrelation for the best found parameters of the 36
+    dimensional product of experts
+
+    :returns: None
+    :rtype: None
+    """
+
+    from mjhmc.figures.ac_fig import plot_best
     ndims = 36
     nbasis = 72
 
+    np.random.seed(2015)
+
     rand_val = rand(ndims,nbasis/2,density=0.25)
-    W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
+    weights = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
     logalpha = np.random.randn(nbasis, 1)
-    poe = ProductOfT(nbatch=1, W=W, logalpha=logalpha)
-    plot_ac(poe, control_params, mjhmc_params, None, max_steps=int(5E4), truncate=True)
+    poe = ProductOfT(nbatch=250, W=weights, logalpha=logalpha)
+    plot_best(poe, num_steps=int(5E4))
