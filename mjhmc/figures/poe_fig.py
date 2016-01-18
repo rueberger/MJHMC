@@ -185,5 +185,5 @@ def ac_plot():
     rand_val = rand(ndims,nbasis/2,density=0.25)
     weights = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
     logalpha = np.random.randn(nbasis, 1)
-    poe = ProductOfT(nbatch=250, W=weights, logalpha=logalpha)
+    poe = ProductOfT(nbatch=50, W=weights, logalpha=logalpha)
     plot_best(poe, num_steps=int(5E4), update_params=False)
