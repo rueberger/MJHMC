@@ -1,2 +1,1 @@
-{"epsilon": 10.0, "beta": 0.01, "num_leapfrog_steps": 8}
-
+{"epsilon": 0.009999999776482582, "beta": 1.0, "num_leapfrog_steps": 0}
