@@ -39,25 +39,20 @@ def find(directory, lahmc):
         for line in open(fname,'r'):
             if re.search('u\'main\':',line):
                 try:
-                    results[ii, 0] = np.float32(line.split(':')[2].split('}')[0])
-                    print('able to split on main')
-                    print('Printing the actual data ......')
-                    print line
+                    results[ii, 0] = np.float32(line.split('}]')[0].split(':')[1])
                 except:
-                    results[ii, 0] = np.float32(line.split(':')[1].split('}')[0])
                     print('Unable to split on main')
-                    print('Printing the actual data ****')
                     print line
             if re.search('epsilon',line):
                 try:
-                    results[ii, 1] = np.float32(line.split('\'epsilon\': array([')[1].split('])')[0])
-                    results[ii, 2] = np.float32(line.split('\'beta\': array([')[1].split('])')[0])
-                    results[ii, 3] = np.float32(line.split('\'num_leapfrog_steps\': array([')[1].split('])')[0])
+                    results[ii, 1] = np.float32(line.split('array([')[1].split('])')[0])
+                    results[ii, 2] = np.float32(line.split('array([')[2].split('])')[0])
+                    results[ii, 3] = np.float32(line.split('array([')[3].split('])')[0])
                 except:
                     ipdb.set_trace()
                 if lahmc:
-                    results[ii, 4] = np.float32(line.split('\'num_look_ahead_steps\': array([')[1].split('])')[0])
-        ii = ii +1
+                    results[ii, 4] = np.float32(line.split('\'num_look_ahead_steps\': ')[1].split(',')[0])
+                ii = ii +1
     return results
 
 def write_best(results, directory):
