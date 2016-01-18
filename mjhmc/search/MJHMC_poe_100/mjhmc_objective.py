@@ -9,10 +9,10 @@ np.random.seed(2015)
 
 def main(job_id, params):
     ndims = 100
-    nbasis = 72
+    nbasis = 200
     rand_val = rand(ndims,nbasis/2,density=0.25)
     W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
     logalpha = np.random.randn(nbasis, 1)
     print "job id: {}, params: {}".format(job_id, params)
-    return obj_func(MarkovJumpHMC, ProductOfT(nbatch=25, W=W, logalpha=logalpha), job_id, **params)
+    return obj_func(MarkovJumpHMC, ProductOfT(nbatch=25,ndims=ndims, nbasis=nbasis, W=W, logalpha=logalpha), job_id, **params)
  
