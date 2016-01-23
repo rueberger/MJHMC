@@ -22,15 +22,14 @@ def dEdX(X, sigma=1.):
     """ Energy function gradient for isotropic Gaussian """
     return X/sigma**2
 
-# Initialize the sample locations -- 2 dimensions, 100 particles
+# Initialize the sample locations -- 2 dimensions, 100 indepedent sampling particles
 Xinit = np.random.randn(2,100)
 
-# initialize the sampler.
-sampler = MarkovJumpHMC(Xinit, E, dEdX, epsilon=0.1, beta=0.1)
-# perform 10 sampling steps for all 100 particles
-X = sampler.sample(num_steps = 10)
-# perform another 10 sampling steps
-X = sampler.sample(num_steps = 10)
+# Initialize the sampler
+mjhmc = MarkovJumpHMC(Xinit, E, dEdX, epsilon=0.1, beta=0.1)
+# Perform 10 sampling steps for all 100 particles
+# Returns an array of samples with shape (ndims, num_steps * num_particles), in this case (2, 1000)
+X = mjhmc.sample(num_steps = 10)
 ```
 
 ## Dependencies
