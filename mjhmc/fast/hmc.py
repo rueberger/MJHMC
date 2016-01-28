@@ -1,6 +1,7 @@
 import numpy as np
 import theano
 import theano.tensor as T
+from collections import OrderedDict
 
 def simulate_dynamics(initial_pos, initial_vel, stepsize, n_steps, energy_fn):
     """
@@ -269,10 +270,11 @@ def hmc_updates(positions, stepsize, final_pos, accept):
     ## POSITION UPDATES ##
     # broadcast `accept` scalar to tensor with the same dimensions as
     # final_pos.
-    import IPython; IPython.embed()
-    accept_matrix = accept.dimshuffle(0, *(('x',) * (final_pos.ndim - 1)))
+    #import IPython; IPython.embed()
+    #accept_matrix = accept.dimshuffle(0, *(('x',) * (final_pos.ndim - 1)))
     # if accept is True, update to `final_pos` else stay put
-    new_positions = T.switch(accept_matrix, final_pos, positions)
+    #new_positions = T.switch(accept_matrix, final_pos, positions)
+    new_positions = T.switch(accept.ravel(), final_pos, positions).astype('float32')
     ## ACCEPT RATE UPDATES ##
     # perform exponential moving average
     '''
@@ -292,7 +294,10 @@ def hmc_updates(positions, stepsize, final_pos, accept):
             (stepsize, new_stepsize),
             (avg_acceptance_rate, new_acceptance_rate)]
     '''
-    return [(positions, new_positions)]
+    update = OrderedDict()
+    update[positions] = new_positions
+    #return [(positions, new_positions)]
+    return update
 
 
 def wrapper_hmc(s_rng,energy_fn,dim=np.array([2,1]),L=10, beta = 0.1, epsilon = 0.1):
