@@ -219,7 +219,7 @@ def hmc_move(s_rng, positions, energy_fn, stepsize=0.1, n_steps=1):
     return accept, final_pos
 
 
-def hmc_updates(positions, stepsize, final_pos, accept):
+def hmc_updates(positions,final_pos, accept):
     """def hmc_updates(positions, stepsize, avg_acceptance_rate, final_pos, accept,
                 target_acceptance_rate, stepsize_inc, stepsize_dec,
                 stepsize_min, stepsize_max, avg_acceptance_slowness):
@@ -270,11 +270,12 @@ def hmc_updates(positions, stepsize, final_pos, accept):
     ## POSITION UPDATES ##
     # broadcast `accept` scalar to tensor with the same dimensions as
     # final_pos.
-    #import IPython; IPython.embed()
     #accept_matrix = accept.dimshuffle(0, *(('x',) * (final_pos.ndim - 1)))
     # if accept is True, update to `final_pos` else stay put
     #new_positions = T.switch(accept_matrix, final_pos, positions)
-    new_positions = T.switch(accept.ravel(), final_pos, positions).astype('float32')
+    #new_positions = T.switch(accept.ravel(), final_pos, positions).astype('float32')
+    #new_positions = T.switch(accept[0].dimshuffle('x',0), final_pos, positions).astype('float32')
+    new_positions = accept[0]*final_pos + (1-accept[0])*positions
     ## ACCEPT RATE UPDATES ##
     # perform exponential moving average
     '''
@@ -295,7 +296,7 @@ def hmc_updates(positions, stepsize, final_pos, accept):
             (avg_acceptance_rate, new_acceptance_rate)]
     '''
     update = OrderedDict()
-    update[positions] = new_positions
+    update[positions] = new_positions.astype('float32')
     #return [(positions, new_positions)]
     return update
 
@@ -323,7 +324,29 @@ def wrapper_hmc(s_rng,energy_fn,dim=np.array([2,1]),L=10, beta = 0.1, epsilon = 
     #pos, vel = simulate_dynamics(initial_pos=pos,initial_vel=vel,stepsize=epsilon,n_steps=L,energy_fn=energy_fn)
     accept, final_pos = hmc_move(s_rng=s_rng, positions=pos, energy_fn=energy_fn,stepsize=epsilon,n_steps=L)
     #Simulate updates
-    simulate_updates = hmc_updates(positions=pos,stepsize=epsilon,final_pos=final_pos,accept=accept)
-    simulate = theano.function([],[],updates=simulate_updates)
+    simulate_updates = hmc_updates(positions=pos,final_pos=final_pos,accept=accept)
+    simulate = theano.function([],[accept,simulate_updates[pos]],updates=simulate_updates)
 
     return simulate
+
+
+def autocorrelation():
+    X = T.tensor3().astype('float32')
+    shape = X.shape
+    #Assumes Length T, need to have a switch that also deals with (T/2)-1
+    t_gap = T.arange(1,shape[2]-1)
+    outputs_info = T.zeros((1,1,1))
+
+    #function def that computes the mean ac for each time lag
+    def calc_ac(t_gap,output_t,X):
+        return T.mean(X[:,:,:-t_gap]*X[:,:,t_gap:],dtype='float32',keepdims=True)
+
+    #We will write a scan function that loops over the indices of the data tensor
+    #and computes the autocorrelation
+    result,updates = theano.scan(fn= calc_ac,
+    #ac,updates = theano.scan(fn= lambda X,t_gap,ac: T.mean(X[:,:,:-t_gap]*X[:,:t_gap:]),
+            outputs_info=[outputs_info],
+            sequences=[t_gap],
+            non_sequences=[X])
+    theano_ac = theano.function(inputs=[X],outputs=[result])
+    return theano_ac
