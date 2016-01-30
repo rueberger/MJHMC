@@ -22,7 +22,9 @@ SEARCHES = [
     ["MJHMC_rw", 3],
     ["LAHMC_mm_gauss", 4],
     ["MJHMC_poe_36", 3],
-    ["control_poe_36", 3]
+    ["control_poe_36", 3],
+    ["MJHMC_poe_100", 3],
+    ["control_poe_100", 3]
 ]
 
 
@@ -45,13 +47,13 @@ def find(directory, num_params=3):
     if len(files) == 0:
         return None
     for fname in files:
-        result = []
+        result = [None for _ in xrange(num_params + 1)]
         for line in open(fname,'r'):
             if re.search('u\'main\':',line):
                 split_line = line.split('}]')
                 if len(split_line) != 0:
                     uncast_param = split_line[0].split(':')[1]
-                    result.append(np.float32(uncast_param))
+                    result[0] = np.float32(uncast_param)
                 else:
                     continue
             if re.search('epsilon',line):
@@ -59,7 +61,7 @@ def find(directory, num_params=3):
                     split_line = line.split('array([')
                     if len(split_line) != 0:
                         uncast_param = split_line[idx].split('])')[0]
-                        result.append(np.float32(uncast_param))
+                        result[idx] = np.float32(uncast_param)
                     else:
                         continue
             if len(result) == num_params + 1:
@@ -102,6 +104,7 @@ def write_all():
     """
 
     for directory, num_params in SEARCHES:
+
         results = find("{}/output/".format(directory), num_params)
         if results == None:
             print "No valid output found for {}".format(directory)
