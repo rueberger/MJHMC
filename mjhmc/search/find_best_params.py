@@ -64,7 +64,7 @@ def find(directory, num_params=3):
                         result[idx] = np.float32(uncast_param)
                     else:
                         continue
-            if len(result) == num_params + 1:
+            if np.all([param is not None for param in result]):
                 results.append(result)
 
     if len(results) != 0:
@@ -89,6 +89,8 @@ def write_best(results, directory):
         'beta' : float(best_par[2]),
         'num_leapfrog_steps' : int(best_par[3])
     }
+    print "{}: score of {}".format(directory, best_par[0])
+    print params
     if len(best_par) == 5:
         params.update({'num_look_ahead_steps' : int(best_par[4])})
     with open("{}/params.json".format(directory), 'w') as d:
