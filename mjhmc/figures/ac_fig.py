@@ -88,7 +88,7 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
     plt.title("{}D {}".format(distribution.ndims, type(distribution).__name__))
     plt.legend()
     plt.show()
-    plt.savefig("{}_ac.pdf".format(type(distribution).__name__))
+    plt.savefig("{}_{}_dim_ac.pdf".format(type(distribution).__name__, distribution.ndims))
     plt.show()
 
 def load_params(distribution):
