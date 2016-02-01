@@ -348,5 +348,8 @@ def autocorrelation():
             outputs_info=[outputs_info],
             sequences=[t_gap],
             non_sequences=[X])
-    theano_ac = theano.function(inputs=[X],outputs=[result])
+    #Append zero mean value of X to the front of the array and then return 
+    #Also, need to divide by the first element to scale the variances
+    #For now though, let's do this in the main script
+    theano_ac = theano.function(inputs=[X],outputs=[result],updates=updates)
     return theano_ac
