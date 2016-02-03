@@ -353,3 +353,26 @@ def autocorrelation():
     #For now though, let's do this in the main script
     theano_ac = theano.function(inputs=[X],outputs=[result],updates=updates)
     return theano_ac
+
+def normed_autocorrelation(df):
+    theano_ac = autocorrelation()
+
+    Time = len(df)
+    N, nbatch = df.loc[0]['X'].shape
+
+    X = np.zeros((N,nbatch,Time))
+
+    for tt in range(Time):
+       X[:,:,tt] = df.loc[tt]['X']
+    
+    ac= theano_ac(X.astype('float32'))
+    X_mean = np.mean(X**2,keepdims=True)[0][0]
+    ac_squeeze = np.squeeze(ac[0])
+    ac_squeeze = ac_squeeze/X_mean
+    ac = np.vstack((1.,ac_squeeze.reshape(Time-2,1)))
+    #This drops the last sample out of the data frame. Unclear, if this is the best way to do things but
+    #it is the only way we can align the total number of samples from sample generation to 
+    #computing autocorrelation
+    ac_df = df[:-1]
+    ac_df.loc[:,'autocorrelation'] = ac
+    return ac_df[['num energy', 'num grad', 'autocorrelation']]
