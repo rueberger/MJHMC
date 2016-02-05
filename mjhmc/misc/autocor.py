@@ -33,12 +33,12 @@ def autocorrelation(history, half_window=False, normalize=True):
     theano_ac = compile_autocor_func(half_window)
 
     n_samples = len(history)
-    n_dims, n_batch = history.loc[0]['samples'].shape
+    n_dims, n_batch = history.loc[0]['X'].shape
 
     samples = np.zeros((n_dims, n_batch, n_samples))
 
     for idx in range(n_samples):
-        samples[:, :, idx] = history.loc[idx]['samples']
+        samples[:, :, idx] = history.loc[idx]['X']
 
     raw_autocor = theano_ac(samples.astype('float32'))
 
