@@ -13,7 +13,7 @@ from mjhmc.misc.plotting import plot_fit, plot_search_ac
 from mjhmc.samplers.markov_jump_hmc import ContinuousTimeHMC
 
 grad_evals = {
-    'Gaussian' : int(2E5),
+    'Gaussian' : int(5E4),
     'RoughWell' : int(5E4),
     'MultimodalGaussian' : int(2E5),
     'ProductOfT' : int(1E4)
