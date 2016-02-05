@@ -170,8 +170,8 @@ class ProductOfT(Distribution):
         self.W = theano.shared(np.array(W,dtype='float32'),'W')
         if lognu is None:
             if ndims == nbasis:
-                nu = np.random.rand(nbasis,)*2 + 2.1
-                lognu = np.log(nu)
+                self.nu = np.random.rand(nbasis,)*2 + 2.1
+                lognu = np.log(self.nu)
             else:
                 lognu = np.random.randn(nbasis,)
         self.lognu = theano.shared(np.array(lognu,dtype='float32'),'nu')
@@ -195,10 +195,10 @@ class ProductOfT(Distribution):
                 biases [# experts] b
                 degrees of freedom [# experts] nu
         """
-        self.b = self.b.reshape((1,-1))
-        nu = T.exp(self.lognu).reshape((1,-1))
-        alpha = (nu + 1.)/2.
-        E_perexpert = alpha*T.log(1 + ((T.dot(X.T,self.W) + self.b)/nu)**2)
+        rshp_b = self.b.reshape((1,-1))
+        rshp_nu = self.nu.reshape((1, -1))
+        alpha = (rshp_nu + 1.)/2.
+        E_perexpert = alpha*T.log(1 + ((T.dot(X.T,self.W) + rshp_b)/rshp_nu)**2)
         E = T.sum(E_perexpert, axis=1).reshape((1,-1))
         return E
 
@@ -215,5 +215,5 @@ class ProductOfT(Distribution):
 		for ii in xrange(self.ndims):
 			Zinit[ii] = stats.t.rvs(self.nu[ii], size=self.nbatch)
 
-		Yinit = Zinit - self.b
-		self.Xinit = np.dot(np.linalg.inv(self.W), Yinit)
+		Yinit = Zinit - self.b.get_value().reshape((-1, 1))
+		self.Xinit = np.dot(np.linalg.inv(self.W.get_value()), Yinit)
