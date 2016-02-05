@@ -32,4 +32,4 @@ class TestFastAutocorrelation(unittest.TestCase):
         slow_ac = slow_ac_df.autocorrelation.as_matrix()
         fast_ac_df = normed_autocorrelation(sample_df)
         fast_ac = fast_ac_df.autocorrelation.as_matrix()
-        self.assertTrue(np.isclose(slow_ac, fast_ac))
+        self.assertTrue(np.isclose(slow_ac, fast_ac).all())
