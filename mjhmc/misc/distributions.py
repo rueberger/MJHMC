@@ -3,6 +3,7 @@ from .utils import overrides
 import theano.tensor as T
 import theano
 from scipy.sparse import rand
+from scipy import stats
 
 class Distribution(object):
     """
@@ -212,7 +213,7 @@ class ProductOfT(Distribution):
     def init_X(self):
 		Zinit = np.zeros((self.ndims, self.nbatch))
 		for ii in xrange(self.ndims):
-			Zinit[ii] = scipy.stats.t.rvs(self.nu[ii], size=self.nbatch)
+			Zinit[ii] = stats.t.rvs(self.nu[ii], size=self.nbatch)
 
 		Yinit = Zinit - self.b
 		self.Xinit = np.dot(np.linalg.inv(self.W), Yinit)
