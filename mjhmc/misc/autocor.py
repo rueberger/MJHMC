@@ -37,7 +37,8 @@ def autocorrelation(history, half_window=False, normalize=True):
     raw_autocor = theano_ac(samples.astype('float32'))
 
     # variance given assumption of *zero mean*
-    sample_var = np.mean(samples**2, keepdims=True)[0][0]
+    #    sample_var = np.mean(samples**2, keepdims=True)[0][0]
+    sample_var = 1.
     ac_squeeze = np.squeeze(raw_autocor[0])
     if normalize:
         ac_squeeze = ac_squeeze / sample_var
