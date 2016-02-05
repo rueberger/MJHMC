@@ -16,7 +16,7 @@ def simulate_dynamics(initial_pos, initial_vel, stepsize, n_steps, energy_fn):
         Initial velocity of particles
     stepsize: shared theano scalar
         Scalar value controlling amount by which to move
-    n_steps: shared theano scalar 
+    n_steps: shared theano scalar
         Scalar value controlling number of steps for which to run the integrator
     energy_fn: python function
         Python function, operating on symbolic theano variables, used to
@@ -307,13 +307,13 @@ def wrapper_hmc(s_rng,energy_fn,dim=np.array([2,1]),L=10, beta = 0.1, epsilon = 
     This should be the wrapper call that calls the various HMC definitions
 
     Parameters:
-      Potential Energy -- function handle that captures the interest distrbution 
+      Potential Energy -- function handle that captures the interest distrbution
       Number of Leap Frog Steps -- L (10)
       Momentum corruption parameter -- beta (0.1)
       Leapfrog Integrator step length -- epsilon (0.1)
       nsamples -- The number of samples to be generated (100)
     Returns:
-      samples -- Samples generated 
+      samples -- Samples generated
     """
     pos = np.random.randn(dim[0],dim[1]).astype('float32')
     vel = np.random.randn(dim[0],dim[1]).astype('float32')
@@ -335,7 +335,7 @@ def autocorrelation():
     shape = X.shape
     #Assumes Length T, need to have a switch that also deals with (T/2)-1
     t_gap = T.arange(1,shape[2]-1)
-    outputs_info = T.zeros((1,1,1))
+    outputs_info = T.zeros((1,1,1),dtype='float32')
 
     #function def that computes the mean ac for each time lag
     def calc_ac(t_gap,output_t,X):
@@ -348,7 +348,7 @@ def autocorrelation():
             outputs_info=[outputs_info],
             sequences=[t_gap],
             non_sequences=[X])
-    #Append zero mean value of X to the front of the array and then return 
+    #Append zero mean value of X to the front of the array and then return
     #Also, need to divide by the first element to scale the variances
     #For now though, let's do this in the main script
     theano_ac = theano.function(inputs=[X],outputs=[result],updates=updates)
@@ -364,14 +364,14 @@ def normed_autocorrelation(df):
 
     for tt in range(Time):
        X[:,:,tt] = df.loc[tt]['X']
-    
+
     ac= theano_ac(X.astype('float32'))
     X_mean = np.mean(X**2,keepdims=True)[0][0]
     ac_squeeze = np.squeeze(ac[0])
     ac_squeeze = ac_squeeze/X_mean
     ac = np.vstack((1.,ac_squeeze.reshape(Time-2,1)))
     #This drops the last sample out of the data frame. Unclear, if this is the best way to do things but
-    #it is the only way we can align the total number of samples from sample generation to 
+    #it is the only way we can align the total number of samples from sample generation to
     #computing autocorrelation
     ac_df = df[:-1]
     ac_df.loc[:,'autocorrelation'] = ac
