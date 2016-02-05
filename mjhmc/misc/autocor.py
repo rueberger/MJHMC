@@ -15,17 +15,10 @@ def calculate_autocorrelation(sampler, distribution,
     just a helper function
     refer to the docstrings for the respective methods
     """
+    print "Generating samples..."
     df = sample_to_df(sampler, distribution.reset(), num_steps, num_grad_steps,
                       sample_steps, **kwargs)
-    # tot_samples = float(df.iloc[-1]['tot L'] + df.iloc[-1]['tot F']
-    #                     + df.iloc[-1]['tot R'] + df.iloc[-1]['tot FL'])
-    # print "Sampler: {}; transitions: L: {}, F: {}, R: {}, FL: {}".format(
-    #     sampler.__name__,
-    #     df.iloc[-1]["tot L"] / tot_samples,
-    #     df.iloc[-1]["tot F"] / tot_samples,
-    #     df.iloc[-1]['tot R'] / tot_samples,
-    #     df.iloc[-1]['tot FL'] / tot_samples
-    # )
+    print "Calculating autocorrelation..."
     return autocorrelation(df, half_window)
 
 def autocorrelation(history, half_window=False, normalize=True):
@@ -36,9 +29,11 @@ def autocorrelation(history, half_window=False, normalize=True):
 
     samples = np.zeros((n_dims, n_batch, n_samples))
 
+    print "Copying samples to array..."
     for idx in range(n_samples):
         samples[:, :, idx] = history.loc[idx]['X']
 
+    print "Running compiled autocorrelation function..."
     raw_autocor = theano_ac(samples.astype('float32'))
 
     # variance given assumption of *zero mean*
