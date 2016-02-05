@@ -47,15 +47,16 @@ def autocorrelation(history, half_window=False, normalize=True):
     if normalize:
         ac_squeeze = ac_squeeze / sample_var
         # theano doesn't play nice with the first element but it's just the variance
-        autocor = np.vstack((1., ac_squeeze.reshape(raw_autocor.shape[0], 1)))
+        autocor = np.vstack((1., ac_squeeze.reshape(raw_autocor[0].shape[0], 1)))
     else:
        # theano doesn't play nice with the first element but it's just the variance
-        autocor = np.vstack((sample_var, ac_squeeze.reshape(raw_autocor.shape[0], 1)))
+        autocor = np.vstack((sample_var, ac_squeeze.reshape(raw_autocor[0].shape[0], 1)))
 
     #This drops the last sample out of the data frame. Unclear, if this is the best way to do things but
     #it is the only way we can align the total number of samples from sample generation to
     #computing autocorrelation
     if half_window:
+        assert (n_samples % 2) == 0
         ac_df = history[:(n_samples / 2) - 1]
     else:
         ac_df = history[:-1]
@@ -69,7 +70,6 @@ def compile_autocor_func(half_window):
     shape = X.shape
     #Assumes Length T, need to have a switch that also deals with (T/2)-1
     if half_window:
-        assert (shape[2] % 2) == 0
         t_gap = T.arange(1, (shape[2] / 2) - 1)
     else:
         t_gap = T.arange(1, shape[2] - 1)
