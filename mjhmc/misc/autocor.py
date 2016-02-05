@@ -57,8 +57,7 @@ def autocorrelation(history, half_window=False, normalize=True):
     #it is the only way we can align the total number of samples from sample generation to
     #computing autocorrelation
     if half_window:
-        assert (n_samples % 2) == 0
-        ac_df = history[:(n_samples / 2) - 1]
+        ac_df = history[:int(n_samples / 2) - 1]
     else:
         ac_df = history[:-1]
     ac_df.loc[:, 'autocorrelation'] = autocor
