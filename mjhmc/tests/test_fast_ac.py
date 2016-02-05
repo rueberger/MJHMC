@@ -10,6 +10,9 @@ from mjhmc.misc.autocor import autocorrelation, slow_autocorrelation, sample_to_
 from mjhmc.misc.distributions import Gaussian, MultimodalGaussian
 from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
 
+# default is 1E-8
+TOL = 1E-7
+
 
 class TestFastAutocorrelation(unittest.TestCase):
     """
@@ -35,7 +38,7 @@ class TestFastAutocorrelation(unittest.TestCase):
         slow_ac = slow_ac_df.autocorrelation.as_matrix()
         fast_ac_df = autocorrelation(sample_df, half_window=False)
         fast_ac = fast_ac_df.autocorrelation.as_matrix()
-        self.assertTrue(np.isclose(slow_ac, fast_ac).all())
+        self.assertTrue(np.isclose(slow_ac, fast_ac, atol=TOL).all())
 
 
     def test_autocorrelation_good_init_half_window(self):
@@ -53,7 +56,7 @@ class TestFastAutocorrelation(unittest.TestCase):
         slow_ac = slow_ac_df.autocorrelation.as_matrix()
         fast_ac_df = autocorrelation(sample_df, half_window=True)
         fast_ac = fast_ac_df.autocorrelation.as_matrix()
-        self.assertTrue(np.isclose(slow_ac, fast_ac).all())
+        self.assertTrue(np.isclose(slow_ac, fast_ac, atol=TOL).all())
 
 
     def test_autocorrelation_bad_init(self):
@@ -69,4 +72,4 @@ class TestFastAutocorrelation(unittest.TestCase):
         slow_ac = slow_ac_df.autocorrelation.as_matrix()
         fast_ac_df = autocorrelation(sample_df)
         fast_ac = fast_ac_df.autocorrelation.as_matrix()
-        self.assertTrue(np.isclose(slow_ac, fast_ac).all())
+        self.assertTrue(np.isclose(slow_ac, fast_ac, atol=TOL).all())
