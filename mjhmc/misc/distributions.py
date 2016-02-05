@@ -157,7 +157,7 @@ class TestGaussian(Distribution):
 
 class ProductOfT(Distribution):
 
-    def __init__(self,ndims=36,nbasis=72,nbatch=100,logalpha=None,W=None,b=None):
+    def __init__(self,ndims=36,nbasis=36,nbatch=100,lognu=None,W=None,b=None):
         """ Product of T experts, assumes a fixed W that is sparse and alpha that is
         """
         self.ndims=ndims
@@ -167,9 +167,13 @@ class ProductOfT(Distribution):
            rand_val = rand(ndims,nbasis/2,density=0.25)
            W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
         self.W = theano.shared(np.array(W,dtype='float32'),'W')
-        if logalpha is None:
-            logalpha = np.random.randn(nbasis,)
-        self.logalpha = theano.shared(np.array(logalpha,dtype='float32'),'alpha')
+        if lognu is None:
+            if ndims == nbasis:
+                nu = np.random.rand(nbasis,)*2 + 2.1
+                lognu = np.log(nu)
+            else:
+                lognu = np.random.randn(nbasis,)
+        self.lognu = theano.shared(np.array(lognu,dtype='float32'),'nu')
         if b is None:
             b = np.zeros((nbasis,))
         self.b = theano.shared(np.array(b,dtype='float32'),'b')
@@ -188,11 +192,12 @@ class ProductOfT(Distribution):
                 samples [# samples]x[# dimensions] X
                 receptive fields [# dimensions]x[# experts] W
                 biases [# experts] b
-                expert weighting [# experts] alpha
+                degrees of freedom [# experts] nu
         """
         self.b = self.b.reshape((1,-1))
-        alpha = T.exp(self.logalpha).reshape((1,-1))
-        E_perexpert = alpha*T.log(1 + (T.dot(X.T,self.W) + self.b)**2)
+        nu = T.exp(self.lognu).reshape((1,-1))
+        alpha = (nu + 1.)/2.
+        E_perexpert = alpha*T.log(1 + ((T.dot(X.T,self.W) + self.b)/nu)**2)
         E = T.sum(E_perexpert, axis=1).reshape((1,-1))
         return E
 
@@ -205,4 +210,9 @@ class ProductOfT(Distribution):
 
     @overrides(Distribution)
     def init_X(self):
-        self.Xinit = np.random.randn(self.ndims,self.nbatch)
+		Zinit = np.zeros((self.ndims, self.nbatch))
+		for ii in xrange(self.ndims):
+			Zinit[ii] = scipy.stats.t.rvs(self.nu[ii], size=self.nbatch)
+
+		Yinit = Zinit * self.nu - self.b
+		self.Xinit = np.dot(np.linalg.inv(self.W), Yinit)
