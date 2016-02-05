@@ -1,3 +1,6 @@
+"""
+This module contains utilities for computing the autocorrelation of a sequence of samples
+"""
 import pandas as pd
 import numpy as np
 
@@ -24,6 +27,60 @@ def calculate_autocorrelation(sampler, distribution,
     return autocorrelation(df, half_window)
 
 def autocorrelation(history, half_window=False):
+    if half_window:
+        # for graceful deprecation
+        raise NotImplementedError
+    else:
+        theano_ac = compile_autocor_func()
+
+        n_samples = len(history)
+        n_dims, n_batch = history.loc[0]['samples'].shape
+
+        samples = np.zeros((n_dims, n_batch, n_samples))
+
+        for idx in range(n_samples):
+           samples[:, :, idx] = history.loc[idx]['samples']
+
+        raw_autocor = theano_ac(samples.astype('float32'))
+        # variance given assumption of zero mean!
+        sample_var = np.mean(samples**2, keepdims=True)[0][0]
+        ac_squeeze = np.squeeze(raw_autocor[0])
+        ac_squeeze = ac_squeeze / sample_var
+        autocor = np.vstack((1.,ac_squeeze.reshape(n_samples-2,1)))
+        #This drops the last sample out of the data frame. Unclear, if this is the best way to do things but
+        #it is the only way we can align the total number of samples from sample generation to
+        #computing autocorrelation
+        ac_df = history[:-1]
+        ac_df.loc[:,'autocorrelation'] = autocor
+        return ac_df[['num energy', 'num grad', 'autocorrelation']]
+
+def compile_autocor_func():
+    X = T.tensor3().astype('float32')
+    shape = X.shape
+    #Assumes Length T, need to have a switch that also deals with (T/2)-1
+    t_gap = T.arange(1,shape[2]-1)
+    outputs_info = T.zeros((1,1,1),dtype='float32')
+
+    #function def that computes the mean ac for each time lag
+    def calc_ac(t_gap,output_t,X):
+        return T.mean(X[:,:,:-t_gap]*X[:,:,t_gap:],dtype='float32',keepdims=True)
+
+    #We will write a scan function that loops over the indices of the data tensor
+    #and computes the autocorrelation
+    result,updates = theano.scan(fn= calc_ac,
+    #ac,updates = theano.scan(fn= lambda X,t_gap,ac: T.mean(X[:,:,:-t_gap]*X[:,:t_gap:]),
+            outputs_info=[outputs_info],
+            sequences=[t_gap],
+            non_sequences=[X])
+    #Append zero mean value of X to the front of the array and then return
+    #Also, need to divide by the first element to scale the variances
+    #For now though, let's do this in the main script
+    theano_ac = theano.function(inputs=[X],outputs=[result],updates=updates)
+    return theano_ac
+
+
+
+def slow_autocorrelation(history, half_window=False):
     """
     calculate the autocorrelation
     history a dataframe
