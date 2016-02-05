@@ -1,7 +1,6 @@
 from mjhmc.search.objective import obj_func
 from mjhmc.samplers.markov_jump_hmc import ControlHMC
 from mjhmc.misc.distributions import ProductOfT
-from scipy.sparse import rand
 import numpy as np
 
 np.random.seed(2015)
@@ -9,9 +8,6 @@ np.random.seed(2015)
 
 def main(job_id, params):
     ndims = 36
-    nbasis = 72
-    rand_val = rand(ndims,nbasis/2,density=0.25)
-    W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
-    logalpha = np.random.randn(nbasis, 1)
+    nbasis = 36
     print "job id: {}, params: {}".format(job_id, params)
-    return obj_func(ControlHMC, ProductOfT(nbatch=250, W=W, logalpha=logalpha), job_id, **params)
+    return obj_func(ControlHMC, ProductOfT(nbatch=25, ndims=ndims, nbasis=nbasis), job_id, **params)
