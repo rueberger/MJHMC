@@ -214,5 +214,5 @@ class ProductOfT(Distribution):
 		for ii in xrange(self.ndims):
 			Zinit[ii] = scipy.stats.t.rvs(self.nu[ii], size=self.nbatch)
 
-		Yinit = Zinit * self.nu - self.b
+		Yinit = Zinit - self.b
 		self.Xinit = np.dot(np.linalg.inv(self.W), Yinit)
