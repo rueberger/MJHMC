@@ -161,20 +161,21 @@ class ProductOfT(Distribution):
     def __init__(self,ndims=36,nbasis=36,nbatch=100,lognu=None,W=None,b=None):
         """ Product of T experts, assumes a fixed W that is sparse and alpha that is
         """
+        if ndims != nbasis:
+            raise NotImplementedError("Initializer only works for ndims == nbasis")
         self.ndims=ndims
         self.nbasis=nbasis
         self.nbatch=nbatch
         if W is  None:
-           rand_val = rand(ndims,nbasis/2,density=0.25)
-           W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
+            # rand_val = rand(ndims,nbasis,density=0.125)
+            # W = rand_val + rand_val.T
+            W = np.eye(ndims, nbasis)
         self.W = theano.shared(np.array(W,dtype='float32'),'W')
         if lognu is None:
-            if ndims == nbasis:
-                self.nu = np.random.rand(nbasis,)*2 + 2.1
-                lognu = np.log(self.nu)
-            else:
-                lognu = np.random.randn(nbasis,)
-        self.lognu = theano.shared(np.array(lognu,dtype='float32'),'nu')
+            pre_nu = np.random.rand(nbasis,)*2 + 2.1
+        else:
+            pre_nu = np.exp(lognu)
+        self.nu = theano.shared(np.array(pre_nu,dtype='float32'),'nu')
         if b is None:
             b = np.zeros((nbasis,))
         self.b = theano.shared(np.array(b,dtype='float32'),'b')
@@ -202,18 +203,12 @@ class ProductOfT(Distribution):
         E = T.sum(E_perexpert, axis=1).reshape((1,-1))
         return E
 
-    """
-    @overrides(Distribution)
-    def dEdX_val(self,X):
-        dEdX = np.sum(((2*self.alpha*(self.W.T,X))/(1+(self.W.T,X)**2))*self.W,axis=0)
-        return dEdX
-    """
 
     @overrides(Distribution)
     def init_X(self):
 		Zinit = np.zeros((self.ndims, self.nbatch))
 		for ii in xrange(self.ndims):
-			Zinit[ii] = stats.t.rvs(self.nu[ii], size=self.nbatch)
+			Zinit[ii] = stats.t.rvs(self.nu.get_value()[ii], size=self.nbatch)
 
 		Yinit = Zinit - self.b.get_value().reshape((-1, 1))
 		self.Xinit = np.dot(np.linalg.inv(self.W.get_value()), Yinit)
