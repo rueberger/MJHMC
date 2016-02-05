@@ -30,4 +30,4 @@ class TestFastAutocorrelation(unittest.TestCase):
         sample_df = sample_to_df(MarkovJumpHMC, gaussian, num_steps=1000)
         slow_ac = autocorrelation(sample_df)
         fast_ac = normed_autocorrelation(sample_df)
-        self.assertTrue((slow_ac == fast_ac).all())
+        self.assertTrue((slow_ac.autocorrelation.as_matrix() == fast_ac.autocorrelation.as_matrix()).all())
