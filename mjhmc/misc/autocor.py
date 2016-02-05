@@ -37,8 +37,11 @@ def autocorrelation(history, half_window=False, normalize=True):
     raw_autocor = theano_ac(samples.astype('float32'))
 
     # variance given assumption of *zero mean*
-    #    sample_var = np.mean(samples**2, keepdims=True)[0][0]
-    sample_var = 1.
+    print "Computing sample variance with numpy..."
+    sample_var = np.mean(samples**2, keepdims=True)[0][0]
+
+    print "Moving result to dataframe"
+
     ac_squeeze = np.squeeze(raw_autocor[0])
     if normalize:
         ac_squeeze = ac_squeeze / sample_var
@@ -47,6 +50,8 @@ def autocorrelation(history, half_window=False, normalize=True):
     else:
        # theano doesn't play nice with the first element but it's just the variance
         autocor = np.vstack((sample_var, ac_squeeze.reshape(raw_autocor[0].shape[0], 1)))
+
+
 
     #This drops the last sample out of the data frame. Unclear, if this is the best way to do things but
     #it is the only way we can align the total number of samples from sample generation to
