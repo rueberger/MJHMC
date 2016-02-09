@@ -84,7 +84,6 @@ class TestControl(unittest.TestCase):
         self.assertTrue(sampler.epsilon == epsilon)
         self.assertTrue(sampler.num_leapfropg_steps == num_leapfrop_steps)
 
-
 class TestHMC(TestControl):
 
     @overrides(TestControl)
@@ -99,12 +98,13 @@ class TestControlHMC(TestControl):
         np.random.seed(n_seed)
         self.sampler_to_test = ControlHMC
 
-class TestContinuousHMC(TestControl):
 
-    @overrides(TestControl)
-    def setUp(self):
-        np.random.seed(n_seed)
-        self.sampler_to_test = ContinuousTimeHMC
+# class TestContinuousHMC(TestControl):
+
+#     @overrides(TestControl)
+#     def setUp(self):
+#         np.random.seed(n_seed)
+#         self.sampler_to_test = ContinuousTimeHMC
 
 
 class TestMJHMC(TestControl):
