@@ -80,8 +80,11 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
         nuts_ac['autocorrelation'].plot(label='NUTS')
 
 
-    control_ac['autocorrelation'].plot(label='Control HMC; {}'.format(str(control_params)))
-    mjhmc_ac['autocorrelation'].plot(label='Markov Jump HMC; {}'.format(str(mjhmc_params)))
+    control_ac['autocorrelation'].plot(label='Control HMC;\n {}'.format(str(control_params)))
+    mjhmc_ac['autocorrelation'].plot(label='Markov Jump HMC;\n {}'.format(str(mjhmc_params)))
+
+    #control_ac['autocorrelation'].plot(label='Control HMC')
+    #mjhmc_ac['autocorrelation'].plot(label='Markov Jump HMC')
 
     plt.xlabel("Gradient Evaluations")
     plt.ylabel("Autocorrelation")
@@ -96,7 +99,7 @@ def load_params(distribution):
         'RoughWell' : "rw",
         'Gaussian' : 'log_gauss',
         'MultimodalGaussian' : 'mm_gauss',
-        'ProductOfT' : 'poe_36'
+        'ProductOfT' : 'poe_100'
     }
     file_name = "params.json"
     extension = dist_to_extension[type(distribution).__name__]
@@ -133,6 +136,8 @@ def plot_best(distribution, num_steps=100000, update_params=False, **kwargs):
     else:
         print "Making plot based off cached parameter jsons..."
     control_params, mjhmc_params, lahmc_params = load_params(distribution)
+    print control_params
+    print mjhmc_params
     plot_ac(distribution, control_params, mjhmc_params, lahmc_params, num_steps, **kwargs)
 
 def plot_std(distribution):
