@@ -173,7 +173,6 @@ class ControlHMC(HMCBase):
         super(ControlHMC, self).__init__(*args, **kwargs)
         self.p_flip = 1
         self.p_r = - np.log(1 - self.beta) * 0.5
-        self.beta = 1
 
 
 class ContinuousTimeHMC(HMCBase):
