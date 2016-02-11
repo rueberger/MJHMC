@@ -172,7 +172,9 @@ class ControlHMC(HMCBase):
     def __init__(self, *args, **kwargs):
         super(ControlHMC, self).__init__(*args, **kwargs)
         self.p_flip = 1
-        self.p_r = - np.log(1 - self.beta) * 0.5
+        self.p_r = - np.log(1 - self.beta.copy()) * 0.5
+        # tells hmc state to randomize all of the momentum when R is called
+        self.beta = 1
 
 
 class ContinuousTimeHMC(HMCBase):
@@ -191,8 +193,9 @@ class ContinuousTimeHMC(HMCBase):
         super(ContinuousTimeHMC, self).__init__(*args, **kwargs)
         # transformation from discrete beta to insure matching autocorrelation
         # maybe assert that beta is less than 1 if necessary
-        self.p_r = - np.log(1 - self.beta) * 0.5
         # corrupt all of the momentum with some fixed probability
+        self.p_r = - np.log(1 - self.beta.copy()) * 0.5
+        # tells hmc state to randomize all of the momentum when R is called
         self.beta = 1
 
         # the last dwelling times
@@ -321,7 +324,7 @@ class MarkovJumpHMC(ContinuousTimeHMC):
         # cache current state as FLF state for next L transition
         self.state.cache_flf_state(l_idx, self.state)
         # cache FL as FLF state for for particles that made transition to F
-#        self.state.cache_flf_state(f_idx, l_state.F())
+        # self.state.cache_flf_state(f_idx, l_state.F())
 
         # update accepted proposed states
         self.state.update(l_idx, l_state)
