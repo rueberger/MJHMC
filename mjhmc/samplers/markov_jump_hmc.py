@@ -172,7 +172,7 @@ class ControlHMC(HMCBase):
     def __init__(self, *args, **kwargs):
         super(ControlHMC, self).__init__(*args, **kwargs)
         self.p_flip = 1
-        self.p_r = - np.log(1 - self.beta.copy()) * 0.5
+        self.p_r = - np.log(1 - self.beta) * 0.5
         # tells hmc state to randomize all of the momentum when R is called
         self.beta = 1
 
@@ -194,7 +194,7 @@ class ContinuousTimeHMC(HMCBase):
         # transformation from discrete beta to insure matching autocorrelation
         # maybe assert that beta is less than 1 if necessary
         # corrupt all of the momentum with some fixed probability
-        self.p_r = - np.log(1 - self.beta.copy()) * 0.5
+        self.p_r = - np.log(1 - self.beta) * 0.5
         # tells hmc state to randomize all of the momentum when R is called
         self.beta = 1
 
