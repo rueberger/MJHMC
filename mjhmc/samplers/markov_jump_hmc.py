@@ -269,8 +269,8 @@ class ContinuousTimeHMC(HMCBase):
             total_t = np.sum(dwell_t)
             cumul_t = np.cumsum(dwell_t)
             # pretty sure there's a way to do the whole batch at once
-            for idx, r in enumerate(np.sort(np.random.random(n_samples)) * total_t):
-                sample_idx = np.where(cumul_t > r)[0][0]
+            for idx, rand_val in enumerate(np.sort(np.random.random(n_samples * self.nbatch)) * total_t):
+                sample_idx = np.where(cumul_t > rand_val)[0][0]
                 resamples[:, idx] = samples[:, sample_idx]
             return resamples
         else:
