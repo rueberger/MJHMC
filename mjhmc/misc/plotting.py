@@ -52,26 +52,28 @@ def plot_fit(grad_evals, autocor, exp_coef, cos_coef, job_id, params, save=True)
     return fig
 
 
-def hist_1d(distr, nsamples=1000, nbins=250):
+def hist_1d(distr, nsamples=1000, nbins=250, control=True, resample=True):
     """
     plots a 1d histogram from each sampler
     distr is (an unitialized) class from distributions
     """
     distribution = distr(ndims=1)
-    #control = HMCBase(distribution=distribution)
-    experimental = MarkovJumpHMC(distribution=distribution, resample=False, epsilon=1)
+    control = HMCBase(distribution=distribution, epsilon=1)
+    experimental = MarkovJumpHMC(distribution=distribution, resample=resample, epsilon=1)
 
-    #plt.hist(control.sample(nsamples)[0], nbins, normed=True, label="Standard HMCBase", alpha=.5)
+    if control:
+        plt.hist(control.sample(nsamples)[0], nbins, normed=True, label="Standard HMCBase", alpha=.5)
+
     plt.hist(experimental.sample(nsamples)[0], nbins, normed=True, label="Continuous-time HMCBase",alpha=.5)
     plt.legend()
 
-def gauss_1d(nsamples=1000, nbins=250):
+def gauss_1d(nsamples=1000, nbins=250, *args, **kwargs):
     """
     Simple test plots.
     Draws nsamples with sampler from a (well conditioned unit variance)
     gaussian and plots a histogram of both of them
     """
-    hist_1d(TestGaussian, nsamples, nbins)
+    hist_1d(TestGaussian, nsamples, nbins, *args, **kwargs)
     test_points = np.linspace(4, -4, 1000)
     true_curve = (1. / np.sqrt(2*np.pi)) * np.exp(- (test_points**2) / 2.)
     plt.plot(test_points, true_curve, label="True curve")
