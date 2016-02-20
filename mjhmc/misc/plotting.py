@@ -58,13 +58,13 @@ def hist_1d(distr, nsamples=1000, nbins=250, control=True, resample=True):
     distr is (an unitialized) class from distributions
     """
     distribution = distr(ndims=1)
-    control = HMCBase(distribution=distribution, epsilon=1)
-    experimental = MarkovJumpHMC(distribution=distribution, resample=resample, epsilon=1)
+    control_smp = HMCBase(distribution=distribution, epsilon=1)
+    experimental_smp = MarkovJumpHMC(distribution=distribution, resample=resample, epsilon=1)
 
     if control:
-        plt.hist(control.sample(nsamples)[0], nbins, normed=True, label="Standard HMCBase", alpha=.5)
+        plt.hist(control_smp.sample(nsamples)[0], nbins, normed=True, label="Standard HMCBase", alpha=.5)
 
-    plt.hist(experimental.sample(nsamples)[0], nbins, normed=True, label="Continuous-time HMCBase",alpha=.5)
+    plt.hist(experimental_smp.sample(nsamples)[0], nbins, normed=True, label="Continuous-time HMCBase",alpha=.5)
     plt.legend()
 
 def gauss_1d(nsamples=1000, nbins=250, *args, **kwargs):
