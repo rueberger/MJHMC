@@ -1,5 +1,10 @@
+"""
+This module contains utilities for computing the autocorrelation of a sequence of samples
+"""
 import pandas as pd
 import numpy as np
+import theano
+import theano.tensor as T
 
 
 def calculate_autocorrelation(sampler, distribution,
@@ -10,20 +15,80 @@ def calculate_autocorrelation(sampler, distribution,
     just a helper function
     refer to the docstrings for the respective methods
     """
+    print "Generating samples..."
     df = sample_to_df(sampler, distribution.reset(), num_steps, num_grad_steps,
                       sample_steps, **kwargs)
-    # tot_samples = float(df.iloc[-1]['tot L'] + df.iloc[-1]['tot F']
-    #                     + df.iloc[-1]['tot R'] + df.iloc[-1]['tot FL'])
-    # print "Sampler: {}; transitions: L: {}, F: {}, R: {}, FL: {}".format(
-    #     sampler.__name__,
-    #     df.iloc[-1]["tot L"] / tot_samples,
-    #     df.iloc[-1]["tot F"] / tot_samples,
-    #     df.iloc[-1]['tot R'] / tot_samples,
-    #     df.iloc[-1]['tot FL'] / tot_samples
-    # )
+    print "Calculating autocorrelation..."
     return autocorrelation(df, half_window)
 
-def autocorrelation(history, half_window=False):
+def autocorrelation(history, half_window=False, normalize=True):
+    theano_ac = compile_autocor_func(half_window)
+
+    n_samples = len(history)
+    n_dims, n_batch = history.loc[0]['X'].shape
+
+    samples = np.zeros((n_dims, n_batch, n_samples))
+
+    print "Copying samples to array..."
+    for idx in range(n_samples):
+        samples[:, :, idx] = history.loc[idx]['X']
+
+    print "Running compiled autocorrelation function..."
+    raw_autocor = theano_ac(samples.astype('float32'))
+
+    # variance given assumption of *zero mean*
+    print "Computing sample variance with numpy..."
+    sample_var = np.mean(samples**2, keepdims=True)[0][0]
+
+    print "Moving result to dataframe"
+
+    ac_squeeze = np.squeeze(raw_autocor[0])
+    if normalize:
+        ac_squeeze = ac_squeeze / sample_var
+        # theano doesn't play nice with the first element but it's just the variance
+        autocor = np.vstack((1., ac_squeeze.reshape(raw_autocor[0].shape[0], 1)))
+    else:
+       # theano doesn't play nice with the first element but it's just the variance
+        autocor = np.vstack((sample_var, ac_squeeze.reshape(raw_autocor[0].shape[0], 1)))
+
+
+
+    #This drops the last sample out of the data frame. Unclear, if this is the best way to do things but
+    #it is the only way we can align the total number of samples from sample generation to
+    #computing autocorrelation
+    if half_window:
+        ac_df = history[:int(n_samples / 2) - 1]
+    else:
+        ac_df = history[:-1]
+    ac_df.loc[:, 'autocorrelation'] = autocor
+    return ac_df[['num energy', 'num grad', 'autocorrelation']]
+
+
+
+def compile_autocor_func(half_window):
+    X = T.tensor3().astype('float32')
+    shape = X.shape
+    #Assumes Length T, need to have a switch that also deals with (T/2)-1
+    if half_window:
+        t_gap = T.arange(1, (shape[2] / 2) - 1)
+    else:
+        t_gap = T.arange(1, shape[2] - 1)
+    outputs_info = T.zeros((1, 1, 1), dtype='float32')
+
+    #function def that computes the mean ac for each time lag
+    def calc_ac(t_gap, _, X):
+        return T.mean(X[:, :, :-t_gap] * X[:, :, t_gap:], dtype='float32', keepdims=True)
+
+    result, updates = theano.scan(fn=calc_ac,
+                                 outputs_info=[outputs_info],
+                                 sequences=[t_gap],
+                                 non_sequences=[X])
+    theano_ac = theano.function(inputs=[X], outputs=[result], updates=updates)
+    return theano_ac
+
+
+
+def slow_autocorrelation(history, half_window=False):
     """
     calculate the autocorrelation
     history a dataframe

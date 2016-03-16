@@ -1,3 +1,8 @@
+"""
+This module contains a script for generating the spectral gap figure
+Figure 3 in the paper (3rd revision on arXiv)
+"""
+
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
@@ -10,7 +15,9 @@ import time
 
 import pandas as pd
 
-from samplers.algebraic_hmc import (AlgebraicHMC, AlgebraicDiscrete,
+from os.path import expanduser
+
+from mjhmc.samplers.algebraic_hmc import (AlgebraicHMC, AlgebraicDiscrete,
                                     AlgebraicContinuous, AlgebraicReducedFlip)
 
 # green blue palette
@@ -31,15 +38,22 @@ def sg(algebraic_sampler, full):
     return 1 - np.absolute(w_ord[1])
 
 
-def plot_spectral_gaps(max_n_energies, n_trials=25, full=True):
-    """
-    plot the spectral gap
+def plot_spectral_gaps(max_n_dims, n_trials=25,
+                       full=True, save_directory='~/Desktop'):
+    """ Generates the spectral gap figure
+
+    :param max_n_dims: max number of dimensions to go up to
+    :param n_trials: number of trials averaged at each dimension
+    :param full: True for computing the spectral gap of the full transition matrix (an 2*n_dim X 2*n_dim matrix)
+    :param save_directory: path to save figure to
+    :returns: None, saves a figure at the specified path
+    :rtype: None
     """
     hmc_sg = []
     rf_sg = []
     sgs = []
     t_begin = time.clock()
-    orders = np.arange(3, max_n_energies) * 2
+    orders = np.arange(3, max_n_dims) * 2
     for order in orders:
         t_start = time.clock()
         hmc_trials = []
@@ -78,5 +92,5 @@ def plot_spectral_gaps(max_n_energies, n_trials=25, full=True):
     plt.xlabel("Number of states in ladder")
     plt.yscale('log')
     plt.title("Spectral gap vs. number of system states")
-    plt.savefig("../../figures/sg_gap_{}_energies_{}_trials.pdf".format(
-        max_n_energies, n_trials))
+    plt.savefig("{}/sg_gap_{}_energies_{}_trials.pdf".format(
+        expanduser(save_directory), max_n_dims, n_trials))

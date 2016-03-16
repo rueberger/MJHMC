@@ -66,6 +66,24 @@ class TestControl(unittest.TestCase):
         return np.linalg.norm(arr1 - arr2) < eps
 
 
+    def test_hyperparameter_setting(self):
+        """
+        Checks to see that hyperparameters are properly set
+        """
+        beta = np.random.random()
+        epsilon = np.random.random() * 5
+        num_leapfrop_steps = np.random.randint(10)
+        gauss = Gaussian()
+        sampler = self.sampler_to_test(
+            distribution=gauss,
+            beta=beta,
+            epsilon=epsilon,
+            num_leapfropg_steps=num_leapfrop_steps
+        )
+        self.assertTrue(sampler.beta == beta)
+        self.assertTrue(sampler.epsilon == epsilon)
+        self.assertTrue(sampler.num_leapfropg_steps == num_leapfrop_steps)
+
 class TestHMC(TestControl):
 
     @overrides(TestControl)
@@ -80,15 +98,16 @@ class TestControlHMC(TestControl):
         np.random.seed(n_seed)
         self.sampler_to_test = ControlHMC
 
-class TestContinuousHMC(TestControl):
 
-    @overrides(TestControl)
-    def setUp(self):
-        np.random.seed(n_seed)
-        self.sampler_to_test = ContinuousTimeHMC
+# class TestContinuousHMC(TestControl):
+
+#     @overrides(TestControl)
+#     def setUp(self):
+#         np.random.seed(n_seed)
+#         self.sampler_to_test = ContinuousTimeHMC
 
 
-class TestReducedFlipHMC(TestControl):
+class TestMJHMC(TestControl):
 
     @overrides(TestControl)
     def setUp(self):

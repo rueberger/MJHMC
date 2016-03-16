@@ -9,6 +9,7 @@ from LAHMC import LAHMC
 from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
 from mjhmc.misc.autocor import calculate_autocorrelation, autocorrelation
 from mjhmc.misc.nutshell import sample_nuts_to_df
+from mjhmc.search.find_best_params import write_all
 
 # green blue palette
 sns.set_palette("cubehelix", n_colors=4)
@@ -79,15 +80,18 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
         nuts_ac['autocorrelation'].plot(label='NUTS')
 
 
-    control_ac['autocorrelation'].plot(label='Control HMC')
-    mjhmc_ac['autocorrelation'].plot(label='Markov Jump HMC')
+    control_ac['autocorrelation'].plot(label='Control HMC;\n {}'.format(str(control_params)))
+    mjhmc_ac['autocorrelation'].plot(label='Markov Jump HMC;\n {}'.format(str(mjhmc_params)))
+
+    #control_ac['autocorrelation'].plot(label='Control HMC')
+    #mjhmc_ac['autocorrelation'].plot(label='Markov Jump HMC')
 
     plt.xlabel("Gradient Evaluations")
     plt.ylabel("Autocorrelation")
     plt.title("{}D {}".format(distribution.ndims, type(distribution).__name__))
     plt.legend()
     plt.show()
-    plt.savefig("{}_ac.pdf".format(type(distribution).__name__))
+    plt.savefig("{}_{}_dim_ac.pdf".format(type(distribution).__name__, distribution.ndims))
     plt.show()
 
 def load_params(distribution):
@@ -95,7 +99,7 @@ def load_params(distribution):
         'RoughWell' : "rw",
         'Gaussian' : 'log_gauss',
         'MultimodalGaussian' : 'mm_gauss',
-        'ProductOfT' : 'poe_36'
+        'ProductOfT' : 'poe_100'
     }
     file_name = "params.json"
     extension = dist_to_extension[type(distribution).__name__]
@@ -108,13 +112,32 @@ def load_params(distribution):
     lahmc_params = None
     return control_params, mjhmc_params, lahmc_params
 
-def plot_best(distribution, num_steps=100000, **kwargs):
+def plot_best(distribution, num_steps=100000, update_params=False, **kwargs):
+    """ Plots the autocorrelation on distribution for all tested samplers using
+    the best hyperparameters found so far
+
+    If update_params is set to True then this script will look through the output logs
+    in all search directories and update the value of the best found parameters.
+
+    If update_params is set to False then the hyperparameters will be those in the params.json
+    of the corresponding search directories
+
+    :param distribution: Distribution object to have autocorrelation plotted of
+    :param num_steps: number of sampling steps to run on
+    :param update_params: boolean flag specifying whether the parameters should be updated
+    or the cached values should be used
+    :returns: None, makes a plot
+    :rtype: None
     """
-    plot ac with the best parameters for control and mjhmc and compare to nuts
-    nbatch must be 1 for nuts comparison
-    """
-#    assert distribution.nbatch == 1
+
+    if update_params:
+        print 'Searching through output logs to find the best parameters...'
+        write_all()
+    else:
+        print "Making plot based off cached parameter jsons..."
     control_params, mjhmc_params, lahmc_params = load_params(distribution)
+    print control_params
+    print mjhmc_params
     plot_ac(distribution, control_params, mjhmc_params, lahmc_params, num_steps, **kwargs)
 
 def plot_std(distribution):

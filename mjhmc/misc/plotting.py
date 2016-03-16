@@ -2,14 +2,14 @@
 This file contains various plotting utilities
 """
 
-import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 
 
 from mjhmc.samplers.markov_jump_hmc import HMCBase, ContinuousTimeHMC, MarkovJumpHMC
+from mjhmc.misc.distributions import TestGaussian
 from .autocor import calculate_autocorrelation
 
 import numpy as np
@@ -52,26 +52,32 @@ def plot_fit(grad_evals, autocor, exp_coef, cos_coef, job_id, params, save=True)
     return fig
 
 
-def hist_1d(distr, nsamples=1000, nbins=250):
+def hist_1d(distr, nsamples=1000, nbins=250, control=True, resample=True):
     """
     plots a 1d histogram from each sampler
     distr is (an unitialized) class from distributions
     """
     distribution = distr(ndims=1)
-    control = HMCBase(distribution.Xinit, distribution.E, distribution.dEdX)
-    experimental = ContinuousTimeHMC(distribution.Xinit, distribution.E, distribution.dEdX)
+    control_smp = HMCBase(distribution=distribution, epsilon=1)
+    experimental_smp = MarkovJumpHMC(distribution=distribution, resample=resample, epsilon=1)
 
-    plt.hist(control.sample(nsamples)[0], nbins, normed=True, label="Standard HMCBase", alpha=.5)
-    plt.hist(experimental.sample(nsamples)[0], nbins, normed=True, label="Continuous-time HMCBase",alpha=.5)
+    if control:
+        plt.hist(control_smp.sample(nsamples)[0], nbins, normed=True, label="Standard HMCBase", alpha=.5)
+
+    plt.hist(experimental_smp.sample(nsamples)[0], nbins, normed=True, label="Continuous-time HMCBase",alpha=.5)
     plt.legend()
 
-def gauss_1d(nsamples=1000, nbins=250):
+def gauss_1d(nsamples=1000, nbins=250, *args, **kwargs):
     """
     Simple test plots.
     Draws nsamples with sampler from a (well conditioned unit variance)
     gaussian and plots a histogram of both of them
     """
-    hist_1d(misc.distributions.TestGaussian)
+    hist_1d(TestGaussian, nsamples, nbins, *args, **kwargs)
+    test_points = np.linspace(4, -4, 1000)
+    true_curve = (1. / np.sqrt(2*np.pi)) * np.exp(- (test_points**2) / 2.)
+    plt.plot(test_points, true_curve, label="True curve")
+    plt.legend()
 
 
 def gauss_2d(nsamples=1000):
@@ -79,9 +85,10 @@ def gauss_2d(nsamples=1000):
     Another simple test plot
     1d gaussian sampled from each sampler visualized as a joint 2d gaussian
     """
-    gaussian = misc.distributions.TestGaussian(ndims=1)
-    control = HMCBase(gaussian.Xinit, gaussian.E, gaussian.dEdX)
-    experimental = ContinuousTimeHMC(gaussian.Xinit, gaussian.E, gaussian.dEdX)
+    gaussian = TestGaussian(ndims=1)
+    control = HMCBase(distribution=gaussian)
+    experimental = MarkovJumpHMC(distribution=gaussian, resample=False)
+
 
     with sns.axes_style("white"):
         sns.jointplot(

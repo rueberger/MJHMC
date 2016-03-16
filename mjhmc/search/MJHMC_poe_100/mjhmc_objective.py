@@ -8,8 +8,8 @@ np.random.seed(2015)
 
 
 def main(job_id, params):
-    ndims = 36
-    nbasis = 36 
+    ndims = 100 
+    nbasis = 100 
     rand_val = rand(ndims,nbasis/2,density=0.25)
     print "job id: {}, params: {}".format(job_id, params)
     return obj_func(MarkovJumpHMC, ProductOfT(nbatch=25,ndims=ndims,nbasis=nbasis), job_id, **params)

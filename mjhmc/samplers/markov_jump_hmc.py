@@ -140,13 +140,13 @@ class HMCBase(object):
         self.f_count += len(F_idx - FL_idx)
         self.fl_count += len(FL_idx - F_idx)
 
-    def sample(self, nsamples=1000):
+    def sample(self, n_samples=1000):
         """
         Draws nsamples, returns them all
         """
         # to do: unroll samples
         samples = []
-        for _ in xrange(nsamples):
+        for _ in xrange(n_samples):
             self.sampling_iteration()
             samples.append(self.state.copy().X)
         return np.concatenate(samples, axis=1)
@@ -174,6 +174,7 @@ class ControlHMC(HMCBase):
         super(ControlHMC, self).__init__(*args, **kwargs)
         self.p_flip = 1
         self.p_r = - np.log(1 - self.beta) * 0.5
+        # tells hmc state to randomize all of the momentum when R is called
         self.beta = 1
 
 
@@ -193,8 +194,9 @@ class ContinuousTimeHMC(HMCBase):
         super(ContinuousTimeHMC, self).__init__(*args, **kwargs)
         # transformation from discrete beta to insure matching autocorrelation
         # maybe assert that beta is less than 1 if necessary
-        self.p_r = - np.log(1 - self.beta) * 0.5
         # corrupt all of the momentum with some fixed probability
+        self.p_r = - np.log(1 - self.beta) * 0.5
+        # tells hmc state to randomize all of the momentum when R is called
         self.beta = 1
 
         # the last dwelling times
@@ -287,8 +289,8 @@ class ContinuousTimeHMC(HMCBase):
             total_t = np.sum(dwell_t)
             cumul_t = np.cumsum(dwell_t)
             # pretty sure there's a way to do the whole batch at once
-            for idx, r in enumerate(np.sort(np.random.random(n_samples)) * total_t):
-                sample_idx = np.where(cumul_t > r)[0][0]
+            for idx, rand_val in enumerate(np.sort(np.random.random(n_samples * self.nbatch)) * total_t):
+                sample_idx = np.where(cumul_t > rand_val)[0][0]
                 resamples[:, idx] = samples[:, sample_idx]
             return resamples
         else:
@@ -342,7 +344,7 @@ class MarkovJumpHMC(ContinuousTimeHMC):
         # cache current state as FLF state for next L transition
         self.state.cache_flf_state(l_idx, self.state)
         # cache FL as FLF state for for particles that made transition to F
-#        self.state.cache_flf_state(f_idx, l_state.F())
+        # self.state.cache_flf_state(f_idx, l_state.F())
 
         # update accepted proposed states
         self.state.update(l_idx, l_state)
