@@ -44,6 +44,7 @@ class HMCBase(object):
         """
 
         if isinstance(distribution, Distribution):
+            distribution.mjhmc = False
             self.ndims = distribution.Xinit.shape[0]
             self.nbatch = distribution.Xinit.shape[1]
             self.energy_func = distribution.E
@@ -198,6 +199,25 @@ class ContinuousTimeHMC(HMCBase):
 
         # the last dwelling times
         self.dwelling_times = np.zeros(self.nbatch)
+
+        if isinstance(distribution, Distribution):
+            distribution.mjhmc = True
+            distribution.reset()
+            self.ndims = distribution.Xinit.shape[0]
+            self.nbatch = distribution.Xinit.shape[1]
+            self.energy_func = distribution.E
+            self.grad_func = distribution.dEdX
+            self.state = HMCState(distribution.Xinit.copy(), self)
+        else:
+            assert Xinit is not None
+            assert E is not None
+            assert dEdX is not None
+            self.ndims = Xinit.shape[0]
+            self.nbatch = Xinit.shape[1]
+            self.energy_func = E
+            self.grad_func = dEdX
+            self.state = HMCState(Xinit.copy(), self)
+
 
 
 
