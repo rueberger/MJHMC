@@ -50,7 +50,9 @@ class Distribution(object):
         """
         # implement me!
         # no need to use inheritance, just store the initial states using the distribution name
-        pass
+        # remove this when implemented
+        raise NotImplementedError()
+
 
 
 
