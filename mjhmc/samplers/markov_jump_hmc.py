@@ -202,6 +202,7 @@ class ContinuousTimeHMC(HMCBase):
         # the last dwelling times
         self.dwelling_times = np.zeros(self.nbatch)
 
+        '''
         if isinstance(distribution, Distribution):
             distribution.mjhmc = True
             distribution.reset()
@@ -219,7 +220,7 @@ class ContinuousTimeHMC(HMCBase):
             self.energy_func = E
             self.grad_func = dEdX
             self.state = HMCState(Xinit.copy(), self)
-
+        '''
 
 
 

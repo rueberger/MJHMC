@@ -4,13 +4,14 @@ import theano.tensor as T
 import theano
 from scipy.sparse import rand
 from scipy import stats
+import pickle
 
 class Distribution(object):
     """
     interface for distributions
     """
 
-    def __init__(self, ndims=2, nbatch=100, mjhmc=False):
+    def __init__(self, ndims=2, nbatch=100, mjhmc=True):
         self.ndims = ndims
         self.nbatch = nbatch
         self.mjhmc = mjhmc
@@ -51,7 +52,9 @@ class Distribution(object):
         # implement me!
         # no need to use inheritance, just store the initial states using the distribution name
         # remove this when implemented
-        raise NotImplementedError()
+        #Totally hardcoding this now, going to make a relative encoding afterwarsds
+        df = pickle.load(open('poe_ndims_36_nbasis_36_nsamples_10000.pkl','r'))
+        self.Xinit = df.as_matrix()[-1]
 
 
 
@@ -232,6 +235,8 @@ class ProductOfT(Distribution):
         return E
 
 
+    '''
+    #Turning this off for now. We should figure out what we want to do with this moving fwd
     @overrides(Distribution)
     def gen_init_X(self):
 		Zinit = np.zeros((self.ndims, self.nbatch))
@@ -240,3 +245,4 @@ class ProductOfT(Distribution):
 
 		Yinit = Zinit - self.b.get_value().reshape((-1, 1))
 		self.Xinit = np.dot(np.linalg.inv(self.W.get_value()), Yinit)
+    '''
