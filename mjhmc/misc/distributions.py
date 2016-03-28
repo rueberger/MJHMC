@@ -53,6 +53,7 @@ class Distribution(object):
         # no need to use inheritance, just store the initial states using the distribution name
         # remove this when implemented
         #Totally hardcoding this now, going to make a relative encoding afterwarsds
+        print('Loading samples from cached file')
         df = pickle.load(open('poe_ndims_36_nbasis_36_nsamples_10000.pkl','r'))
         self.Xinit = df.as_matrix()[-1]
 
