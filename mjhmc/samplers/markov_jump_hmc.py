@@ -42,7 +42,7 @@ class HMCBase(object):
         :returns: a new instance
         :rtype: HMCBase
         """
-
+        import IPython; IPython.embed()
         if isinstance(distribution, Distribution):
             distribution.mjhmc = False
             self.ndims = distribution.Xinit.shape[0]
@@ -191,6 +191,7 @@ class ContinuousTimeHMC(HMCBase):
         :rtype: ContinuousTimeHMC
         """
         self.resample = kwargs.pop('resample', True)
+        self.distribution = kwargs.pop('distribution',None)
         super(ContinuousTimeHMC, self).__init__(*args, **kwargs)
         # transformation from discrete beta to insure matching autocorrelation
         # maybe assert that beta is less than 1 if necessary
@@ -201,8 +202,9 @@ class ContinuousTimeHMC(HMCBase):
 
         # the last dwelling times
         self.dwelling_times = np.zeros(self.nbatch)
+        IPython.embed()
 
-        '''
+        
         if isinstance(distribution, Distribution):
             distribution.mjhmc = True
             distribution.reset()
@@ -220,7 +222,7 @@ class ContinuousTimeHMC(HMCBase):
             self.energy_func = E
             self.grad_func = dEdX
             self.state = HMCState(Xinit.copy(), self)
-        '''
+       
 
 
 

@@ -147,6 +147,7 @@ def sample_to_df(sampler, distribution, num_steps=None, num_grad_steps=None,
     # ridiculous assert to make sure only one of them is ever None
     assert (((num_steps is None) and (num_grad_steps is not None)) or
             (num_steps is not None) and (num_grad_steps is None))
+    import IPython; IPython.embed()
     smp = sampler(distribution.Xinit, distribution.E, distribution.dEdX, **kwargs)
     # fudge factor because grad per sampler step is only approximate
     num_steps = num_steps or num_grad_steps / smp.grad_per_sample_step + 100

@@ -37,6 +37,7 @@ class Distribution(object):
         """
         Sets self.Xinit to a good initial value
         """
+        import IPython; IPython.embed()
         if self.mjhmc:
             self.cached_init_X()
         else:
@@ -53,9 +54,9 @@ class Distribution(object):
         # no need to use inheritance, just store the initial states using the distribution name
         # remove this when implemented
         #Totally hardcoding this now, going to make a relative encoding afterwarsds
-        print('Loading samples from cached file')
+        print('Loading samples from cached file for continuous case')
         df = pickle.load(open('poe_ndims_36_nbasis_36_nsamples_10000.pkl','r'))
-        self.Xinit = df.as_matrix()[-1]
+        self.Xinit = df
 
 
 
@@ -66,6 +67,10 @@ class Distribution(object):
 
         :returns: None
         :rtype: None
+        
+        print('Loading samples from cached file for discrete case')
+        df = pickle.load(open('poe_ndims_36_nbasis_36_nsamples_10000.pkl','r'))
+        self.Xinit = df.as_matrix()
         """
         raise NotImplementedError()
 
@@ -236,14 +241,13 @@ class ProductOfT(Distribution):
         return E
 
 
-    '''
-    #Turning this off for now. We should figure out what we want to do with this moving fwd
     @overrides(Distribution)
     def gen_init_X(self):
-		Zinit = np.zeros((self.ndims, self.nbatch))
-		for ii in xrange(self.ndims):
-			Zinit[ii] = stats.t.rvs(self.nu.get_value()[ii], size=self.nbatch)
+        print("We are now going to remap samples from a generic product of experts to \
+                the model we are actually going to generate samples from")
+        Zinit = np.zeros((self.ndims, self.nbatch))
+        for ii in xrange(self.ndims):
+            Zinit[ii] = stats.t.rvs(self.nu.get_value()[ii], size=self.nbatch)
 
-		Yinit = Zinit - self.b.get_value().reshape((-1, 1))
-		self.Xinit = np.dot(np.linalg.inv(self.W.get_value()), Yinit)
-    '''
+        Yinit = Zinit - self.b.get_value().reshape((-1, 1))
+        self.Xinit = np.dot(np.linalg.inv(self.W.get_value()), Yinit)
