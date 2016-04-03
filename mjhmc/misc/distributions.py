@@ -228,7 +228,7 @@ class ProductOfT(Distribution):
     def E_def(self,X):
         """
         energy for a POE with student's-t expert in terms of:
-                samples [# samples]x[# dimensions] X
+                samples [# dimensions]x[# samples] X
                 receptive fields [# dimensions]x[# experts] W
                 biases [# experts] b
                 degrees of freedom [# experts] nu
