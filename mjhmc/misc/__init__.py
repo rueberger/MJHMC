@@ -2,7 +2,7 @@
  Initialization and import management for misc subpackage
 """
 __all__ = ['autocor', 'distributions',
-           'mixing', 'plotting', 'nutshell', 'utils']
+           'mixing', 'plotting', 'nutshell', 'utils', 'gen_mj_init']
 
 # import mjhmc.misc.autocor
 # import mjhmc.misc.distributions

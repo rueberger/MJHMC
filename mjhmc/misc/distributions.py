@@ -7,7 +7,7 @@ import numpy as np
 from .utils import overrides
 import theano.tensor as T
 import theano
-from scipy.sparse import rand
+import os
 from scipy import stats
 import pickle
 
@@ -31,6 +31,9 @@ class Distribution(object):
         return self.E_val(X)
 
     def E_val(self, X):
+        """
+        Subclasses should implement this with the correct energy function
+        """
         raise NotImplementedError()
 
     def dEdX(self, X):
@@ -38,7 +41,22 @@ class Distribution(object):
         return self.dEdX_val(X)
 
     def dEdX_val(self, X):
+        """
+        Subclasses should implement this with the correct energy gradient function
+        """
         raise NotImplementedError()
+
+    def __hash__(self):
+        """ Subclasses should implement this as the hash of the tuple of all parameters
+        that effect the distribution, including ndims. This is very important!!
+
+        As an example, see how this is implemented in Gaussian
+
+        :returns: a hash of the relevant parameters of self
+        :rtype: int
+        """
+        raise NotImplementedError()
+
 
     def init_X(self):
         """
@@ -56,27 +74,27 @@ class Distribution(object):
         :returns: None
         :rtype: none
         """
-        # implement me!
-        # no need to use inheritance, just store the initial states using the distribution name
-        # remove this when implemented
-        #Totally hardcoding this now, going to make a relative encoding afterwarsds
-        # if exists
-        #   return existing pickle from intialization
-        # return only up to the current required number of particles
-        # else
-        #   call burn in code with new distribution with max_n_particles
-        #   sign with parameters *AND* current version of code
-        #   do not sign with number of particles
-        pass
-
+        distr_name = self.__name__
+        distr_hash = hash(self)
+        file_prefix = '../../initializations'
+        file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
+        if file_name in os.listdir(file_prefix):
+            with open('{}/{}'.format(file_prefix, file_name)) as f:
+                fair_init = pickle.load(f)
+            self.Xinit = fair_init[:, :self.nbatch]
         else:
+            from mjhmc.misc.gen_mj_init import MAX_N_PARTICLES, cache_initialization
             # modify this object so it can be used by gen_mj_init
-            from mjhmc.misc.gen_mj_init import MAX_N_PARTICLES
+            old_nbatch = self.nbatch.copy()
             self.nbatch = MAX_N_PARTICLES
             # start with biased initializations
             self.gen_init_X()
-            # generate fair initializations, set them as my xinit and then continue
-            # actually just call this method again should work
+            #generate and cache fair initialization
+            cache_initialization()
+            # reconstruct this object using fair initialization
+            self.nbatch = old_nbatch
+            self.cached_init_X()
+
 
 
 
@@ -135,6 +153,10 @@ class Gaussian(Distribution):
     def gen_init_X(self):
         self.Xinit = (1./np.sqrt(self.conditioning).reshape((-1,1))) * np.random.randn(self.ndims,self.nbatch)
 
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash((self.ndims, self.log_conditioning))
+
 class RoughWell(Distribution):
     def __init__(self, ndims=2, nbatch=100, scale1=100, scale2=4):
         """
@@ -161,6 +183,10 @@ class RoughWell(Distribution):
     @overrides(Distribution)
     def gen_init_X(self):
         self.Xinit = self.scale1 * np.random.randn(self.ndims, self.nbatch)
+
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash((self.ndims, self.scale1, self.scale2))
 
 class MultimodalGaussian(Distribution):
     def __init__(self, ndims=2, nbatch=100, separation=3):
@@ -192,6 +218,10 @@ class MultimodalGaussian(Distribution):
         self.Xinit = ((np.random.randn(self.ndims, self.nbatch) + self.sep_vec) +
                 (np.random.randn(self.ndims, self.nbatch) - self.sep_vec))
 
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash(self.ndims, self.separation)
+
 class TestGaussian(Distribution):
 
     def __init__(self, ndims=2, nbatch=100, sigma=1.):
@@ -211,6 +241,11 @@ class TestGaussian(Distribution):
     @overrides(Distribution)
     def gen_init_X(self):
         self.Xinit = np.random.randn(self.ndims, self.nbatch)
+
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash(self.ndims, self.sigma)
+
 
 class ProductOfT(Distribution):
 
@@ -270,3 +305,7 @@ class ProductOfT(Distribution):
 
         Yinit = Zinit - self.b.get_value().reshape((-1, 1))
         self.Xinit = np.dot(np.linalg.inv(self.W.get_value()), Yinit)
+
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash(self.ndims, self.nbasis, self.lognu, hash(tuple(self.W)), hash(tuple(self.b)))
