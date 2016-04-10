@@ -67,11 +67,16 @@ class Distribution(object):
         #   call burn in code with new distribution with max_n_particles
         #   sign with parameters *AND* current version of code
         #   do not sign with number of particles
+        pass
 
-        print('Loading samples from cached file for continuous case')
-        df = pickle.load(open('poe_ndims_36_nbasis_36_nsamples_10000.pkl','r'))
-        self.Xinit = df
-
+        else:
+            # modify this object so it can be used by gen_mj_init
+            from mjhmc.misc.gen_mj_init import MAX_N_PARTICLES
+            self.nbatch = MAX_N_PARTICLES
+            # start with biased initializations
+            self.gen_init_X()
+            # generate fair initializations, set them as my xinit and then continue
+            # actually just call this method again should work
 
 
 

@@ -42,22 +42,25 @@ class HMCBase(object):
         :returns: a new instance
         :rtype: HMCBase
         """
-        if isinstance(distribution, Distribution):
-            distribution.mjhmc = False
-            self.ndims = distribution.Xinit.shape[0]
-            self.nbatch = distribution.Xinit.shape[1]
-            self.energy_func = distribution.E
-            self.grad_func = distribution.dEdX
-            self.state = HMCState(distribution.Xinit.copy(), self)
-        else:
-            assert Xinit is not None
-            assert E is not None
-            assert dEdX is not None
-            self.ndims = Xinit.shape[0]
-            self.nbatch = Xinit.shape[1]
-            self.energy_func = E
-            self.grad_func = dEdX
-            self.state = HMCState(Xinit.copy(), self)
+        # do not execute this block if I am an instance of MarkovJumpHMC
+        if not isinstance(self, MarkovJumpHMC):
+            if isinstance(distribution, Distribution):
+                distribution.mjhmc = False
+                distribution.reset()
+                self.ndims = distribution.Xinit.shape[0]
+                self.nbatch = distribution.Xinit.shape[1]
+                self.energy_func = distribution.E
+                self.grad_func = distribution.dEdX
+                self.state = HMCState(distribution.Xinit.copy(), self)
+            else:
+                assert Xinit is not None
+                assert E is not None
+                assert dEdX is not None
+                self.ndims = Xinit.shape[0]
+                self.nbatch = Xinit.shape[1]
+                self.energy_func = E
+                self.grad_func = dEdX
+                self.state = HMCState(Xinit.copy(), self)
 
         self.num_leapfrog_steps = num_leapfrog_steps
         self.epsilon = epsilon
@@ -190,7 +193,7 @@ class ContinuousTimeHMC(HMCBase):
         :rtype: ContinuousTimeHMC
         """
         self.resample = kwargs.pop('resample', True)
-        distribution = kwargs.pop('distribution',None)
+        distribution = kwargs.get('distribution')
         super(ContinuousTimeHMC, self).__init__(*args, **kwargs)
         # transformation from discrete beta to insure matching autocorrelation
         # maybe assert that beta is less than 1 if necessary
@@ -198,10 +201,6 @@ class ContinuousTimeHMC(HMCBase):
         self.p_r = - np.log(1 - self.beta) * 0.5
         # tells hmc state to randomize all of the momentum when R is called
         self.beta = 1
-
-        # the last dwelling times
-        self.dwelling_times = np.zeros(self.nbatch)
-
 
         if isinstance(distribution, Distribution):
             distribution.mjhmc = True
@@ -212,14 +211,16 @@ class ContinuousTimeHMC(HMCBase):
             self.grad_func = distribution.dEdX
             self.state = HMCState(distribution.Xinit.copy(), self)
         else:
-            assert Xinit is not None
-            assert E is not None
-            assert dEdX is not None
-            self.ndims = Xinit.shape[0]
-            self.nbatch = Xinit.shape[1]
-            self.energy_func = E
-            self.grad_func = dEdX
-            self.state = HMCState(Xinit.copy(), self)
+            raise NotImplementedError(
+                ("Unfortunately, you must define your distribution by"
+                 " subclassing mjhmc.misc.Distribution."
+                 "This is due to subtle issues having to do with generating"
+                 " a fair initialization for"
+                 "the embedded Markov Chain. See the docs in mjhmc.misc.Distribution."
+                ))
+
+        # the last dwelling times
+        self.dwelling_times = np.zeros(self.nbatch)
 
 
 
