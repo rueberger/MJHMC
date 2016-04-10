@@ -42,7 +42,6 @@ class HMCBase(object):
         :returns: a new instance
         :rtype: HMCBase
         """
-        import IPython; IPython.embed()
         if isinstance(distribution, Distribution):
             distribution.mjhmc = False
             self.ndims = distribution.Xinit.shape[0]

@@ -1,3 +1,8 @@
+"""
+ This module contains the Distribution class which defines a standard interface for distributions
+ It also provides several implemented distributions, which inherit from Distribution
+ Any user-specified distributions should inherit from Distribution
+"""
 import numpy as np
 from .utils import overrides
 import theano.tensor as T
@@ -8,7 +13,9 @@ import pickle
 
 class Distribution(object):
     """
-    interface for distributions
+    Interface for distributions
+    Any user-specified distributions should be defined by inheriting from this class and
+     overriding the appropriate methods
     """
 
     def __init__(self, ndims=2, nbatch=100, mjhmc=True):
@@ -37,7 +44,6 @@ class Distribution(object):
         """
         Sets self.Xinit to a good initial value
         """
-        import IPython; IPython.embed()
         if self.mjhmc:
             self.cached_init_X()
         else:
@@ -54,6 +60,7 @@ class Distribution(object):
         # no need to use inheritance, just store the initial states using the distribution name
         # remove this when implemented
         #Totally hardcoding this now, going to make a relative encoding afterwarsds
+
         print('Loading samples from cached file for continuous case')
         df = pickle.load(open('poe_ndims_36_nbasis_36_nsamples_10000.pkl','r'))
         self.Xinit = df
@@ -67,7 +74,7 @@ class Distribution(object):
 
         :returns: None
         :rtype: None
-        
+
         print('Loading samples from cached file for discrete case')
         df = pickle.load(open('poe_ndims_36_nbasis_36_nsamples_10000.pkl','r'))
         self.Xinit = df.as_matrix()
