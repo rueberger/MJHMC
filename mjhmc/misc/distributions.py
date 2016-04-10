@@ -23,18 +23,18 @@ class Distribution(object):
         self.nbatch = nbatch
         self.mjhmc = mjhmc
         self.init_X()
-        self.e_count = 0
-        self.dedx_count = 0
+        self.E_count = 0
+        self.dEdX_count = 0
 
     def E(self, X):
-        self.e_count += X.shape[1]
+        self.E_count += X.shape[1]
         return self.E_val(X)
 
     def E_val(self, X):
         raise NotImplementedError()
 
     def dEdX(self, X):
-        self.dedx_count += X.shape[1]
+        self.dEdX_count += X.shape[1]
         return self.dEdX_val(X)
 
     def dEdX_val(self, X):
@@ -62,9 +62,11 @@ class Distribution(object):
         #Totally hardcoding this now, going to make a relative encoding afterwarsds
         # if exists
         #   return existing pickle from intialization
+        # return only up to the current required number of particles
         # else
-        #   call burn in code
+        #   call burn in code with new distribution with max_n_particles
         #   sign with parameters *AND* current version of code
+        #   do not sign with number of particles
 
         print('Loading samples from cached file for continuous case')
         df = pickle.load(open('poe_ndims_36_nbasis_36_nsamples_10000.pkl','r'))
@@ -90,8 +92,8 @@ class Distribution(object):
         """
         resets the object. returns self for convenience
         """
-        self.e_count = 0
-        self.dedx_count = 0
+        self.E_count = 0
+        self.dEdX_count = 0
         self.init_X()
         return self
 
