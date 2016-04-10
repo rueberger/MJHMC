@@ -74,7 +74,7 @@ class Distribution(object):
         :returns: None
         :rtype: none
         """
-        distr_name = self.__name__
+        distr_name = type(self).__name__
         distr_hash = hash(self)
         file_prefix = '../../initializations'
         file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
@@ -85,12 +85,12 @@ class Distribution(object):
         else:
             from mjhmc.misc.gen_mj_init import MAX_N_PARTICLES, cache_initialization
             # modify this object so it can be used by gen_mj_init
-            old_nbatch = self.nbatch.copy()
+            old_nbatch = self.nbatch
             self.nbatch = MAX_N_PARTICLES
             # start with biased initializations
             self.gen_init_X()
             #generate and cache fair initialization
-            cache_initialization()
+            cache_initialization(self)
             # reconstruct this object using fair initialization
             self.nbatch = old_nbatch
             self.cached_init_X()
@@ -155,7 +155,7 @@ class Gaussian(Distribution):
 
     @overrides(Distribution)
     def __hash__(self):
-        return hash((self.ndims, self.log_conditioning))
+        return hash((self.ndims, hash(tuple(self.conditioning))))
 
 class RoughWell(Distribution):
     def __init__(self, ndims=2, nbatch=100, scale1=100, scale2=4):

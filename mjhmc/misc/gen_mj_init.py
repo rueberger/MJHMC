@@ -17,7 +17,7 @@ def generate_initialization(distribution):
     :rtype: array of shape (2 * distribution.ndims, MAX_N_PARTICLES)
     """
     print('Generating fair initialization for {} by burning in {} steps'.format(
-        distribution.__name__, BURN_IN_STEPS)
+        type(distribution).__name__, BURN_IN_STEPS))
     assert distribution.nbatch == MAX_N_PARTICLES
     mjhmc = MarkovJumpHMC(distribution=distribution)
     for _ in xrange(BURN_IN_STEPS):
@@ -34,7 +34,7 @@ def cache_initialization(distribution):
     :returns:
     :rtype:
     """
-    distr_name = distribution.__name__
+    distr_name = type(distribution).__name__
     distr_hash = hash(distribution)
     fair_init = generate_initialization(distribution)
     file_name = '../../initializations/{}_{}.pickle'.format(distr_name, distr_hash)
