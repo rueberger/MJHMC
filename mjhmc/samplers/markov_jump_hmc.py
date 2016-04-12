@@ -204,7 +204,8 @@ class ContinuousTimeHMC(HMCBase):
 
         if isinstance(distribution, Distribution):
             distribution.mjhmc = True
-            distribution.reset()
+            if not distribution.generation_instance:
+                distribution.reset()
             self.ndims = distribution.Xinit.shape[0]
             self.nbatch = distribution.Xinit.shape[1]
             self.energy_func = distribution.E

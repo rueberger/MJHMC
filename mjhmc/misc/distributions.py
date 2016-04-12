@@ -18,13 +18,16 @@ class Distribution(object):
      overriding the appropriate methods
     """
 
-    def __init__(self, ndims=2, nbatch=100, mjhmc=True):
+    def __init__(self, ndims=2, nbatch=100, mjhmc=False):
         self.ndims = ndims
         self.nbatch = nbatch
         self.mjhmc = mjhmc
         self.init_X()
         self.E_count = 0
         self.dEdX_count = 0
+        # only set to true when I have a bias initialization and am being burned in
+        # to generate and cache a fair initialization for continuous samplers
+        self.generation_instance = False
 
     def E(self, X):
         self.E_count += X.shape[1]
@@ -87,12 +90,14 @@ class Distribution(object):
             # modify this object so it can be used by gen_mj_init
             old_nbatch = self.nbatch
             self.nbatch = MAX_N_PARTICLES
+            self.generation_instance = True
             # start with biased initializations
             self.gen_init_X()
             #generate and cache fair initialization
             cache_initialization(self)
             # reconstruct this object using fair initialization
             self.nbatch = old_nbatch
+            self.generation_instance = False
             self.cached_init_X()
 
 
