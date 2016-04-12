@@ -5,8 +5,7 @@ import pickle
 import numpy as np
 from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
 
-#BURN_IN_STEPS = int(1E6)
-BURN_IN_STEPS = 10
+BURN_IN_STEPS = int(1E6)
 MAX_N_PARTICLES = 1000
 
 def generate_initialization(distribution):
