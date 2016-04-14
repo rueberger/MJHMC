@@ -1,29 +1,42 @@
+"""
+ This module contains the Distribution class which defines a standard interface for distributions
+ It also provides several implemented distributions, which inherit from Distribution
+ Any user-specified distributions should inherit from Distribution
+"""
 import numpy as np
 from .utils import overrides
 import theano.tensor as T
 import theano
-from scipy.sparse import rand
+import os
 from scipy import stats
 import pickle
 
 class Distribution(object):
     """
-    interface for distributions
+    Interface for distributions
+    Any user-specified distributions should be defined by inheriting from this class and
+     overriding the appropriate methods
     """
 
-    def __init__(self, ndims=2, nbatch=100, mjhmc=True):
+    def __init__(self, ndims=2, nbatch=100, mjhmc=False):
         self.ndims = ndims
         self.nbatch = nbatch
         self.mjhmc = mjhmc
         self.init_X()
         self.E_count = 0
         self.dEdX_count = 0
+        # only set to true when I have a bias initialization and am being burned in
+        # to generate and cache a fair initialization for continuous samplers
+        self.generation_instance = False
 
     def E(self, X):
         self.E_count += X.shape[1]
         return self.E_val(X)
 
     def E_val(self, X):
+        """
+        Subclasses should implement this with the correct energy function
+        """
         raise NotImplementedError()
 
     def dEdX(self, X):
@@ -31,13 +44,27 @@ class Distribution(object):
         return self.dEdX_val(X)
 
     def dEdX_val(self, X):
+        """
+        Subclasses should implement this with the correct energy gradient function
+        """
         raise NotImplementedError()
+
+    def __hash__(self):
+        """ Subclasses should implement this as the hash of the tuple of all parameters
+        that effect the distribution, including ndims. This is very important!!
+
+        As an example, see how this is implemented in Gaussian
+
+        :returns: a hash of the relevant parameters of self
+        :rtype: int
+        """
+        raise NotImplementedError()
+
 
     def init_X(self):
         """
         Sets self.Xinit to a good initial value
         """
-        import IPython; IPython.embed()
         if self.mjhmc:
             self.cached_init_X()
         else:
@@ -50,13 +77,28 @@ class Distribution(object):
         :returns: None
         :rtype: none
         """
-        # implement me!
-        # no need to use inheritance, just store the initial states using the distribution name
-        # remove this when implemented
-        #Totally hardcoding this now, going to make a relative encoding afterwarsds
-        print('Loading samples from cached file for continuous case')
-        df = pickle.load(open('poe_ndims_36_nbasis_36_nsamples_10000.pkl','r'))
-        self.Xinit = df
+        distr_name = type(self).__name__
+        distr_hash = hash(self)
+        file_prefix = '../../initializations'
+        file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
+        if file_name in os.listdir(file_prefix):
+            with open('{}/{}'.format(file_prefix, file_name)) as f:
+                fair_init = pickle.load(f)
+            self.Xinit = fair_init[:, :self.nbatch]
+        else:
+            from mjhmc.misc.gen_mj_init import MAX_N_PARTICLES, cache_initialization
+            # modify this object so it can be used by gen_mj_init
+            old_nbatch = self.nbatch
+            self.nbatch = MAX_N_PARTICLES
+            self.generation_instance = True
+            # start with biased initializations
+            self.gen_init_X()
+            #generate and cache fair initialization
+            cache_initialization(self)
+            # reconstruct this object using fair initialization
+            self.nbatch = old_nbatch
+            self.generation_instance = False
+            self.cached_init_X()
 
 
 
@@ -67,7 +109,7 @@ class Distribution(object):
 
         :returns: None
         :rtype: None
-        
+
         print('Loading samples from cached file for discrete case')
         df = pickle.load(open('poe_ndims_36_nbasis_36_nsamples_10000.pkl','r'))
         self.Xinit = df.as_matrix()
@@ -116,6 +158,10 @@ class Gaussian(Distribution):
     def gen_init_X(self):
         self.Xinit = (1./np.sqrt(self.conditioning).reshape((-1,1))) * np.random.randn(self.ndims,self.nbatch)
 
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash((self.ndims, hash(tuple(self.conditioning))))
+
 class RoughWell(Distribution):
     def __init__(self, ndims=2, nbatch=100, scale1=100, scale2=4):
         """
@@ -142,6 +188,10 @@ class RoughWell(Distribution):
     @overrides(Distribution)
     def gen_init_X(self):
         self.Xinit = self.scale1 * np.random.randn(self.ndims, self.nbatch)
+
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash((self.ndims, self.scale1, self.scale2))
 
 class MultimodalGaussian(Distribution):
     def __init__(self, ndims=2, nbatch=100, separation=3):
@@ -173,6 +223,10 @@ class MultimodalGaussian(Distribution):
         self.Xinit = ((np.random.randn(self.ndims, self.nbatch) + self.sep_vec) +
                 (np.random.randn(self.ndims, self.nbatch) - self.sep_vec))
 
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash(self.ndims, self.separation)
+
 class TestGaussian(Distribution):
 
     def __init__(self, ndims=2, nbatch=100, sigma=1.):
@@ -192,6 +246,11 @@ class TestGaussian(Distribution):
     @overrides(Distribution)
     def gen_init_X(self):
         self.Xinit = np.random.randn(self.ndims, self.nbatch)
+
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash(self.ndims, self.sigma)
+
 
 class ProductOfT(Distribution):
 
@@ -251,3 +310,7 @@ class ProductOfT(Distribution):
 
         Yinit = Zinit - self.b.get_value().reshape((-1, 1))
         self.Xinit = np.dot(np.linalg.inv(self.W.get_value()), Yinit)
+
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash(self.ndims, self.nbasis, self.lognu, hash(tuple(self.W)), hash(tuple(self.b)))
