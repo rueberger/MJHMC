@@ -315,15 +315,15 @@ class ProductOfT(Distribution):
         rshp_b = self.bias.reshape((1,-1))
         rshp_nu = self.nu.reshape((1, -1))
         alpha = (rshp_nu + 1.)/2.
-        E_perexpert = alpha * T.log(1 + ((T.dot(X.T, self.weights) + rshp_b) / rshp_nu) ** 2)
-        energy = T.sum(E_perexpert, axis=1).reshape((1, -1))
+        energy_per_expert = alpha * T.log(1 + ((T.dot(X.T, self.weights) + rshp_b) / rshp_nu) ** 2)
+        energy = T.sum(energy_per_expert, axis=1).reshape((1, -1))
         return energy
 
 
     @overrides(Distribution)
     def gen_init_X(self):
-        print("We are now going to remap samples from a generic product of experts to \
-                the model we are actually going to generate samples from")
+        #hack to remap samples from a generic product of experts to
+        #the model we are actually going to generate samples from
         Zinit = np.zeros((self.ndims, self.nbatch))
         for ii in xrange(self.ndims):
             Zinit[ii] = stats.t.rvs(self.nu.get_value()[ii], size=self.nbatch)
@@ -336,5 +336,5 @@ class ProductOfT(Distribution):
         return hash(self.ndims,
                     self.nbasis,
                     hash(tuple(self.nu.get_value())),
-                    hash(tuple(self.weights.get_value())),
-                    hash(tuple(self.bias.get_value())))
+                    hash(tuple(self.weights.get_value().ravel())),
+                    hash(tuple(self.bias.get_value().ravel())))
