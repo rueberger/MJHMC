@@ -177,7 +177,7 @@ class Gaussian(Distribution):
 
     @overrides(Distribution)
     def __hash__(self):
-        return hash((self.ndims, hash(tuple(self.conditioning))))
+        return hash(tuple(self.ndims, hash(tuple(self.conditioning))))
 
 class RoughWell(Distribution):
     def __init__(self, ndims=2, nbatch=100, scale1=100, scale2=4):
@@ -208,7 +208,7 @@ class RoughWell(Distribution):
 
     @overrides(Distribution)
     def __hash__(self):
-        return hash((self.ndims, self.scale1, self.scale2))
+        return hash(tuple(self.ndims, self.scale1, self.scale2))
 
 class MultimodalGaussian(Distribution):
     def __init__(self, ndims=2, nbatch=100, separation=3):
@@ -242,7 +242,7 @@ class MultimodalGaussian(Distribution):
 
     @overrides(Distribution)
     def __hash__(self):
-        return hash(self.ndims, self.separation)
+        return hash(tuple(self.ndims, self.separation))
 
 class TestGaussian(Distribution):
 
@@ -266,7 +266,7 @@ class TestGaussian(Distribution):
 
     @overrides(Distribution)
     def __hash__(self):
-        return hash(self.ndims, self.sigma)
+        return hash(tuple(self.ndims, self.sigma))
 
 
 class ProductOfT(Distribution):
@@ -333,8 +333,8 @@ class ProductOfT(Distribution):
 
     @overrides(Distribution)
     def __hash__(self):
-        return hash(self.ndims,
-                    self.nbasis,
-                    hash(tuple(self.nu.get_value())),
-                    hash(tuple(self.weights.get_value().ravel())),
-                    hash(tuple(self.bias.get_value().ravel())))
+        return hash(tuple(self.ndims,
+                          self.nbasis,
+                          hash(tuple(self.nu.get_value())),
+                          hash(tuple(self.weights.get_value().ravel())),
+                          hash(tuple(self.bias.get_value().ravel()))))
