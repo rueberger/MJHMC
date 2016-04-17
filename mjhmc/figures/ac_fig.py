@@ -35,6 +35,7 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
                                            num_steps=max_steps,
                                            sample_steps=sample_steps,
                                            half_window=True,
+                                           use_cached_var=True,
                                            **control_params)
 
     print('Calculating AutoCorrelation for MJHMC')
@@ -43,6 +44,7 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
                                          sample_steps=sample_steps,
                                          half_window=True,
                                          resample=False,
+                                         use_cached_var=True,
                                          **mjhmc_params)
 
     # lahmc_ac = calculate_autocorrelation(LAHMC, distribution,
