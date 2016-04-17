@@ -6,11 +6,10 @@ import numpy as np
 import theano
 import theano.tensor as T
 
-
 def calculate_autocorrelation(sampler, distribution,
                               num_steps=None, num_grad_steps=None,
                               sample_steps=1, half_window=False,
-                              **kwargs):
+                              use_cached_var=False,**kwargs):
     """
     just a helper function
     refer to the docstrings for the respective methods
@@ -18,10 +17,19 @@ def calculate_autocorrelation(sampler, distribution,
     print "Generating samples..."
     df = sample_to_df(sampler, distribution.reset(), num_steps, num_grad_steps,
                       sample_steps, **kwargs)
-    print "Calculating autocorrelation..."
-    return autocorrelation(df, half_window)
 
-def autocorrelation(history, half_window=False, normalize=True):
+    cached_var = None
+    if use_cached_var:
+        _, emc_var_estimate, true_var_estimate = distribution.load_cache()
+        if sampler.mjhmc:
+            cached_var = emc_var_estimate
+        else:
+            cached_var = true_var_estimate
+
+    print "Calculating autocorrelation..."
+    return autocorrelation(df, half_window, use_cached_var=cached_var)
+
+def autocorrelation(history, half_window=False, normalize=True, cached_var=False):
     theano_ac = compile_autocor_func(half_window)
 
     n_samples = len(history)
@@ -36,20 +44,24 @@ def autocorrelation(history, half_window=False, normalize=True):
     print "Running compiled autocorrelation function..."
     raw_autocor = theano_ac(samples.astype('float32'))
 
-    # variance given assumption of *zero mean*
-    print "Computing sample variance with numpy..."
-    sample_var = np.mean(samples**2, keepdims=True)[0][0]
+
+    if cached_var is None:
+        # variance given assumption of *zero mean*
+        print "Computing sample variance with numpy..."
+        var = np.mean(samples**2, keepdims=True)[0][0]
+    else:
+        var = cached_var
 
     print "Moving result to dataframe"
 
     ac_squeeze = np.squeeze(raw_autocor[0])
     if normalize:
-        ac_squeeze = ac_squeeze / sample_var
+        ac_squeeze = ac_squeeze / var
         # theano doesn't play nice with the first element but it's just the variance
         autocor = np.vstack((1., ac_squeeze.reshape(raw_autocor[0].shape[0], 1)))
     else:
        # theano doesn't play nice with the first element but it's just the variance
-        autocor = np.vstack((sample_var, ac_squeeze.reshape(raw_autocor[0].shape[0], 1)))
+        autocor = np.vstack((var, ac_squeeze.reshape(raw_autocor[0].shape[0], 1)))
 
 
 

@@ -135,6 +135,23 @@ class Distribution(object):
         dEdX = self.dEdX(rshp_X).T[0]
         return -E, -dEdX
 
+    def load_cache(self):
+        """ Loads and returns the cached fair initializations and
+         estimated variances associated with this
+         distribution. Throws an error if the cache does not exist
+
+        :returns: the loaded cache: (fair_initialization, emc_var_estimate, true_var_estimate)
+        :rtype: (np.ndarray, float, float)
+        """
+        distr_name = type(self).__name__
+        distr_hash = hash(self)
+        file_prefix = '../../initializations'
+        file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
+        with open('{}/{}'.format(file_prefix, file_name)) as cache_file:
+            return pickle.load(cache_file)
+
+
+
 class Gaussian(Distribution):
     def __init__(self, ndims=2, nbatch=100, log_conditioning=6):
         """

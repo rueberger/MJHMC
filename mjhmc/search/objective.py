@@ -52,7 +52,8 @@ def obj_func_helper(sampler, distr, unpack, kwargs):
         "num_grad_steps": num_target_grad_evals,
         "sample_steps": 1,
         "num_steps": None,
-        "half_window": True
+        "half_window": True,
+        "use_cached_var": True
     }
     if unpack:
         kwargs = unpack_params(kwargs)
