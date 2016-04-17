@@ -336,5 +336,5 @@ class ProductOfT(Distribution):
         return hash(self.ndims,
                     self.nbasis,
                     hash(tuple(self.nu.get_value())),
-                    hash(tuple(self.weights)),
-                    hash(tuple(self.bias)))
+                    hash(tuple(self.weights.get_value())),
+                    hash(tuple(self.bias.get_value())))
