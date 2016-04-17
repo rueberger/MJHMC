@@ -6,8 +6,8 @@ import numpy as np
 from copy import deepcopy
 from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
 
-BURN_IN_STEPS = 100
-#BURN_IN_STEPS = int(1E6)
+
+BURN_IN_STEPS = int(1E6)
 VAR_STEPS = int(1E4)
 MAX_N_PARTICLES = 1000
 
@@ -40,18 +40,19 @@ def cache_initialization(distribution):
     """
     distr_name = type(distribution).__name__
     distr_hash = hash(distribution)
-    fair_init, var_estimate = generate_initialization(distribution)
-    file_name = '../../initializations/{}_{}.pickle'.format(distr_name, distr_hash)
-    with open(file_name, 'wb') as cache_file:
-        pickle.dump((fair_init, var_estimate), cache_file)
-    print "Fair initialization for {} saved as {}".format(distr_name, file_name)
-    print "The embedded jump process on {} has estimated variance of {}".format(
-        distr_name, var_estimate)
+    fair_init, emc_var_estimate = generate_initialization(distribution)
 
     # hack to estimate variance of the distribution itself
     distr_copy = deepcopy(distribution)
     distr_copy.nbatch = VAR_STEPS
     distr_copy.gen_init_X()
     true_var_estimate = np.var(distr_copy.Xinit)
+
+    file_name = '../../initializations/{}_{}.pickle'.format(distr_name, distr_hash)
+    with open(file_name, 'wb') as cache_file:
+        pickle.dump((fair_init, emc_var_estimate, true_var_estimate), cache_file)
+    print "Fair initialization for {} saved as {}".format(distr_name, file_name)
+    print "The embedded jump process on {} has estimated variance of {}".format(
+        distr_name, emc_var_estimate)
     print "Meanwhile {} itself has an estimated variance of {}".format(
         distr_name, true_var_estimate)

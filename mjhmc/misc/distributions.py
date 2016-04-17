@@ -83,7 +83,7 @@ class Distribution(object):
         file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
         if file_name in os.listdir(file_prefix):
             with open('{}/{}'.format(file_prefix, file_name)) as cache_file:
-                fair_init, var_estimate = pickle.load(cache_file)
+                fair_init, _, _ = pickle.load(cache_file)
             self.Xinit = fair_init
         else:
             from mjhmc.misc.gen_mj_init import MAX_N_PARTICLES, cache_initialization
