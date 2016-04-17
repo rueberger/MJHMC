@@ -270,35 +270,38 @@ class TestGaussian(Distribution):
 
 
 class ProductOfT(Distribution):
+    """ Provides the product of T experts distribution
+    """
 
-    def __init__(self,ndims=36,nbasis=36,nbatch=100,lognu=None,W=None,b=None):
+    def __init__(self, ndims=36, nbasis=36, nbatch=100, lognu=None, W=None, b=None):
         """ Product of T experts, assumes a fixed W that is sparse and alpha that is
         """
         if ndims != nbasis:
             raise NotImplementedError("Initializer only works for ndims == nbasis")
-        self.ndims=ndims
-        self.nbasis=nbasis
-        self.nbatch=nbatch
-        if W is  None:
-            # rand_val = rand(ndims,nbasis,density=0.125)
-            # W = rand_val + rand_val.T
+        self.ndims = ndims
+        self.nbasis = nbasis
+        self.nbatch = nbatch
+        if W is None:
             W = np.eye(ndims, nbasis)
-        self.W = theano.shared(np.array(W,dtype='float32'),'W')
+        self.weights = theano.shared(np.array(W, dtype='float32'), 'W')
         if lognu is None:
-            pre_nu = np.random.rand(nbasis,)*2 + 2.1
+            pre_nu = np.random.rand(nbasis,) * 2 + 2.1
         else:
             pre_nu = np.exp(lognu)
-        self.nu = theano.shared(np.array(pre_nu,dtype='float32'),'nu')
+        self.nu = theano.shared(np.array(pre_nu, dtype='float32'), 'nu')
         if b is None:
             b = np.zeros((nbasis,))
-        self.b = theano.shared(np.array(b,dtype='float32'),'b')
-        X = T.matrix()
-        E = self.E_def(X)
-        dEdX = T.grad(T.sum(E),X)
+        self.bias = theano.shared(np.array(b, dtype='float32'), 'b')
+
+        state = T.matrix()
+        energy = self.E_def(state)
+        gradient = T.grad(T.sum(energy), state)
+
         #@overrides(Distribution)
-        self.E_val=theano.function([X],E,allow_input_downcast=True)
+        self.E_val = theano.function([state], energy, allow_input_downcast=True)
         #@overrides(Distribution)
-        self.dEdX_val = theano.function([X],dEdX,allow_input_downcast=True)
+        self.dEdX_val = theano.function([state], gradient, allow_input_downcast=True)
+
         super(ProductOfT,self).__init__(ndims,nbatch)
 
     def E_def(self,X):
@@ -309,12 +312,12 @@ class ProductOfT(Distribution):
                 biases [# experts] b
                 degrees of freedom [# experts] nu
         """
-        rshp_b = self.b.reshape((1,-1))
+        rshp_b = self.bias.reshape((1,-1))
         rshp_nu = self.nu.reshape((1, -1))
         alpha = (rshp_nu + 1.)/2.
-        E_perexpert = alpha*T.log(1 + ((T.dot(X.T,self.W) + rshp_b)/rshp_nu)**2)
-        E = T.sum(E_perexpert, axis=1).reshape((1,-1))
-        return E
+        E_perexpert = alpha * T.log(1 + ((T.dot(X.T, self.weights) + rshp_b) / rshp_nu) ** 2)
+        energy = T.sum(E_perexpert, axis=1).reshape((1, -1))
+        return energy
 
 
     @overrides(Distribution)
@@ -325,9 +328,13 @@ class ProductOfT(Distribution):
         for ii in xrange(self.ndims):
             Zinit[ii] = stats.t.rvs(self.nu.get_value()[ii], size=self.nbatch)
 
-        Yinit = Zinit - self.b.get_value().reshape((-1, 1))
-        self.Xinit = np.dot(np.linalg.inv(self.W.get_value()), Yinit)
+        Yinit = Zinit - self.bias.get_value().reshape((-1, 1))
+        self.Xinit = np.dot(np.linalg.inv(self.weights.get_value()), Yinit)
 
     @overrides(Distribution)
     def __hash__(self):
-        return hash(self.ndims, self.nbasis, self.lognu, hash(tuple(self.W)), hash(tuple(self.b)))
+        return hash(self.ndims,
+                    self.nbasis,
+                    hash(tuple(self.nu.get_value())),
+                    hash(tuple(self.weights)),
+                    hash(tuple(self.bias)))
