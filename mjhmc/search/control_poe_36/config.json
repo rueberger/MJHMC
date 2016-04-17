@@ -1,7 +1,7 @@
 {
     "language"        : "PYTHON",
     "main-file"       : "mjhmc_objective.py",
-    "experiment-name" : "Control_POE_36_W_identity_gpu_autocor2_ver2",
+    "experiment-name" : "Control_POE_36_W_identity_gpu_autocor2_ver3",
     "likelihood"      : "GAUSSIAN",
     "variables" : {
         "num_leapfrog_steps" : {
