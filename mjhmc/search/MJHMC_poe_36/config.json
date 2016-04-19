@@ -1,7 +1,7 @@
 {
     "language"        : "PYTHON",
     "main-file"       : "mjhmc_objective.py",
-    "experiment-name" : "MJHMC_POE_36_Wid_GPUautocor_cachedXinit",
+    "experiment-name" : "MJHMC_POE_36_Wid_GPUautocor_cachedXinit_ver3",
     "likelihood"      : "GAUSSIAN",
     "variables" : {
         "num_leapfrog_steps" : {
