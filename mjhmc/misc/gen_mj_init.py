@@ -38,6 +38,7 @@ def cache_initialization(distribution):
     :returns:
     :rtype:
     """
+    print('Caching Initializations')
     distr_name = type(distribution).__name__
     distr_hash = hash(distribution)
     fair_init, emc_var_estimate = generate_initialization(distribution)
@@ -49,6 +50,8 @@ def cache_initialization(distribution):
     true_var_estimate = np.var(distr_copy.Xinit)
 
     file_name = '../../initializations/{}_{}.pickle'.format(distr_name, distr_hash)
+    print('Saving initializations into a pkl file')
+    print('This is the file name {}'.format(file_name))
     with open(file_name, 'wb') as cache_file:
         pickle.dump((fair_init, emc_var_estimate, true_var_estimate), cache_file)
     print "Fair initialization for {} saved as {}".format(distr_name, file_name)

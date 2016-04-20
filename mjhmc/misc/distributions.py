@@ -68,6 +68,7 @@ class Distribution(object):
         if self.mjhmc:
             self.cached_init_X()
         else:
+            print('Generating samples on the fly')
             self.gen_init_X()
 
     def cached_init_X(self):
@@ -79,6 +80,8 @@ class Distribution(object):
         """
         distr_name = type(self).__name__
         distr_hash = hash(self)
+        print('Inside cached_init_X')
+        print os.getcwd()
         file_prefix = '../../initializations'
         file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
         if file_name in os.listdir(file_prefix):
@@ -145,6 +148,7 @@ class Distribution(object):
         """
         distr_name = type(self).__name__
         distr_hash = hash(self)
+        print os.getcwd()
         file_prefix = '../../initializations'
         file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
         with open('{}/{}'.format(file_prefix, file_name)) as cache_file:
@@ -322,6 +326,7 @@ class ProductOfT(Distribution):
 
     @overrides(Distribution)
     def gen_init_X(self):
+        print('Generating samples from the POE model on the fly')
         #hack to remap samples from a generic product of experts to
         #the model we are actually going to generate samples from
         Zinit = np.zeros((self.ndims, self.nbatch))

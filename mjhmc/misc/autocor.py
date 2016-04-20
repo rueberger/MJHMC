@@ -165,7 +165,9 @@ def sample_to_df(sampler, distribution, num_steps=None, num_grad_steps=None,
     # {time : {'X': samples, 'num grad' dEdX evals, 'num energy': E evals}}
     recs = {}
     smp.burn_in()
+    print('Resetting distribution object')
     distribution.reset()
+    print('Distribution object reset')
     for t in xrange(num_steps):
         recs[t] = {
             'X': smp.sample(sample_steps),
