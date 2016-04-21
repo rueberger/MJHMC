@@ -44,3 +44,15 @@ def normalize_by_row(matrix):
     np.place(row_sums, row_sums == 0, 1)
     norm_matrix = matrix / row_sums[:, np.newaxis]
     return norm_matrix
+
+def package_path():
+    """ Returns the absolute path to this package base directory
+
+    :returns: absolute path to mjhmc/
+    :rtype: string
+
+    """
+    import sys
+    mjhmc_path = [path for path in sys.path if 'MJHMC' in path][0]
+    prefix = mjhmc_path.split('MJHMC')[0]
+    return "{}MJHMC".format(prefix)

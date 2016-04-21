@@ -4,7 +4,7 @@
  Any user-specified distributions should inherit from Distribution
 """
 import numpy as np
-from .utils import overrides
+from .utils import overrides, package_path
 import theano.tensor as T
 import theano
 import os
@@ -79,8 +79,8 @@ class Distribution(object):
         """
         distr_name = type(self).__name__
         distr_hash = hash(self)
-        file_prefix = '../../initializations'
         file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
+        file_prefix = '{}/initializations'.format(package_path())
         if file_name in os.listdir(file_prefix):
             with open('{}/{}'.format(file_prefix, file_name)) as cache_file:
                 fair_init, _, _ = pickle.load(cache_file)
