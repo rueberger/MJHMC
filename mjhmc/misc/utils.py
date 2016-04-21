@@ -54,5 +54,7 @@ def package_path():
     """
     import sys
     mjhmc_path = [path for path in sys.path if 'MJHMC' in path][0]
+    if mjhmc_path is None:
+        raise Exception('You must include MJHMC in your PYTHON_PATH')
     prefix = mjhmc_path.split('MJHMC')[0]
     return "{}MJHMC".format(prefix)
