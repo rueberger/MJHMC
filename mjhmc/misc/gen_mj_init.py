@@ -7,7 +7,7 @@ from copy import deepcopy
 from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
 from .utils import package_path
 
-BURN_IN_STEPS = int(1E6)
+BURN_IN_STEPS = int(1E3)
 VAR_STEPS = int(1E4)
 MAX_N_PARTICLES = 1000
 
