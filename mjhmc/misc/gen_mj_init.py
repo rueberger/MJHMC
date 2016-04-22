@@ -5,7 +5,7 @@ import pickle
 import numpy as np
 from copy import deepcopy
 from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
-
+from .utils import package_path
 
 BURN_IN_STEPS = int(1E6)
 VAR_STEPS = int(1E4)
@@ -48,8 +48,9 @@ def cache_initialization(distribution):
     distr_copy.gen_init_X()
     true_var_estimate = np.var(distr_copy.Xinit)
 
-    file_name = '../../initializations/{}_{}.pickle'.format(distr_name, distr_hash)
-    with open(file_name, 'wb') as cache_file:
+    file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
+    file_prefix = '{}/initializations'.format(package_path())
+    with open('{}/{}'.format(file_prefix, file_name), 'wb') as cache_file:
         pickle.dump((fair_init, emc_var_estimate, true_var_estimate), cache_file)
     print "Fair initialization for {} saved as {}".format(distr_name, file_name)
     print "The embedded jump process on {} has estimated variance of {}".format(
