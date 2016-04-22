@@ -145,8 +145,8 @@ class Distribution(object):
         """
         distr_name = type(self).__name__
         distr_hash = hash(self)
-        file_prefix = '../../initializations'
         file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
+        file_prefix = '{}/initializations'.format(package_path())
         with open('{}/{}'.format(file_prefix, file_name)) as cache_file:
             return pickle.load(cache_file)
 
