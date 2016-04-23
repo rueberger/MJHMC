@@ -42,16 +42,17 @@ class HMCBase(object):
         :returns: a new instance
         :rtype: HMCBase
         """
-        distribution.mjhmc = False
         # do not execute this block if I am an instance of MarkovJumpHMC
         if not isinstance(self, MarkovJumpHMC):
             if isinstance(distribution, Distribution):
+                distribution.mjhmc = False
                 distribution.reset()
                 self.ndims = distribution.Xinit.shape[0]
                 self.nbatch = distribution.Xinit.shape[1]
                 self.energy_func = distribution.E
                 self.grad_func = distribution.dEdX
                 self.state = HMCState(distribution.Xinit.copy(), self)
+                self.distribution = distribution
             else:
                 assert Xinit is not None
                 assert E is not None
@@ -211,6 +212,7 @@ class ContinuousTimeHMC(HMCBase):
             self.energy_func = distribution.E
             self.grad_func = distribution.dEdX
             self.state = HMCState(distribution.Xinit.copy(), self)
+            self.distribution = distribution
         else:
             raise NotImplementedError(
                 ("Unfortunately, you must define your distribution by"

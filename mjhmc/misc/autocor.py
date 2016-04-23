@@ -21,7 +21,7 @@ def calculate_autocorrelation(sampler, distribution,
     cached_var = None
     if use_cached_var:
         _, emc_var_estimate, true_var_estimate = distribution.load_cache()
-        if sampler.mjhmc:
+        if sampler.distribution.mjhmc:
             cached_var = emc_var_estimate
         else:
             cached_var = true_var_estimate
