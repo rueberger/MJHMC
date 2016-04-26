@@ -15,19 +15,30 @@ def calculate_autocorrelation(sampler, distribution,
     refer to the docstrings for the respective methods
     """
     print "Generating samples..."
-    df = sample_to_df(sampler, distribution.reset(), num_steps, num_grad_steps,
+    smp,df = sample_to_df(sampler, distribution.reset(), num_steps, num_grad_steps,
                       sample_steps, **kwargs)
 
     cached_var = None
+    try:
+        if smp.distribution.mjhmc:
+            print("sampler.distribution.mjhmc exists")
+    except:
+        print("Sampler.distriution.mjhmc does not exist")
     if use_cached_var:
+        print("Using cached variance")
         _, emc_var_estimate, true_var_estimate = distribution.load_cache()
-        if sampler.distribution.mjhmc:
+        try:
+            if smp.distribution.mjhmc:
+                print("sampler.distribution.mjhmc exists")
+        except:
+            print("Sampler.distriution.mjhmc does not exist")
+        if smp.distribution.mjhmc:
             cached_var = emc_var_estimate
         else:
             cached_var = true_var_estimate
 
     print "Calculating autocorrelation..."
-    return autocorrelation(df, half_window, use_cached_var=cached_var)
+    return autocorrelation(df, half_window, cached_var=cached_var)
 
 def autocorrelation(history, half_window=False, normalize=True, cached_var=False):
     theano_ac = compile_autocor_func(half_window)
@@ -183,6 +194,6 @@ def sample_to_df(sampler, distribution, num_steps=None, num_grad_steps=None,
         assert df.iloc[-1]['num grad'] >= num_grad_steps
         truncated_df = df.loc[:, 'num grad'] >= num_grad_steps
         trunc_idx = truncated_df[truncated_df].index[0]
-        return df.loc[:trunc_idx]
+        return smp,df.loc[:trunc_idx]
     else:
-        return df
+        return smp,df
