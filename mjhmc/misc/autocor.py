@@ -49,6 +49,10 @@ def autocorrelation(history, half_window=False, normalize=True, cached_var=False
     samples = np.zeros((n_dims, n_batch, n_samples))
 
     print "Copying samples to array..."
+    print("Shape of history.loc[idx]['X'],n_samples")
+    print history.loc[0]['X'].shape
+    print n_samples
+    print np.arange(1,n_samples/2, -1)
     for idx in range(n_samples):
         samples[:, :, idx] = history.loc[idx]['X']
 
