@@ -168,7 +168,7 @@ def plot_concat_imgs(imgs, border_thickness=2, axis=None, normalize=False):
     else:
         plt.imshow(concat_rf, interpolation='none', aspect='auto')
 
-def ac_plot():
+def ac_plot(n_samples=5000):
     """ Plots the autocorrelation for the best found parameters of the 36
     dimensional product of experts
 
@@ -182,4 +182,4 @@ def ac_plot():
 
     np.random.seed(2015)
     poe = ProductOfT(nbatch=25,ndims=ndims,nbasis=nbasis)
-    plot_best(poe, num_steps=int(5E4), update_params=False)
+    plot_best(poe, num_steps=n_samples, update_params=False)
