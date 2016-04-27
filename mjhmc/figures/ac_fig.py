@@ -97,6 +97,7 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
     plt.show()
 
 def load_params(distribution):
+    from mjhmc.misc.utils import package_path
     dist_to_extension = {
         'RoughWell' : "rw",
         'Gaussian' : 'log_gauss',
@@ -105,9 +106,10 @@ def load_params(distribution):
     }
     file_name = "params.json"
     extension = dist_to_extension[type(distribution).__name__]
-    with open("../search/control_{}/{}".format(extension, file_name), 'r') as control:
+    prefix = package_path()
+    with open("{}/search/control_{}/{}".format(prefix, extension, file_name), 'r') as control:
         control_params = json.load(control)
-    with open("../search/MJHMC_{}/{}".format(extension, file_name), 'r') as mjhmc:
+    with open("{}/search/MJHMC_{}/{}".format(prefix, extension, file_name), 'r') as mjhmc:
         mjhmc_params = json.load(mjhmc)
 #    with open("../search/LAHMC_{}/{}".format(extension, file_name), 'r') as lahmc:
  #       lahmc_params = json.load(lahmc)
