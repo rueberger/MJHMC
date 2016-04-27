@@ -48,7 +48,7 @@ def normalize_by_row(matrix):
 def package_path():
     """ Returns the absolute path to this package base directory
 
-    :returns: absolute path to mjhmc/
+    :returns: absolute path to MJHMC/
     :rtype: string
 
     """

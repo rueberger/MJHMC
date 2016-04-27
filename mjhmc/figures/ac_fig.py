@@ -107,9 +107,9 @@ def load_params(distribution):
     file_name = "params.json"
     extension = dist_to_extension[type(distribution).__name__]
     prefix = package_path()
-    with open("{}/search/control_{}/{}".format(prefix, extension, file_name), 'r') as control:
+    with open("{}/mjhmc/search/control_{}/{}".format(prefix, extension, file_name), 'r') as control:
         control_params = json.load(control)
-    with open("{}/search/MJHMC_{}/{}".format(prefix, extension, file_name), 'r') as mjhmc:
+    with open("{}/mjhmc/search/MJHMC_{}/{}".format(prefix, extension, file_name), 'r') as mjhmc:
         mjhmc_params = json.load(mjhmc)
 #    with open("../search/LAHMC_{}/{}".format(extension, file_name), 'r') as lahmc:
  #       lahmc_params = json.load(lahmc)
