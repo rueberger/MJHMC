@@ -1,4 +1,4 @@
-"""
+A"""
  This module contains the Distribution class which defines a standard interface for distributions
  It also provides several implemented distributions, which inherit from Distribution
  Any user-specified distributions should inherit from Distribution
@@ -84,7 +84,7 @@ class Distribution(object):
         if file_name in os.listdir(file_prefix):
             with open('{}/{}'.format(file_prefix, file_name)) as cache_file:
                 fair_init, _, _ = pickle.load(cache_file)
-            self.Xinit = fair_init
+            self.Xinit = fair_init[:, :self.nbatch]
         else:
             from mjhmc.misc.gen_mj_init import MAX_N_PARTICLES, cache_initialization
             # modify this object so it can be used by gen_mj_init
