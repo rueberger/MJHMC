@@ -1,4 +1,4 @@
-A"""
+"""
  This module contains the Distribution class which defines a standard interface for distributions
  It also provides several implemented distributions, which inherit from Distribution
  Any user-specified distributions should inherit from Distribution
