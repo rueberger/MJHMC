@@ -85,11 +85,10 @@ class HMCState(object):
 
     def leapfrog(self):
         """ A single leapfrog step for X and V """
-        idx = self.active_idx
-        self.V[:, idx] += -self.parent.epsilon/2. * self.dEdX[:, idx]
-        self.X[:, idx] += self.parent.epsilon * self.V[:, idx]
+        self.V[:, self.active_idx] += -self.parent.epsilon/2. * self.dEdX[:, self.active_idx]
+        self.X[:, self.active_idx] += self.parent.epsilon * self.V[:, self.active_idx]
         self.update_dEdX()
-        self.V[:, idx] += -self.parent.epsilon/2. * self.dEdX[:, idx]
+        self.V[:, self.active_idx] += -self.parent.epsilon/2. * self.dEdX[:, self.active_idx]
 
     def L(self):
         """ Run the leapfrog operator for M leapfrog steps
