@@ -15,9 +15,11 @@ def calculate_autocorrelation(sampler, distribution,
     just a helper function
     refer to the docstrings for the respective methods
     """
-    print "Generating samples..."
+    print "Now generating samples..."
+    start_time = time()
     smp, sample_df = sample_to_df(sampler, distribution.reset(), num_steps, num_grad_steps,
                       sample_steps, **kwargs)
+    print "Took {} seconds".format(time() - start_time)
 
     cached_var = None
     if use_cached_var:
