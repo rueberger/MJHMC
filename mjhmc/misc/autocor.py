@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 import theano
 import theano.tensor as T
+from time import time
 
 def calculate_autocorrelation(sampler, distribution,
                               num_steps=None, num_grad_steps=None,
@@ -31,23 +32,26 @@ def calculate_autocorrelation(sampler, distribution,
     return autocorrelation(sample_df, half_window, cached_var=cached_var)
 
 def autocorrelation(history, half_window=False, normalize=True, cached_var=None):
+    print "Now compiling autocorrelation function"
+    start_time = time()
     theano_ac = compile_autocor_func(half_window)
+    print "Took {} seconds".format(time() - start_time)
 
     n_samples = len(history)
     n_dims, n_batch = history.loc[0]['X'].shape
 
     samples = np.zeros((n_dims, n_batch, n_samples))
 
-    print "Copying samples to array..."
-    print("Shape of history.loc[idx]['X'],n_samples")
-    print history.loc[0]['X'].shape
-    print n_samples
-    print np.arange(1,n_samples/2, -1)
+    print "Now copying samples to array..."
+    start_time = time()
     for idx in range(n_samples):
         samples[:, :, idx] = history.loc[idx]['X']
+    print "Took {} seconds".format(time() - start_time)
 
-    print "Running compiled autocorrelation function..."
+    print "Now running compiled autocorrelation function..."
+    start_time = time()
     raw_autocor = theano_ac(samples.astype('float32'))
+    print "Took {} seconds".format(time() - start_time)
 
 
     if cached_var is None:
@@ -57,8 +61,8 @@ def autocorrelation(history, half_window=False, normalize=True, cached_var=None)
     else:
         var = cached_var
 
-    print "Moving result to dataframe"
-
+    print "Now moving result to dataframe"
+    start_time = time()
     ac_squeeze = np.squeeze(raw_autocor[0])
     if normalize:
         ac_squeeze = ac_squeeze / var
@@ -78,6 +82,7 @@ def autocorrelation(history, half_window=False, normalize=True, cached_var=None)
     else:
         ac_df = history[:-1]
     ac_df.loc[:, 'autocorrelation'] = autocor
+    print "Took {} seconds".format(time() - start_time)
     return ac_df[['num energy', 'num grad', 'autocorrelation']]
 
 
