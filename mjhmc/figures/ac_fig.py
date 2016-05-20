@@ -88,11 +88,11 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
         nuts_ac['autocorrelation'].plot(label='NUTS')
 
 
-    control_ac['autocorrelation'].plot(label='Control HMC;\n {}'.format(str(control_params)))
-    mjhmc_ac['autocorrelation'].plot(label='Markov Jump HMC;\n {}'.format(str(mjhmc_params)))
+    # control_ac['autocorrelation'].plot(label='Control HMC;\n {}'.format(str(control_params)))
+    # mjhmc_ac['autocorrelation'].plot(label='Markov Jump HMC;\n {}'.format(str(mjhmc_params)))
 
-    #control_ac['autocorrelation'].plot(label='Control HMC')
-    #mjhmc_ac['autocorrelation'].plot(label='Markov Jump HMC')
+    control_ac['autocorrelation'].plot(label='Control HMC')
+    mjhmc_ac['autocorrelation'].plot(label='Markov Jump HMC')
 
     plt.xlabel("Gradient Evaluations")
     plt.ylabel("Autocorrelation")
