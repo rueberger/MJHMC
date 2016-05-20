@@ -23,7 +23,7 @@ std_param1 = {'epsilon': 1, 'beta': 0.1, 'num_leapfrog_steps': 10}
 std_param2 = {'epsilon': 1, 'beta': .8, 'num_leapfrog_steps': 10}
 
 def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=3000,
-            sample_steps=1, truncate=False, truncate_at=0.0, nuts=False):
+            sample_steps=1, truncate=False, truncate_at=0.0, nuts=False, truncate_idx=None):
     """
     distribution is an instantiated distribution object
     runs the sampler for max steps and then truncates the output to autocorrelation 0.5
@@ -62,17 +62,23 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
     if truncate:
         control_trunc = control_ac.loc[:, 'autocorrelation'] < truncate_at
         mjhmc_trunc = mjhmc_ac.loc[:, 'autocorrelation'] < truncate_at
-        if nuts:
-            nuts_trunc = nuts_ac.loc[:, 'autocorrelation'] < truncate_at
-            trunc_idx = max(control_trunc[control_trunc].index[0],
-                            mjhmc_trunc[mjhmc_trunc].index[0])
-                            # nuts_trunc[nuts_trunc].index[0])
-            nuts_ac = nuts_ac.loc[:trunc_idx]
+        if truncate_idx is None:
+            if nuts:
+                nuts_trunc = nuts_ac.loc[:, 'autocorrelation'] < truncate_at
+                trunc_idx = max(control_trunc[control_trunc].index[0],
+                                mjhmc_trunc[mjhmc_trunc].index[0])
+                                # nuts_trunc[nuts_trunc].index[0])
+                nuts_ac = nuts_ac.loc[:trunc_idx]
+            else:
+                trunc_idx = max(control_trunc[control_trunc].index[0],
+                                mjhmc_trunc[mjhmc_trunc].index[0])
         else:
-            trunc_idx = max(control_trunc[control_trunc].index[0],
-                            mjhmc_trunc[mjhmc_trunc].index[0])
+            trunc_idx = truncate_idx
         control_ac = control_ac.loc[:trunc_idx]
         mjhmc_ac = mjhmc_ac.loc[:trunc_idx]
+
+
+
 
 
     control_ac.index = control_ac['num grad']
