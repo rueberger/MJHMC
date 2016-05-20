@@ -84,7 +84,7 @@ class Distribution(object):
         if file_name in os.listdir(file_prefix):
             with open('{}/{}'.format(file_prefix, file_name)) as cache_file:
                 fair_init, _, _ = pickle.load(cache_file)
-            self.Xinit = fair_init
+            self.Xinit = fair_init[:, :self.nbatch]
         else:
             from mjhmc.misc.gen_mj_init import MAX_N_PARTICLES, cache_initialization
             # modify this object so it can be used by gen_mj_init
@@ -338,3 +338,30 @@ class ProductOfT(Distribution):
                      hash(tuple(self.nu.get_value())),
                      hash(tuple(self.weights.get_value().ravel())),
                      hash(tuple(self.bias.get_value().ravel()))))
+
+class Funnel(Distribution):
+    """
+    Provides a handle for the Funnel distribution as specified
+    by Neal, 2003
+    """
+    def __init__(self):
+        state = T.matrix()
+        energy = self.E_val(state)
+        gradient = T.grad(T.sum(energy),state)
+        self.E_val = theano.function([state],energy,allow_input_downcast=True)
+        self.dEdX_val = theano.function([state],energy,allow_input_downcast=True)
+        super(Funnel,self).__init__(nbatch)
+
+
+    def E_val(self,X):
+        """
+        Energy function for a 10 Dimensional funnel distribution
+        where the first dimenion sets the mean for the other dimensions
+        which are all sampled from a Gaussian
+        """
+        term1 = (1/3)*(1/(X[0,:]**9))*(1/(T.sqrt(2*np.pi)))
+        term2 = T.exp((-X[0,:]**2)/(2*(3**2)))
+        term3 = T.sum(T.exp((-X[1:,:]**2)/(2*(X[0,:]**2))),axis=0)
+        return T.log(term1+term2+term3)
+
+
