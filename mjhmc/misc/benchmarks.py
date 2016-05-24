@@ -8,7 +8,7 @@ plt.ion()
 import time
 
 
-from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC. ControlHMC
+from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
 from mjhmc.misc.distributions import ProductOfT, Gaussian
 from mjhmc.misc.autocor import calculate_autocorrelation
 
@@ -126,7 +126,7 @@ def autocorrelation_vs_n_samples(sampler_cls=MarkovJumpHMC,
     axis.set_xlabel("batch size")
     axis.set_title("{}: autocorrelation compute time by number of samples".format(sampler_cls.__name__))
 
-def time_per_sample(sampler, trials=10, **kwargs):
+def time_per_sample(sampler, trials=10, n_samples=1000):
     """ Helper function. Computes average time per sample
 
     :param trials: number of trials to average over
@@ -134,11 +134,10 @@ def time_per_sample(sampler, trials=10, **kwargs):
     :returns: the average time per sample
     :rtype: float
     """
-    N_SAMPLES = 1000
     times = np.zeros(trials)
     for tr_idx in xrange(trials):
         t_i = time.time()
-        sampler.sample(nsamples=N_SAMPLES, **kwargs)
+        sampler.sample(n_samples)
         t_f = time.time()
         times[tr_idx] = t_f - t_i
     return np.mean(times)
