@@ -175,7 +175,7 @@ class LambdaDistribution(Distribution):
 
 
     #pylint: disable=too-many-arguments
-    def __init__(self, ndims=2, nbatch=100, energy_func=None, energy_grad_func=None, init=None, name=None):
+    def __init__(self, energy_func=None, energy_grad_func=None, init=None, name=None):
         """ Creates an anonymous distribution object.
 
         :param ndims: the dimension of the state space for this distribution
@@ -193,7 +193,7 @@ class LambdaDistribution(Distribution):
         self.energy_grad_func = energy_grad_func
         self.init = init
         self.name = name or str(np.random())
-        super(LambdaDistribution, self).__init__(ndims=ndims, nbatch=nbatch)
+        super(LambdaDistribution, self).__init__(ndims=init.shape[0], nbatch=init.shape[1])
 
     @overrides(Distribution)
     def E_val(self, X):
@@ -330,11 +330,13 @@ class TestGaussian(Distribution):
     def __hash__(self):
         return hash((self.ndims, self.sigma))
 
+#pylint: disable=too-many-instance-attributes
 
 class ProductOfT(Distribution):
     """ Provides the product of T experts distribution
     """
 
+    #pylint: disable=too-many-arguments
     def __init__(self, ndims=36, nbasis=36, nbatch=100, lognu=None, W=None, b=None):
         """ Product of T experts, assumes a fixed W that is sparse and alpha that is
         """
