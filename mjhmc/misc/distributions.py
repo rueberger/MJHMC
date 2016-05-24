@@ -205,7 +205,7 @@ class LambdaDistribution(Distribution):
 
     @overrides(Distribution)
     def gen_init_X(self):
-        self.Xinit = init
+        self.Xinit = self.init
 
     @overrides(Distribution)
     def __hash__(self):
