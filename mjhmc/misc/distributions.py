@@ -1,7 +1,8 @@
 """
- This module contains the Distribution class which defines a standard interface for distributions
- It also provides several implemented distributions, which inherit from Distribution
- Any user-specified distributions should inherit from Distribution
+ This module contains the Distribution class which defines a standard
+ interface for distributions It also provides several implemented
+ distributions, which inherit from Distribution Any user-specified
+ distributions should inherit from Distribution
 """
 import numpy as np
 from .utils import overrides, package_path
@@ -13,15 +14,24 @@ import pickle
 
 class Distribution(object):
     """
-    Interface for distributions
+    Interface/abstract class for distributions.
     Any user-specified distributions should be defined by inheriting from this class and
-     overriding the appropriate methods
+     overriding the appropriate methods.
     """
 
-    def __init__(self, ndims=2, nbatch=100, mjhmc=False):
+    def __init__(self, ndims=2, nbatch=100):
+        """ Creates a Distribution object
+
+        :param ndims: the dimension of the state space for this distribution
+        :param nbatch: the number of sampling particles to run simultaneously
+        :returns: a Distribution object
+        :rtype: Distribution
+
+        """
+
         self.ndims = ndims
         self.nbatch = nbatch
-        self.mjhmc = mjhmc
+        self.mjhmc = None
         self.init_X()
         self.E_count = 0
         self.dEdX_count = 0
@@ -38,6 +48,7 @@ class Distribution(object):
         Subclasses should implement this with the correct energy function
         """
         raise NotImplementedError()
+
 
     def dEdX(self, X):
         self.dEdX_count += X.shape[1]
@@ -109,10 +120,6 @@ class Distribution(object):
 
         :returns: None
         :rtype: None
-
-        print('Loading samples from cached file for discrete case')
-        df = pickle.load(open('poe_ndims_36_nbasis_36_nsamples_10000.pkl','r'))
-        self.Xinit = df.as_matrix()
         """
         raise NotImplementedError()
 
@@ -149,6 +156,61 @@ class Distribution(object):
         file_prefix = '{}/initializations'.format(package_path())
         with open('{}/{}'.format(file_prefix, file_name)) as cache_file:
             return pickle.load(cache_file)
+
+class LambdaDistribution(Distribution):
+    """ An `anonymous' distribution object for quick
+    experimentation. Due to the initialization time that is required
+    at first run it, one shouldn't use this object in the
+    long-term. Rather create your own distribution class that inherits
+    from Distribution.
+
+    You should give your LambdaDistribution objects a name. Use a
+    descriptive name, and use the same for functionally equivalent
+    LambdaDistributions - the hash of the name is used to label the
+    initialization information which is generated at first run time of
+    a new distribution. This requirement is a side effect of the
+    unfortunate fact that there is no computable hash function which
+    assigns functionally identical programs to the same number.
+    """
+
+
+    #pylint: disable=too-many-arguments
+    def __init__(self, ndims=2, nbatch=100, energy_func=None, energy_grad_func=None, init=None, name=None):
+        """ Creates an anonymous distribution object.
+
+        :param ndims: the dimension of the state space for this distribution
+        :param nbatch: the number of sampling particles to run simultaneously
+        :param energy_func: function specifying the energy
+        :param energy_grad_func: function specifying gradient of the energy
+        :param name: name of this distribution. use the same name for
+          functionally identical distributions
+        :param init: fair initialization for this distribution. array of shape (ndims, nbatch)
+        :returns: an anonymous distribution object
+        :rtype: LambdaDistribution
+
+        """
+        self.energy_func = energy_func
+        self.energy_grad_func = energy_grad_func
+        self.init = init
+        self.name = name or str(np.random())
+        super(LambdaDistribution, self).__init__(ndims=ndims, nbatch=nbatch)
+
+    @overrides(Distribution)
+    def E_val(self, X):
+        return np.sum(X*np.dot(self.J,X), axis=0).reshape((1,-1))/2.
+
+    @overrides(Distribution)
+    def dEdX_val(self, X):
+        return np.dot(self.J,X)/2. + np.dot(self.J.T,X)/2.
+
+    @overrides(Distribution)
+    def gen_init_X(self):
+        self.Xinit = init
+
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash((self.ndims, hash(tuple(self.conditioning))))
+
 
 
 
@@ -363,5 +425,3 @@ class Funnel(Distribution):
         term2 = T.exp((-X[0,:]**2)/(2*(3**2)))
         term3 = T.sum(T.exp((-X[1:,:]**2)/(2*(X[0,:]**2))),axis=0)
         return T.log(term1+term2+term3)
-
-
