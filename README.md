@@ -30,7 +30,7 @@ Xinit = np.random.randn(2,100)
 anonymous_gaussian = LambdaDistribution(energy_func=E, energy_grad_func=dEdX, init=Xinit, name='IsotropicGaussian')
 
 # Initialize the sampler
-mjhmc = MarkovJumpHMC(distribution=anonymous_`gaussian)
+mjhmc = MarkovJumpHMC(distribution=anonymous_gaussian)
 # Perform 10 sampling steps for all 100 particles
 # Returns an array of samples with shape (ndims, num_steps * num_particles), in this case (2, 1000)
 X = mjhmc.sample(num_steps = 10)
