@@ -408,7 +408,7 @@ class Funnel(Distribution):
     Provides a handle for the Funnel distribution as specified
     by Neal, 2003
     """
-    def __init__(self):
+    def __init__(self,nbatch=5):
         state = T.matrix()
         energy = self.E_val(state)
         gradient = T.grad(T.sum(energy),state)
@@ -427,3 +427,11 @@ class Funnel(Distribution):
         term2 = T.exp((-X[0,:]**2)/(2*(3**2)))
         term3 = T.sum(T.exp((-X[1:,:]**2)/(2*(X[0,:]**2))),axis=0)
         return T.log(term1+term2+term3)
+
+    @overrides(Distribution)
+    def gen_init_X(self):
+        #but we know how to exactly generate samples from this distribution
+        #so, we shall
+        y = np.random.normal(scale=3.0,size=(1,self.nbatch))
+        x = np.random.normal(scale=np.exp(y/2.0),size=(9,self.nbatch))
+        return np.vstack((y,x))
