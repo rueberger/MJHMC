@@ -107,7 +107,7 @@ def autocorrelation_vs_n_samples(sampler_cls=MarkovJumpHMC,
     """
     run_time = []
     sample_sizes = np.arange(100, 10000, 250)
-    for n_samples in sample_sizes:
+    for n_samples in izes:
         distribution = distribution_cls(ndims=ndims, nbatch=n_batch)
         print "now running for {} samples".format(n_samples)
         times = np.zeros(n_itrs)
@@ -175,3 +175,20 @@ def sampler_speedometer():
     print "resampled MJHMC theano gradient: {}".format(m_p_r_avg)
     print "not resampled MJHMC theano gradient: {}".format(m_p_nr_avg)
     print "control HMC theano gradient: {}".format(c_p_avg)
+
+
+def check_variance():
+    """ Simple benchmark that estimates the variance a ton of times and writes to file the results
+
+    :returns: Nothing
+    :rtype: None
+    """
+    from mjhmc.misc.gen_mj_init import generate_initialization
+    np.random.seed(2015)
+    poe = ProductOfT(nbatch=100, ndims=36, nbasis=36)
+    var_estimates = []
+    for trial_idx in xrange(100):
+        _, var_estimate = generate_initialization(poe.reset())
+        with open("var_log.txt", 'a') as vlog:
+            vlog.write("Trial {} variance {}".format(trial_idx, var_estimate))
+            vlog.write("Variance of variance estimates so far {}".format(np.var(var_estimates)))
