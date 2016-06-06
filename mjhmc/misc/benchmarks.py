@@ -185,7 +185,7 @@ def check_variance():
     """
     from mjhmc.misc.gen_mj_init import generate_initialization
     np.random.seed(2015)
-    poe = ProductOfT(nbatch=100, ndims=36, nbasis=36)
+    poe = ProductOfT(nbatch=1000, ndims=36, nbasis=36)
     var_estimates = []
     for trial_idx in xrange(100):
         _, var_estimate = generate_initialization(poe.reset())
