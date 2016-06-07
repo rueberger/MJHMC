@@ -22,12 +22,20 @@ def generate_initialization(distribution):
         type(distribution).__name__, BURN_IN_STEPS))
     assert BURN_IN_STEPS > VAR_STEPS
     assert distribution.nbatch == MAX_N_PARTICLES
-    mjhmc = MarkovJumpHMC(distribution=distribution)
+    mjhmc = MarkovJumpHMC(distribution=distribution, resample=False)
     for _ in xrange(BURN_IN_STEPS - VAR_STEPS):
         mjhmc.sampling_iteration()
-    mjhmc.resample = False
-    samples = mjhmc.sample(n_samples=VAR_STEPS)
-    var_estimate = np.var(samples)
+    assert mjhmc.resample == False
+
+    #online variance computation, algorithm due to Knuth and Wellford
+    curr_mean = 0
+    curr_sumsq = 0
+    for trial_idx in xrange(VAR_STEPS):
+        curr_sample = mjhmc.sample(1)
+        delta = curr_sample - curr_mean
+        curr_mean += float(delta) / trial_idx
+        curr_sumsq += delta * (curr_sample - curr_mean)
+    var_estimate = curr_sumsq / float(VAR_STEPS - 1)
     # we discard v since p(x,v) = p(x)p(v)
     fair_x = mjhmc.state.copy().X
     return (fair_x, var_estimate)
