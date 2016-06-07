@@ -31,11 +31,12 @@ def generate_initialization(distribution):
     curr_mean = 0
     curr_sumsq = 0
     for trial_idx in xrange(VAR_STEPS):
-        curr_sample = mjhmc.sample(1)
-        delta = curr_sample - curr_mean
-        curr_mean += float(delta) / trial_idx
-        curr_sumsq += delta * (curr_sample - curr_mean)
-    var_estimate = curr_sumsq / float(VAR_STEPS - 1)
+        # very slow but safe
+        for val in  mjhmc.sample(1).ravel():
+            delta = val - curr_mean
+            curr_mean += float(delta) / trial_idx
+            curr_sumsq += delta * (val - curr_mean)
+    var_estimate = curr_sumsq / float(VAR_STEPS * distribution.nbatch * distribution.ndims - 1)
     # we discard v since p(x,v) = p(x)p(v)
     fair_x = mjhmc.state.copy().X
     return (fair_x, var_estimate)
