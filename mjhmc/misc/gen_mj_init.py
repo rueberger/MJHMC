@@ -30,9 +30,11 @@ def generate_initialization(distribution):
     #online variance computation, algorithm due to Knuth and Wellford
     curr_mean = 0
     curr_sumsq = 0
-    for trial_idx in xrange(VAR_STEPS):
+    trial_idx = 0
+    for _ in xrange(VAR_STEPS):
         # very slow but safe
         for val in  mjhmc.sample(1).ravel():
+            trial_idx += 1
             delta = val - curr_mean
             curr_mean += float(delta) / trial_idx
             curr_sumsq += delta * (val - curr_mean)
