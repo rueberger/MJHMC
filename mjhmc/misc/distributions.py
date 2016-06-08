@@ -414,7 +414,7 @@ class Funnel(Distribution):
         gradient = T.grad(T.sum(energy),state)
         self.E_val = theano.function([state],energy,allow_input_downcast=True)
         self.dEdX_val = theano.function([state],energy,allow_input_downcast=True)
-        super(Funnel,self).__init__(nbatch)
+        super(Funnel,self).__init__(ndims=10,nbatch=nbatch)
 
 
     def E_val(self,X):
@@ -425,8 +425,8 @@ class Funnel(Distribution):
         """
         term1 = (1/3)*(1/(X[0,:]**9))*(1/(T.sqrt(2*np.pi)))
         term2 = T.exp((-X[0,:]**2)/(2*(3**2)))
-        term3 = T.sum(T.exp((-X[1:,:]**2)/(2*(X[0,:]**2))),axis=0)
-        return T.log(term1+term2+term3)
+        self.term3 = T.sum(T.exp((-X[1:,:]**2)/(2*(X[0,:]**2))),axis=0)
+        return T.log(term1+term2+self.term3)
 
     @overrides(Distribution)
     def gen_init_X(self):
@@ -434,4 +434,7 @@ class Funnel(Distribution):
         #so, we shall
         y = np.random.normal(scale=3.0,size=(1,self.nbatch))
         x = np.random.normal(scale=np.exp(y/2.0),size=(9,self.nbatch))
-        return np.vstack((y,x))
+        self.Xinit= np.vstack((y,x))
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash((self.nbatch))
