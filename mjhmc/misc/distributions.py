@@ -63,6 +63,7 @@ class Distribution(object):
     def __hash__(self):
         """ Subclasses should implement this as the hash of the tuple of all parameters
         that effect the distribution, including ndims. This is very important!!
+        nbatch should not be part of the hash!! Including it will break everything
 
         As an example, see how this is implemented in Gaussian
 
@@ -425,7 +426,7 @@ class Funnel(Distribution):
         """
         term1 = (1/3)*(1/(X[0,:]**9))*(1/(T.sqrt(2*np.pi)))
         term2 = T.exp((-X[0,:]**2)/(2*(3**2)))
-        self.term3 = T.sum(T.exp((-X[1:,:]**2)/(2*(X[0,:]**2))),axis=0)
+        self.term3 = T.sum(T.exp((-X[1:,:] ** 2)/(2*(X[0,:]**2))),axis=0)
         return T.log(term1+term2+self.term3)
 
     @overrides(Distribution)
@@ -434,7 +435,8 @@ class Funnel(Distribution):
         #so, we shall
         y = np.random.normal(scale=3.0,size=(1,self.nbatch))
         x = np.random.normal(scale=np.exp(y/2.0),size=(9,self.nbatch))
-        self.Xinit= np.vstack((y,x))
+        self.Xinit= np.vstack((y, x))
+
     @overrides(Distribution)
     def __hash__(self):
-        return hash((self.nbatch))
+        return 1
