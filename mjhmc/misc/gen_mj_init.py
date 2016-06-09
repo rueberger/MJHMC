@@ -7,8 +7,8 @@ from copy import deepcopy
 from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
 from .utils import package_path
 
-BURN_IN_STEPS = int(1E6)
-VAR_STEPS = int(1E5)
+BURN_IN_STEPS = int(2E6)
+VAR_STEPS = int(1E6)
 MAX_N_PARTICLES = 1000
 
 def generate_initialization(distribution):
