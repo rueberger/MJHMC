@@ -189,6 +189,7 @@ def check_variance():
     var_estimates = []
     for trial_idx in xrange(100):
         _, var_estimate = generate_initialization(poe.reset())
+        var_estimates.apppend(var_estimate)
         with open("var_log.txt", 'a') as vlog:
-            vlog.write("Trial {} variance {}".format(trial_idx, var_estimate))
+            vlog.write("Trial {} variance {}\n".format(trial_idx, var_estimate))
             vlog.write("Variance of variance estimates so far {}".format(np.var(var_estimates)))
