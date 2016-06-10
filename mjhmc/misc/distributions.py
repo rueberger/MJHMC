@@ -409,12 +409,13 @@ class Funnel(Distribution):
     Provides a handle for the Funnel distribution as specified
     by Neal, 2003
     """
-    def __init__(self,nbatch=5):
+    def __init__(self,scale=3.0,nbatch=5):
+        self.scale = scale 
         state = T.matrix()
         energy = self.E_val(state)
         gradient = T.grad(T.sum(energy),state)
         self.E_val = theano.function([state],energy,allow_input_downcast=True)
-        self.dEdX_val = theano.function([state],energy,allow_input_downcast=True)
+        self.dEdX_val = theano.function([state],gradient,allow_input_downcast=True)
         super(Funnel,self).__init__(ndims=10,nbatch=nbatch)
 
 
@@ -424,10 +425,9 @@ class Funnel(Distribution):
         where the first dimenion sets the mean for the other dimensions
         which are all sampled from a Gaussian
         """
-        term1 = (1/3)*(1/(X[0,:]**9))*(1/(T.sqrt(2*np.pi)))
-        term2 = T.exp((-X[0,:]**2)/(2*(3**2)))
-        self.term3 = T.sum(T.exp((-X[1:,:] ** 2)/(2*(X[0,:]**2))),axis=0)
-        return T.log(term1+term2+self.term3)
+        term2 = ((X[0,:]**2)/(2*(self.scale**2)))
+        term3 = T.sum(((X[1:,:]** 2)/(2*(X[0,:]**2))),axis=0)
+        return term2+term3
 
     @overrides(Distribution)
     def gen_init_X(self):
@@ -439,4 +439,4 @@ class Funnel(Distribution):
 
     @overrides(Distribution)
     def __hash__(self):
-        return 1
+        return hash(self.scale) 
