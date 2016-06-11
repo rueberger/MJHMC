@@ -426,7 +426,7 @@ class Funnel(Distribution):
         which are all sampled from a Gaussian
         """
         term2 = ((X[0,:]**2)/(2*(self.scale**2)))
-        term3 = T.sum(((X[1:,:]** 2)/(2*(X[0,:]**2))),axis=0)
+        term3 = T.sum(((X[1:,:]** 2)/(2*(T.exp(X[0,:])**2))),axis=0)
         return term2+term3
 
     @overrides(Distribution)
@@ -434,7 +434,7 @@ class Funnel(Distribution):
         #but we know how to exactly generate samples from this distribution
         #so, we shall
         y = np.random.normal(scale=3.0,size=(1,self.nbatch))
-        x = np.random.normal(scale=np.exp(y/2.0),size=(9,self.nbatch))
+        x = np.random.normal(scale=np.exp(y),size=(9,self.nbatch))
         self.Xinit= np.vstack((y, x))
 
     @overrides(Distribution)
