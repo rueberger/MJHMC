@@ -4,7 +4,7 @@
 import pickle
 import numpy as np
 from copy import deepcopy
-from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
+from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
 from .utils import package_path
 
 BURN_IN_STEPS = int(2E6)
@@ -15,8 +15,8 @@ def generate_initialization(distribution):
     """ Run mjhmc for BURN_IN_STEPS on distribution, generating a fair set of initial states
 
     :param distribution: Distribution object. Must have nbatch == MAX_N_PARTICLES
-    :returns: a set of fair initial states and an estimate of the variance
-    :rtype: tuple: (array of shape (distribution.ndims, MAX_N_PARTICLES), float)
+    :returns: a set of fair initial states and an estimate of the variance for emc and true both
+    :rtype: tuple: (array of shape (distribution.ndims, MAX_N_PARTICLES), float, float)
     """
     print('Generating fair initialization for {} by burning in {} steps'.format(
         type(distribution).__name__, BURN_IN_STEPS))
@@ -27,21 +27,16 @@ def generate_initialization(distribution):
         mjhmc.sampling_iteration()
     assert mjhmc.resample == False
 
-    #online variance computation, algorithm due to Knuth and Wellford
-    curr_mean = 0
-    curr_sumsq = 0
-    trial_idx = 0
-    for _ in xrange(VAR_STEPS):
-        # very slow but safe
-        for val in  mjhmc.sample(1).ravel():
-            trial_idx += 1
-            delta = val - curr_mean
-            curr_mean += float(delta) / trial_idx
-            curr_sumsq += delta * (val - curr_mean)
-    var_estimate = curr_sumsq / float(VAR_STEPS * distribution.nbatch * distribution.ndims - 1)
+    emc_var_estimate, mjhmc = online_variance(mjhmc, distribution)
     # we discard v since p(x,v) = p(x)p(v)
     fair_x = mjhmc.state.copy().X
-    return (fair_x, var_estimate)
+
+    control = ControlHMC(distribution=distribution.reset())
+    for - in xrange(BURN_IN_STEPS - VAR_STEPS):
+        control.sampling_iteration()
+    true_var_estimate, control = online_variance(control, distribution)
+
+    return (fair_x, emc_var_estimate, true_var_estimate)
 
 def cache_initialization(distribution):
     """ Generates fair initialization for mjhmc on distribution and then caches it
@@ -52,13 +47,7 @@ def cache_initialization(distribution):
     """
     distr_name = type(distribution).__name__
     distr_hash = hash(distribution)
-    fair_init, emc_var_estimate = generate_initialization(distribution)
-
-    # hack to estimate variance of the distribution itself
-    distr_copy = deepcopy(distribution)
-    distr_copy.nbatch = VAR_STEPS
-    distr_copy.gen_init_X()
-    true_var_estimate = np.var(distr_copy.Xinit)
+    fair_init, emc_var_estimate, true_var_estimate = generate_initialization(distribution)
 
     file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
     file_prefix = '{}/initializations'.format(package_path())
@@ -69,3 +58,28 @@ def cache_initialization(distribution):
         distr_name, emc_var_estimate)
     print "Meanwhile {} itself has an estimated variance of {}".format(
         distr_name, true_var_estimate)
+
+
+def online_variance(sampler, distribution):
+    """ computes the variance in an online fashion to allow arbitrarily large sample sizes
+
+
+    :param sampler: initialized sampler
+    :param distribution: initialized distribution
+    :returns: variance estimate, sampler (for convenience)
+    :rtype: float, HMCBase
+
+    """
+    #online variance computation, algorithm due to Knuth and Wellford
+    curr_mean = 0
+    curr_sumsq = 0
+    trial_idx = 0
+    for _ in xrange(VAR_STEPS):
+        # very slow but safe
+        for val in  sampler.sample(1).ravel():
+            trial_idx += 1
+            delta = val - curr_mean
+            curr_mean += float(delta) / trial_idx
+            curr_sumsq += delta * (val - curr_mean)
+    var_estimate = curr_sumsq / float(VAR_STEPS * distribution.nbatch * distribution.ndims - 1)
+    return var_estimate, sampler
