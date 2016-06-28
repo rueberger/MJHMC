@@ -98,12 +98,15 @@ def gauss_2d(nsamples=1000):
             kind='hex',
             stat_func=None)
 
-def hist_2d(distribution, nsamples, **kwargs):
+def hist_2d(distr, nsamples, **kwargs):
     """
     Plots a 2d hexbinned histogram of distribution
+
+    Args:
+     distr: Distribution object
+     nsamples: number of samples to use to generate plot
     """
-    distr = distribution(ndims=2)
-    sampler = MarkovJumpHMC(distr.Xinit, distr.E, distr.dEdX, **kwargs)
+    sampler = MarkovJumpHMC(distribution=distr, **kwargs)
     samples = sampler.sample(nsamples)
 
     with sns.axes_style("white"):
