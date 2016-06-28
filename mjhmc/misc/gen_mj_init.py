@@ -32,7 +32,7 @@ def generate_initialization(distribution):
     fair_x = mjhmc.state.copy().X
 
     control = ControlHMC(distribution=distribution.reset())
-    for - in xrange(BURN_IN_STEPS - VAR_STEPS):
+    for _ in xrange(BURN_IN_STEPS - VAR_STEPS):
         control.sampling_iteration()
     true_var_estimate, control = online_variance(control, distribution)
 
