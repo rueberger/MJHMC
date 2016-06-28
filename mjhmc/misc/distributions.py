@@ -409,14 +409,14 @@ class Funnel(Distribution):
     Provides a handle for the Funnel distribution as specified
     by Neal, 2003
     """
-    def __init__(self,scale=3.0,nbatch=5):
-        self.scale = scale 
+    def __init__(self,scale=1.0,nbatch=5,ndims=10):
+        self.scale = scale
         state = T.matrix()
         energy = self.E_val(state)
         gradient = T.grad(T.sum(energy),state)
         self.E_val = theano.function([state],energy,allow_input_downcast=True)
         self.dEdX_val = theano.function([state],gradient,allow_input_downcast=True)
-        super(Funnel,self).__init__(ndims=10,nbatch=nbatch)
+        super(Funnel,self).__init__(ndims=ndims,nbatch=nbatch)
 
 
     def E_val(self,X):
@@ -426,17 +426,17 @@ class Funnel(Distribution):
         which are all sampled from a Gaussian
         """
         term2 = ((X[0,:]**2)/(2*(self.scale**2)))
-        term3 = T.sum(((X[1:,:]** 2)/(2*(T.exp(X[0,:])**2))),axis=0)
+        term3 = T.sum(((X[1:,:]** 2)/(2*(T.exp(term2)**2))),axis=0)
         return term2+term3
 
     @overrides(Distribution)
     def gen_init_X(self):
         #but we know how to exactly generate samples from this distribution
         #so, we shall
-        y = np.random.normal(scale=3.0,size=(1,self.nbatch))
-        x = np.random.normal(scale=np.exp(y),size=(9,self.nbatch))
+        y = np.random.normal(scale=self.scale,size=(1,self.nbatch))
+        x = np.random.normal(scale=np.exp(y**2),size=(self.ndims-1,self.nbatch))
         self.Xinit= np.vstack((y, x))
 
     @overrides(Distribution)
     def __hash__(self):
-        return hash(self.scale) 
+        return hash((self.scale,self.ndims))
