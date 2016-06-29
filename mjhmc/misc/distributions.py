@@ -411,6 +411,8 @@ class Funnel(Distribution):
     """
     def __init__(self,scale=1.0,nbatch=5,ndims=10):
         self.scale = scale
+        self.ndims = ndims
+        self.nbatch = nbatch
         state = T.matrix()
         energy = self.E_val(state)
         gradient = T.grad(T.sum(energy),state)
