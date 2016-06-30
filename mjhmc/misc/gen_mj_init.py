@@ -31,6 +31,8 @@ def generate_initialization(distribution):
     # we discard v since p(x,v) = p(x)p(v)
     fair_x = mjhmc.state.copy().X
 
+    # otherwise will go into recursive loop
+    distribution.mjhmc = False
     control = ControlHMC(distribution=distribution.reset())
     for _ in xrange(BURN_IN_STEPS - VAR_STEPS):
         control.sampling_iteration()
