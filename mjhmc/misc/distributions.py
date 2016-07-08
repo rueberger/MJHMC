@@ -6,8 +6,6 @@
 """
 import numpy as np
 from .utils import overrides, package_path
-import theano.tensor as T
-import theano
 import os
 from scipy import stats
 import pickle
@@ -404,6 +402,8 @@ class ProductOfT(Distribution):
     def __init__(self, ndims=36, nbasis=36, nbatch=100, lognu=None, W=None, b=None):
         """ Product of T experts, assumes a fixed W that is sparse and alpha that is
         """
+        import theano.tensor as T
+        import theano
         if ndims != nbasis:
             raise NotImplementedError("Initializer only works for ndims == nbasis")
         self.ndims = ndims
@@ -472,7 +472,11 @@ class Funnel(Distribution):
     Provides a handle for the Funnel distribution as specified
     by Neal, 2003
     """
+
+
     def __init__(self,scale=1.0,nbatch=5,ndims=10):
+        import theano.tensor as T
+        import theano
         self.scale = scale
         self.ndims = ndims
         self.nbatch = nbatch
