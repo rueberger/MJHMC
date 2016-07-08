@@ -110,8 +110,8 @@ def hist_2d(distr, nsamples, **kwargs):
     samples = sampler.sample(nsamples)
 
     with sns.axes_style("white"):
-        sns.jointplot(samples[0], samples[1], kind='kde', stat_func=None)
-
+       g =  sns.jointplot(samples[0], samples[1], kind='kde', stat_func=None)
+    return g
 
 def jump_plot(distribution, nsamples=100, **kwargs):
     """
