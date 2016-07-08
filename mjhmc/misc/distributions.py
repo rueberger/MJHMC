@@ -158,6 +158,68 @@ class Distribution(object):
         with open('{}/{}'.format(file_prefix, file_name)) as cache_file:
             return pickle.load(cache_file)
 
+class TensorflowDistribution(Distribution):
+    """ Base class for distributions defined by energy functions written
+    in Tensorflow
+
+    You should give your TensorflowDistribution objects a name. Use a
+    descriptive name, and use the same for functionally equivalent
+    TensorflowDistributions - the hash of the name is used to label the
+    initialization information which is generated at first run time of
+    a new distribution. This requirement is a side effect of the
+    unfortunate fact that there is no computable hash function which
+    assigns functionally identical programs to the same number.
+    """
+
+    #pylint: disable=too-many-arguments
+    def __init__(self, energy_op, state_placeholder, init, name=None, sess=None):
+        """ Creates a TensorflowDistribution object
+
+        ndims and nbatch are inferred from init
+        nbatch must match shape of energy_op
+
+        :param energy_func: energy function op
+        :param state_placeholder: placeholder taken as input by energy_func of the same shape as init
+        :param init: fair initialization for this distribution. array of shape (ndims, nbatch)
+        :param name: name of this distribution. use the same name for functionally identical distributions
+        :param sess: optional session. If none, one will be created
+        :returns: TensorflowDistribution object
+        :rtype: TensorflowDistribution
+        """
+        import tensorflow as tf
+        with tf.Graph().as_default():
+            self.energy_op = energy_op
+            self.grad_op = tf.gradients(energy_op, state_placeholder)
+            self.state_placholder = state_placeholder
+            self.init = init
+            self.sess = sess or tf.Session()
+            # TODO: raise warning if name is not passed
+            self.name = name or energy_op.op.name
+
+            self.sess.run(tf.initialize_all_variables())
+            self.graph = tf.get_default_graph()
+
+        super(TensorflowDistribution, self).__init__(ndims=init.shape[0], nbatch=init.shape[1])
+
+    @overrides(Distribution)
+    def E_val(self, X):
+        with self.graph.as_default():
+            return self.sess.run(self.energy_op, feed_dict={self.state_placeholder: X})
+
+    @overrides(Distribution)
+    def dEdX_val(self, X):
+        with self.graph.as_default():
+            return self.sess.run(self.grad_op, feed_dict={self.state_placeholder: X})
+
+    @overrides(Distribution)
+    def gen_init_X(self):
+        self.Xinit = self.init
+
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash((self.ndims, self.nbatch, self.name))
+
+
 class LambdaDistribution(Distribution):
     """ An `anonymous' distribution object for quick
     experimentation. Due to the initialization time that is required
@@ -193,6 +255,7 @@ class LambdaDistribution(Distribution):
         self.energy_func = energy_func
         self.energy_grad_func = energy_grad_func
         self.init = init
+        # TODO: raise warning if name is not passed
         self.name = name or str(np.random())
         super(LambdaDistribution, self).__init__(ndims=init.shape[0], nbatch=init.shape[1])
 
@@ -210,7 +273,7 @@ class LambdaDistribution(Distribution):
 
     @overrides(Distribution)
     def __hash__(self):
-        return hash((self.ndims, hash(tuple(self.conditioning))))
+        return hash((self.ndims, self.nbatch, self.name))
 
 
 
