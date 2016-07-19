@@ -215,7 +215,7 @@ class TensorflowDistribution(Distribution):
 
     @overrides(Distribution)
     def __hash__(self):
-        return hash((self.ndims, self.nbatch, self.name))
+        return hash((self.ndims, self.name))
 
 
 class LambdaDistribution(Distribution):
@@ -475,45 +475,35 @@ class ProductOfT(Distribution):
                      hash(tuple(self.weights.get_value().ravel())),
                      hash(tuple(self.bias.get_value().ravel()))))
 
-class Funnel(Distribution):
-    """
-    Provides a handle for the Funnel distribution as specified
-    by Neal, 2003
+class Funnel(TensorflowDistribution):
+    """ This class implements the Funnel distribution as specified in Neal, 2003
+    In particular:
+      x_0 ~ N(0, scale^2)
+      x_i ~ N(0, e^x_0); i \in {1, ... ,ndims}
     """
 
-
-    def __init__(self,scale=1.0,nbatch=5,ndims=10):
-        import theano.tensor as T
-        import theano
-        self.scale = scale
+    def __init__(self,scale=1.0, nbatch=50, ndims=10):
+        import tensorflow as tf
+        self.scale = float(scale)
         self.ndims = ndims
         self.nbatch = nbatch
-        state = T.matrix()
-        energy = self.E_val(state)
-        gradient = T.grad(T.sum(energy),state)
-        self.E_val = theano.function([state],energy,allow_input_downcast=True)
-        self.dEdX_val = theano.function([state],gradient,allow_input_downcast=True)
-        super(Funnel,self).__init__(ndims=ndims,nbatch=nbatch)
+        self.gen_init_X()
 
-
-    def E_val(self,X):
-        """
-        Energy function for a 10 Dimensional funnel distribution
-        where the first dimenion sets the mean for the other dimensions
-        which are all sampled from a Gaussian
-        """
-        term2 = ((X[0,:]**2)/(2*(self.scale**2)))
-        term3 = T.sum(((X[1:,:]** 2)/(2*(T.exp(term2)))),axis=0)
-        return term2+term3
+        state_pl = tf.placeholder(tf.float32, [ndims, nbatch], name='state_pl')
+        # [1, nbatch]
+        e_x_0 = tf.neg((state_pl[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
+        # [ndims - 1, nbatch]
+        e_x_k = tf.neg((state_pl[1:, :] ** 2) / tf.exp(state_pl[0, :]), name='E_x_k')
+        # [nbatch]
+        energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
+        super(Funnel, self).__init__(energy_op, state_pl, self.Xinit, name='Funnel')
 
     @overrides(Distribution)
     def gen_init_X(self):
-        #but we know how to exactly generate samples from this distribution
-        #so, we shall
-        y = np.random.normal(scale=self.scale,size=(1,self.nbatch))
-        x = np.random.normal(scale=np.exp(y),size=(self.ndims-1,self.nbatch))
-        self.Xinit= np.vstack((y, x))
+        x_0 = np.random.normal(scale=self.scale, size=(1, self.nbatch))
+        x_k = np.random.normal(scale=np.exp(x_0), size=(self.ndims - 1, self.nbatch))
+        self.Xinit = np.vstack((x_0, x_k))
 
     @overrides(Distribution)
     def __hash__(self):
-        return hash((self.scale,self.ndims))
+        return hash((self.scale, self.ndims))
