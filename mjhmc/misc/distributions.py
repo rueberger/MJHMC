@@ -398,12 +398,20 @@ class ProductOfT(Distribution):
     """ Provides the product of T experts distribution
     """
 
+
     #pylint: disable=too-many-arguments
     def __init__(self, ndims=36, nbasis=36, nbatch=100, lognu=None, W=None, b=None):
         """ Product of T experts, assumes a fixed W that is sparse and alpha that is
         """
-        import theano.tensor as T
-        import theano
+        # awkward hack to import theano in poe only
+        try:
+            import theano.tensor as T
+            import theano
+            self.theano = theano
+            self.T = T
+        except:
+            raise ImportError("Theano could not be imported")
+
         if ndims != nbasis:
             raise NotImplementedError("Initializer only works for ndims == nbasis")
         self.ndims = ndims
@@ -411,24 +419,24 @@ class ProductOfT(Distribution):
         self.nbatch = nbatch
         if W is None:
             W = np.eye(ndims, nbasis)
-        self.weights = theano.shared(np.array(W, dtype='float32'), 'W')
+        self.weights = self.theano.shared(np.array(W, dtype='float32'), 'W')
         if lognu is None:
             pre_nu = np.random.rand(nbasis,) * 2 + 2.1
         else:
             pre_nu = np.exp(lognu)
-        self.nu = theano.shared(np.array(pre_nu, dtype='float32'), 'nu')
+        self.nu = self.theano.shared(np.array(pre_nu, dtype='float32'), 'nu')
         if b is None:
             b = np.zeros((nbasis,))
-        self.bias = theano.shared(np.array(b, dtype='float32'), 'b')
+        self.bias = self.theano.shared(np.array(b, dtype='float32'), 'b')
 
         state = T.matrix()
         energy = self.E_def(state)
         gradient = T.grad(T.sum(energy), state)
 
         #@overrides(Distribution)
-        self.E_val = theano.function([state], energy, allow_input_downcast=True)
+        self.E_val = self.theano.function([state], energy, allow_input_downcast=True)
         #@overrides(Distribution)
-        self.dEdX_val = theano.function([state], gradient, allow_input_downcast=True)
+        self.dEdX_val = self.theano.function([state], gradient, allow_input_downcast=True)
 
         super(ProductOfT,self).__init__(ndims,nbatch)
 
@@ -443,8 +451,8 @@ class ProductOfT(Distribution):
         rshp_b = self.bias.reshape((1,-1))
         rshp_nu = self.nu.reshape((1, -1))
         alpha = (rshp_nu + 1.)/2.
-        energy_per_expert = alpha * T.log(1 + ((T.dot(X.T, self.weights) + rshp_b) / rshp_nu) ** 2)
-        energy = T.sum(energy_per_expert, axis=1).reshape((1, -1))
+        energy_per_expert = alpha * self.T.log(1 + ((self.T.dot(X.T, self.weights) + rshp_b) / rshp_nu) ** 2)
+        energy = self.T.sum(energy_per_expert, axis=1).reshape((1, -1))
         return energy
 
 
