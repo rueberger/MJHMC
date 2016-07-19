@@ -9,6 +9,7 @@ from .utils import overrides, package_path
 import os
 from scipy import stats
 import pickle
+import tensorflow as tf
 
 class Distribution(object):
     """
@@ -170,44 +171,46 @@ class TensorflowDistribution(Distribution):
     """
 
     #pylint: disable=too-many-arguments
-    def __init__(self, energy_op, state_placeholder, init, name=None, sess=None):
+    def __init__(self, graph, energy_op, state, state_placeholder, init, name=None, sess=None):
         """ Creates a TensorflowDistribution object
 
         ndims and nbatch are inferred from init
         nbatch must match shape of energy_op
 
+        :param graph: the graph in which energy_op, state and state_placeholder were constructed
         :param energy_func: energy function op
-        :param state_placeholder: placeholder taken as input by energy_func of the same shape as init
+        :param state: Variable taken as input by energy_func of the same shape as init
+        :param state_placeholder: placeholder used to initialize state. of same shape as init
         :param init: fair initialization for this distribution. array of shape (ndims, nbatch)
         :param name: name of this distribution. use the same name for functionally identical distributions
         :param sess: optional session. If none, one will be created
         :returns: TensorflowDistribution object
         :rtype: TensorflowDistribution
         """
-        import tensorflow as tf
-        with tf.Graph().as_default():
+        with graph.as_default():
+            self.graph = graph
             self.energy_op = energy_op
-            self.grad_op = tf.gradients(energy_op, state_placeholder)
-            self.state_placholder = state_placeholder
+            self.grad_op = tf.gradients(energy_op, state)
+            self.state = state
+            self.state_pl = state_placeholder
             self.init = init
             self.sess = sess or tf.Session()
             # TODO: raise warning if name is not passed
             self.name = name or energy_op.op.name
 
-            self.sess.run(tf.initialize_all_variables())
-            self.graph = tf.get_default_graph()
+            self.sess.run(tf.initialize_all_variables(), feed_dict={self.state_pl: self.init})
 
         super(TensorflowDistribution, self).__init__(ndims=init.shape[0], nbatch=init.shape[1])
 
     @overrides(Distribution)
     def E_val(self, X):
         with self.graph.as_default():
-            return self.sess.run(self.energy_op, feed_dict={self.state_placeholder: X})
+            return self.sess.run(self.energy_op, feed_dict={self.state_pl: X})
 
     @overrides(Distribution)
     def dEdX_val(self, X):
         with self.graph.as_default():
-            return self.sess.run(self.grad_op, feed_dict={self.state_placeholder: X})
+            return self.sess.run(self.grad_op, feed_dict={self.state_pl: X})
 
     @overrides(Distribution)
     def gen_init_X(self):
@@ -479,24 +482,27 @@ class Funnel(TensorflowDistribution):
     """ This class implements the Funnel distribution as specified in Neal, 2003
     In particular:
       x_0 ~ N(0, scale^2)
-      x_i ~ N(0, e^x_0); i \in {1, ... ,ndims}
+      x_i ~ N(0, e^x_0); i in {1, ... ,ndims}
     """
 
     def __init__(self,scale=1.0, nbatch=50, ndims=10):
-        import tensorflow as tf
-        self.scale = float(scale)
-        self.ndims = ndims
-        self.nbatch = nbatch
-        self.gen_init_X()
+        with tf.Graph().as_default():
+            self.scale = float(scale)
+            self.ndims = ndims
+            self.nbatch = nbatch
+            self.gen_init_X()
 
-        state_pl = tf.placeholder(tf.float32, [ndims, nbatch], name='state_pl')
-        # [1, nbatch]
-        e_x_0 = tf.neg((state_pl[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
-        # [ndims - 1, nbatch]
-        e_x_k = tf.neg((state_pl[1:, :] ** 2) / tf.exp(state_pl[0, :]), name='E_x_k')
-        # [nbatch]
-        energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
-        super(Funnel, self).__init__(energy_op, state_pl, self.Xinit, name='Funnel')
+            state_pl = tf.placeholder(tf.float32, [ndims, nbatch])
+            state = tf.Variable(state_pl, name='state')
+            # [1, nbatch]
+            e_x_0 = tf.neg((state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
+            # [ndims - 1, nbatch]
+            e_x_k = tf.neg((state[1:, :] ** 2) / tf.exp(state[0, :]), name='E_x_k')
+            # [nbatch]
+            energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
+            super(Funnel, self).__init__(tf.get_default_graph(),
+                                         energy_op, state, state_pl, self.Xinit, name='Funnel')
+
 
     @overrides(Distribution)
     def gen_init_X(self):
