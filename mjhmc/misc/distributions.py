@@ -492,17 +492,16 @@ class Funnel(TensorflowDistribution):
             self.nbatch = nbatch
             self.gen_init_X()
             
-            with tf.device('/gpu:1'):
-                state_pl = tf.placeholder(tf.float32, [ndims, nbatch])
-                state = tf.Variable(state_pl, name='state')
-                # [1, nbatch]
-                e_x_0 = tf.neg((state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
-                # [ndims - 1, nbatch]
-                e_x_k = tf.neg((state[1:, :] ** 2) / tf.exp(state[0, :]), name='E_x_k')
-                # [nbatch]
-                energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
-                super(Funnel, self).__init__(tf.get_default_graph(),
-                                             energy_op, state, state_pl, self.Xinit, name='Funnel')
+            state_pl = tf.placeholder(tf.float32, [ndims, nbatch])
+            state = tf.Variable(state_pl, name='state')
+            # [1, nbatch]
+            e_x_0 = tf.neg((state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
+            # [ndims - 1, nbatch]
+            e_x_k = tf.neg((state[1:, :] ** 2) / tf.exp(state[0, :]), name='E_x_k')
+            # [nbatch]
+            energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
+            super(Funnel, self).__init__(tf.get_default_graph(),
+                             energy_op, state, state_pl, self.Xinit, name='Funnel')
 
 
     @overrides(Distribution)

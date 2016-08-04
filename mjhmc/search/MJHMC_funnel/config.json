@@ -1,7 +1,7 @@
 {
     "language"        : "PYTHON",
     "main-file"       : "mjhmc_objective.py",
-    "experiment-name" : "MJHMC_funnel_scale_3",
+    "experiment-name" : "MJHMC_funnel_scale_3_cori",
     "likelihood"      : "GAUSSIAN",
     "variables" : {
         "num_leapfrog_steps" : {
@@ -26,7 +26,7 @@
   "resources" : {
     "rivendell" : {
     "scheduler" : "local",
-    "max-concurrent" : 6,
+    "max-concurrent" : 1,
     "max-finished-jobs" : 100
     }
   }
