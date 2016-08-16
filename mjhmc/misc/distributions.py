@@ -93,7 +93,7 @@ class Distribution(object):
         file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
         file_prefix = '{}/initializations'.format(package_path())
         if file_name in os.listdir(file_prefix):
-            with open('{}/{}'.format(file_prefix, file_name)) as cache_file:
+            with open('{}/{}'.format(file_prefix, file_name), 'rb') as cache_file:
                 fair_init, _, _ = pickle.load(cache_file)
             self.Xinit = fair_init[:, :self.nbatch]
         else:
@@ -171,7 +171,7 @@ class TensorflowDistribution(Distribution):
     """
 
     #pylint: disable=too-many-arguments
-    def __init__(self, graph, energy_op, state, state_placeholder, init, name=None, sess=None):
+    def __init__(self, graph, energy_op, state, name=None, sess=None):
         """ Creates a TensorflowDistribution object
 
         ndims and nbatch are inferred from init
@@ -190,27 +190,33 @@ class TensorflowDistribution(Distribution):
         with graph.as_default():
             self.graph = graph
             self.energy_op = energy_op
-            self.grad_op = tf.gradients(energy_op, state)
+
             self.state = state
-            self.state_pl = state_placeholder
-            self.init = init
+            ndims, nbatch = state.get_shape().as_list()
+            self.state_pl = tf.placeholder(tf.float32, [ndims, nbatch])
+
+            self.assign_op = state.assign(self.state_pl)
+            self.grad_op = tf.gradients(energy_op, state)[0]
+
             self.sess = sess or tf.Session()
             # TODO: raise warning if name is not passed
             self.name = name or energy_op.op.name
 
-            self.sess.run(tf.initialize_all_variables(), feed_dict={self.state_pl: self.init})
+            self.sess.run(tf.initialize_all_variables())
 
-        super(TensorflowDistribution, self).__init__(ndims=init.shape[0], nbatch=init.shape[1])
+        super(TensorflowDistribution, self).__init__(ndims=ndims, nbatch=nbatch)
 
     @overrides(Distribution)
     def E_val(self, X):
         with self.graph.as_default():
-            return self.sess.run(self.energy_op, feed_dict={self.state_pl: X})
+            _, energy = self.sess.run([self.assign_op, self.energy_op], feed_dict={self.state_pl: X})
+            return energy
 
     @overrides(Distribution)
     def dEdX_val(self, X):
         with self.graph.as_default():
-            return self.sess.run(self.grad_op, feed_dict={self.state_pl: X})
+            _, grad = self.sess.run([self.assign_op, self.grad_op], feed_dict={self.state_pl: X})
+            return grad
 
     @overrides(Distribution)
     def gen_init_X(self):
@@ -492,8 +498,7 @@ class Funnel(TensorflowDistribution):
             self.nbatch = nbatch
             self.gen_init_X()
 
-            state_pl = tf.placeholder(tf.float32, [ndims, nbatch])
-            state = tf.Variable(state_pl, name='state')
+            state = tf.Variable(self.Xinit, name='state', dtype=tf.float32)
             # [1, nbatch]
             e_x_0 = tf.neg((state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
             # [ndims - 1, nbatch]
@@ -501,7 +506,7 @@ class Funnel(TensorflowDistribution):
             # [nbatch]
             energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
             super(Funnel, self).__init__(tf.get_default_graph(),
-                                         energy_op, state, state_pl, self.Xinit, name='Funnel')
+                                         energy_op, state, name='Funnel')
 
 
     @overrides(Distribution)
