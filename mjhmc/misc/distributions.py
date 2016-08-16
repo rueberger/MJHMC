@@ -199,6 +199,7 @@ class TensorflowDistribution(Distribution):
             self.grad_op = tf.gradients(energy_op, state)[0]
 
             self.sess = sess or tf.Session()
+
             # TODO: raise warning if name is not passed
             self.name = name or energy_op.op.name
 
@@ -507,6 +508,7 @@ class Funnel(TensorflowDistribution):
             energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
             super(Funnel, self).__init__(tf.get_default_graph(),
                                          energy_op, state, name='Funnel')
+
 
 
     @overrides(Distribution)
