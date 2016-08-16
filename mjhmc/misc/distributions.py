@@ -402,7 +402,6 @@ class TestGaussian(Distribution):
         return hash((self.ndims, self.sigma))
 
 #pylint: disable=too-many-instance-attributes
-
 class ProductOfT(Distribution):
     """ Provides the product of T experts distribution
     """
@@ -483,6 +482,7 @@ class ProductOfT(Distribution):
                      hash(tuple(self.nu.get_value())),
                      hash(tuple(self.weights.get_value().ravel())),
                      hash(tuple(self.bias.get_value().ravel()))))
+
 
 class Funnel(TensorflowDistribution):
     """ This class implements the Funnel distribution as specified in Neal, 2003
