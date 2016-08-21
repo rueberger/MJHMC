@@ -127,7 +127,7 @@ class Distribution(object):
         """
         resets the object. returns self for convenience
         """
-         self.E_count = 0
+        self.E_count = 0
         self.dEdX_count = 0
         self.init_X()
         return self
