@@ -127,7 +127,7 @@ class Distribution(object):
         """
         resets the object. returns self for convenience
         """
-        self.E_count = 0
+         self.E_count = 0
         self.dEdX_count = 0
         self.init_X()
         return self
@@ -193,7 +193,7 @@ class TensorflowDistribution(Distribution):
 
             self.state = state
             ndims, nbatch = state.get_shape().as_list()
-            self.state_pl = tf.placeholder(tf.float32, [ndims, nbatch])
+            self.state_pl = tf.placeholder(tf.float32, [ndims, None])
 
             self.assign_op = state.assign(self.state_pl)
             self.grad_op = tf.gradients(energy_op, state)[0]
