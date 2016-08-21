@@ -172,10 +172,13 @@ class TensorflowDistribution(Distribution):
     a new distribution. This requirement is a side effect of the
     unfortunate fact that there is no computable hash function which
     assigns functionally identical programs to the same number.
+
+    TensorflowDistribution is subclassed by defining the distribution energy op in
+    build_energy_op
     """
 
     #pylint: disable=too-many-arguments
-    def __init__(self, graph, energy_op, state, name=None, sess=None):
+    def __init__(self, name=None, sess=None):
         """ Creates a TensorflowDistribution object
 
         ndims and nbatch are inferred from init
@@ -191,31 +194,32 @@ class TensorflowDistribution(Distribution):
         :returns: TensorflowDistribution object
         :rtype: TensorflowDistribution
         """
-        with graph.as_default():
-            self.graph = graph
-            self.energy_op = energy_op
-            self.state = state
-
+        self.graph = tf.Graph()
+        with self.graph.as_default():
             self.sess = sess or tf.Session()
-            self.name = name or energy_op.op.name
+
 
             ndims, nbatch = self.build_graph()
+            self.name = name or self.energy_op.op.name
 
         super(TensorflowDistribution, self).__init__(ndims=ndims, nbatch=nbatch)
 
     def build_graph(self):
-        self.build_child_graph()
-        ndims, nbatch = self.state.get_shape().as_list()
-        self.state_pl = tf.placeholder(tf.float32, [ndims, None])
+        with self.graph.as_default():
+            self.build_energy_op()
+            ndims, nbatch = self.state.get_shape().as_list()
+            self.state_pl = tf.placeholder(tf.float32, [ndims, None])
 
-        self.assign_op = self.state.assign(self.state_pl)
-        self.grad_op = tf.gradients(self.energy_op, self.state)[0]
-        self.sess.run(tf.initialize_all_variables())
-        return ndims, nbatch
+            self.assign_op = self.state.assign(self.state_pl)
+            self.grad_op = tf.gradients(self.energy_op, self.state)[0]
+            self.sess.run(tf.initialize_all_variables())
+            return ndims, nbatch
 
 
-    def build_child_graph(self):
-        pass
+    def build_energy_op(self):
+        """ Sets self.state and self.energy_op
+        """
+        raise NotImplementedError("this method must be defined to subclass TensorflowDistribution")
 
     @overrides(Distribution)
     def E_val(self, X):
@@ -509,18 +513,18 @@ class Funnel(TensorflowDistribution):
             self.nbatch = nbatch
             self.gen_init_X()
 
-            super(Funnel, self).__init__(tf.get_default_graph(),
-                                         self.energy_op, self.state, name='Funnel')
+            super(Funnel, self).__init__(name='Funnel')
 
     @overrides(TensorflowDistribution)
-    def build_child_graph(self):
-        self.state = tf.Variable(self.Xinit, name='state', dtype=tf.float32)
-        # [1, nbatch]
-        e_x_0 = tf.neg((self.state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
-        # [ndims - 1, nbatch]
-        e_x_k = tf.neg((self.state[1:, :] ** 2) / tf.exp(self.state[0, :]), name='E_x_k')
-        # [nbatch]
-        self.energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
+    def build_energy_op(self):
+        with self.graph.as_default():
+            self.state = tf.Variable(self.Xinit, name='state', dtype=tf.float32)
+            # [1, nbatch]
+            e_x_0 = tf.neg((self.state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
+            # [ndims - 1, nbatch]
+            e_x_k = tf.neg((self.state[1:, :] ** 2) / tf.exp(self.state[0, :]), name='E_x_k')
+            # [nbatch]
+            self.energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
 
 
     @overrides(Distribution)
