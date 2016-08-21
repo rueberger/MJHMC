@@ -104,13 +104,17 @@ class Distribution(object):
             self.generation_instance = True
             # start with biased initializations
             self.gen_init_X()
+            # must rebuild graph to new dimension for tensorflow distributions
+            if isinstance(self, TensorflowDistribution):
+                _, _ = self.build_graph()
             #generate and cache fair initialization
             cache_initialization(self)
             # reconstruct this object using fair initialization
             self.nbatch = old_nbatch
             self.generation_instance = False
             self.cached_init_X()
-
+            if isinstance(self, TensorflowDistribution):
+                _, _ = self.build_graph()
 
 
 
@@ -190,22 +194,28 @@ class TensorflowDistribution(Distribution):
         with graph.as_default():
             self.graph = graph
             self.energy_op = energy_op
-
             self.state = state
-            ndims, nbatch = state.get_shape().as_list()
-            self.state_pl = tf.placeholder(tf.float32, [ndims, None])
-
-            self.assign_op = state.assign(self.state_pl)
-            self.grad_op = tf.gradients(energy_op, state)[0]
 
             self.sess = sess or tf.Session()
-
-            # TODO: raise warning if name is not passed
             self.name = name or energy_op.op.name
 
-            self.sess.run(tf.initialize_all_variables())
+            ndims, nbatch = self.build_graph()
 
         super(TensorflowDistribution, self).__init__(ndims=ndims, nbatch=nbatch)
+
+    def build_graph(self):
+        self.build_child_graph()
+        ndims, nbatch = self.state.get_shape().as_list()
+        self.state_pl = tf.placeholder(tf.float32, [ndims, None])
+
+        self.assign_op = self.state.assign(self.state_pl)
+        self.grad_op = tf.gradients(self.energy_op, self.state)[0]
+        self.sess.run(tf.initialize_all_variables())
+        return ndims, nbatch
+
+
+    def build_child_graph(self):
+        pass
 
     @overrides(Distribution)
     def E_val(self, X):
@@ -499,16 +509,18 @@ class Funnel(TensorflowDistribution):
             self.nbatch = nbatch
             self.gen_init_X()
 
-            state = tf.Variable(self.Xinit, name='state', dtype=tf.float32)
-            # [1, nbatch]
-            e_x_0 = tf.neg((state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
-            # [ndims - 1, nbatch]
-            e_x_k = tf.neg((state[1:, :] ** 2) / tf.exp(state[0, :]), name='E_x_k')
-            # [nbatch]
-            energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
             super(Funnel, self).__init__(tf.get_default_graph(),
-                                         energy_op, state, name='Funnel')
+                                         self.energy_op, self.state, name='Funnel')
 
+    @overrides(TensorflowDistribution)
+    def build_child_graph(self):
+        self.state = tf.Variable(self.Xinit, name='state', dtype=tf.float32)
+        # [1, nbatch]
+        e_x_0 = tf.neg((self.state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
+        # [ndims - 1, nbatch]
+        e_x_k = tf.neg((self.state[1:, :] ** 2) / tf.exp(self.state[0, :]), name='E_x_k')
+        # [nbatch]
+        self.energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
 
 
     @overrides(Distribution)
