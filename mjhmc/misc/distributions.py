@@ -205,8 +205,6 @@ class TensorflowDistribution(Distribution):
 
     def build_graph(self):
         with self.graph.as_default():
-            if self.generation_instance:
-                self.gen_init_X()
             self.build_energy_op()
             ndims, nbatch = self.state.get_shape().as_list()
             self.state_pl = tf.placeholder(tf.float32, [ndims, None])
