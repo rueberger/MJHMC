@@ -552,7 +552,7 @@ class TFGaussian(TensorflowDistribution):
     def build_energy_op(self):
         with self.graph.as_default():
             self.state = tf.Variable(self.Xinit, name='state', dtype=tf.float32)
-            self.energy_op = tf.reduce_sum(self.state ** 2, 1) / (2 * self.sigma ** 2)
+            self.energy_op = tf.reduce_sum(self.state ** 2, 0) / (2 * self.sigma ** 2)
 
     @overrides(Distribution)
     def gen_init_X(self):
