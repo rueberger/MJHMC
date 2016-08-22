@@ -112,9 +112,9 @@ class Distribution(object):
             # reconstruct this object using fair initialization
             self.nbatch = old_nbatch
             self.generation_instance = False
-            self.cached_init_X()
             if isinstance(self, TensorflowDistribution):
                 _, _ = self.build_graph()
+            self.cached_init_X()
 
 
 
