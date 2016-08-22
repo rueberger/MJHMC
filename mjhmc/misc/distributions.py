@@ -103,15 +103,14 @@ class Distribution(object):
             self.nbatch = MAX_N_PARTICLES
             self.generation_instance = True
             # start with biased initializations
+            # changes self.nbatch
             self.gen_init_X()
-            # must rebuild graph to new dimension for tensorflow distributions
-            if isinstance(self, TensorflowDistribution):
-                _, _ = self.build_graph()
             #generate and cache fair initialization
             cache_initialization(self)
             # reconstruct this object using fair initialization
             self.nbatch = old_nbatch
             self.generation_instance = False
+            # must rebuild now that nbatch is changed back
             if isinstance(self, TensorflowDistribution):
                 _, _ = self.build_graph()
             self.cached_init_X()
