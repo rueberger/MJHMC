@@ -205,6 +205,8 @@ class TensorflowDistribution(Distribution):
 
     def build_graph(self):
         with self.graph.as_default():
+            if self.generation_instance:
+                self.gen_init_X()
             self.build_energy_op()
             ndims, nbatch = self.state.get_shape().as_list()
             self.state_pl = tf.placeholder(tf.float32, [ndims, None])
@@ -517,7 +519,7 @@ class Funnel(TensorflowDistribution):
     @overrides(TensorflowDistribution)
     def build_energy_op(self):
         with self.graph.as_default():
-            self.state = tf.Variable(self.Xinit, name='state', dtype=tf.float32)
+            self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
             # [1, nbatch]
             e_x_0 = tf.neg((self.state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
             # [ndims - 1, nbatch]
@@ -550,7 +552,7 @@ class TFGaussian(TensorflowDistribution):
     @overrides(TensorflowDistribution)
     def build_energy_op(self):
         with self.graph.as_default():
-            self.state = tf.Variable(self.Xinit, name='state', dtype=tf.float32)
+            self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
             self.energy_op = tf.reduce_sum(self.state ** 2, 0) / (2 * self.sigma ** 2)
 
     @overrides(Distribution)
