@@ -221,6 +221,7 @@ class TensorflowDistribution(Distribution):
         """
         raise NotImplementedError("this method must be defined to subclass TensorflowDistribution")
 
+
     @overrides(Distribution)
     def E_val(self, X):
         with self.graph.as_default():
@@ -402,7 +403,7 @@ class TestGaussian(Distribution):
 
     @overrides(Distribution)
     def E_val(self, X):
-        return np.sum(X**2, axis=0).reshape((1,-1))/2./self.sigma**2
+        return np.sum(X**2, axis=0).reshape((1, -1)) / (2. * self.sigma ** 2)
 
     @overrides(Distribution)
     def dEdX_val(self, X):
@@ -507,13 +508,12 @@ class Funnel(TensorflowDistribution):
     """
 
     def __init__(self,scale=1.0, nbatch=50, ndims=10):
-        with tf.Graph().as_default():
-            self.scale = float(scale)
-            self.ndims = ndims
-            self.nbatch = nbatch
-            self.gen_init_X()
+        self.scale = float(scale)
+        self.ndims = ndims
+        self.nbatch = nbatch
+        self.gen_init_X()
 
-            super(Funnel, self).__init__(name='Funnel')
+        super(Funnel, self).__init__(name='Funnel')
 
     @overrides(TensorflowDistribution)
     def build_energy_op(self):
@@ -536,3 +536,28 @@ class Funnel(TensorflowDistribution):
     @overrides(Distribution)
     def __hash__(self):
         return hash((self.scale, self.ndims))
+
+class TFGaussian(TensorflowDistribution):
+    """ Standard gaussian implemented in tensorflow
+    """
+    def __init__(self, ndims=2, nbatch=100, sigma=1.):
+        self.ndims  = ndims
+        self.nbatch = nbatch
+        self.sigma = sigma
+        self.gen_init_X()
+
+        super(TFGaussian, self).__init__(name='TFGaussian')
+
+    @overrides(TensorflowDistribution)
+    def build_energy_op(self):
+        with self.graph.as_default():
+            self.state = tf.Variable(self.Xinit, name='state', dtype=tf.float32)
+            self.energy_op = tf.reduce_sum(self.state ** 2, 1) / (2 * self.sigma ** 2)
+
+    @overrides(Distribution)
+    def gen_init_X(self):
+        self.Xinit = np.random.randn(self.ndims, self.nbatch)
+
+    @overrides(Distribution)
+    def __hash__(self):
+        return hash((self.ndims, self.sigma))
