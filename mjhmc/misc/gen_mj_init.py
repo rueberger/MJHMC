@@ -5,7 +5,6 @@ import pickle
 import numpy as np
 from copy import deepcopy
 from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
-from mjhmc.misc.distributions import TensorflowDistribution
 from .utils import package_path
 
 BURN_IN_STEPS = int(2E6)
@@ -24,7 +23,7 @@ def generate_initialization(distribution):
     assert BURN_IN_STEPS > VAR_STEPS
     assert distribution.nbatch == MAX_N_PARTICLES
     # must rebuild graph to nbatch=MAX_N_PARTICLES
-    if isinstance(distribution, TensorflowDistribution):
+    if distribution.backend == 'tensorflow':
                 _, _ = distribution.build_graph()
     mjhmc = MarkovJumpHMC(distribution=distribution, resample=False)
     for _ in xrange(BURN_IN_STEPS - VAR_STEPS):
