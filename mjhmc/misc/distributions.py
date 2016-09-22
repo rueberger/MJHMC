@@ -385,6 +385,7 @@ class ProductOfT(Distribution):
         self.dEdX_val = self.theano.function([state], gradient, allow_input_downcast=True)
 
         super(ProductOfT,self).__init__(ndims,nbatch)
+        self.backend = 'theano'
 
     def E_def(self,X):
         """
