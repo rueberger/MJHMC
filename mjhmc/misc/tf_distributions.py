@@ -29,24 +29,21 @@ class TensorflowDistribution(Distribution):
     """
 
     #pylint: disable=too-many-arguments
-    def __init__(self, name=None, sess=None):
+    def __init__(self, name=None, sess=None, device='/cpu:0'):
         """ Creates a TensorflowDistribution object
 
         ndims and nbatch are inferred from init
         nbatch must match shape of energy_op
 
-        :param graph: the graph in which energy_op, state and state_placeholder were constructed
-        :param energy_func: energy function op
-        :param state: Variable taken as input by energy_func of the same shape as init
-        :param state_placeholder: placeholder used to initialize state. of same shape as init
-        :param init: fair initialization for this distribution. array of shape (ndims, nbatch)
         :param name: name of this distribution. use the same name for functionally identical distributions
         :param sess: optional session. If none, one will be created
+        :param device: device to execute tf ops on. By default uses cpu to avoid compatibility issues
         :returns: TensorflowDistribution object
         :rtype: TensorflowDistribution
         """
         self.graph = tf.Graph()
-        with self.graph.as_default():
+        self.device = device
+        with self.graph.as_default(), tf.device(self.device):
             self.sess = sess or tf.Session()
 
 
@@ -57,7 +54,7 @@ class TensorflowDistribution(Distribution):
         self.backend = 'tensorflow'
 
     def build_graph(self):
-        with self.graph.as_default():
+        with self.graph.as_default(), tf.device(self.device):
             self.build_energy_op()
             ndims, nbatch = self.state.get_shape().as_list()
             self.state_pl = tf.placeholder(tf.float32, [ndims, None])
@@ -76,13 +73,13 @@ class TensorflowDistribution(Distribution):
 
     @overrides(Distribution)
     def E_val(self, X):
-        with self.graph.as_default():
+        with self.graph.as_default(), tf.device(self.device):
             _, energy = self.sess.run([self.assign_op, self.energy_op], feed_dict={self.state_pl: X})
             return energy
 
     @overrides(Distribution)
     def dEdX_val(self, X):
-        with self.graph.as_default():
+        with self.graph.as_default(), tf.device(self.device):
             _, grad = self.sess.run([self.assign_op, self.grad_op], feed_dict={self.state_pl: X})
             return grad
 
@@ -101,17 +98,17 @@ class Funnel(TensorflowDistribution):
       x_i ~ N(0, e^x_0); i in {1, ... ,ndims}
     """
 
-    def __init__(self,scale=1.0, nbatch=50, ndims=10):
+    def __init__(self,scale=1.0, nbatch=50, ndims=10, **kwargs):
         self.scale = float(scale)
         self.ndims = ndims
         self.nbatch = nbatch
         self.gen_init_X()
 
-        super(Funnel, self).__init__(name='Funnel')
+        super(Funnel, self).__init__(name='Funnel', **kwargs)
 
     @overrides(TensorflowDistribution)
     def build_energy_op(self):
-        with self.graph.as_default():
+        with self.graph.as_default(), tf.device(self.device):
             self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
             # [1, nbatch]
             e_x_0 = tf.neg((self.state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
@@ -134,17 +131,17 @@ class Funnel(TensorflowDistribution):
 class TFGaussian(TensorflowDistribution):
     """ Standard gaussian implemented in tensorflow
     """
-    def __init__(self, ndims=2, nbatch=100, sigma=1.):
+    def __init__(self, ndims=2, nbatch=100, sigma=1.,  **kwargs):
         self.ndims  = ndims
         self.nbatch = nbatch
         self.sigma = sigma
         self.gen_init_X()
 
-        super(TFGaussian, self).__init__(name='TFGaussian')
+        super(TFGaussian, self).__init__(name='TFGaussian', **kwargs)
 
     @overrides(TensorflowDistribution)
     def build_energy_op(self):
-        with self.graph.as_default():
+        with self.graph.as_default(), tf.device(self.device):
             self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
             self.energy_op = tf.reduce_sum(self.state ** 2, 0) / (2 * self.sigma ** 2)
 
