@@ -1,7 +1,8 @@
 """
-Module containing various experiments
+Module containing spectral gap experiments
 """
 import numpy as np
+from scipy.interpolate import UnivariateSpline
 
 from mjhmc.samplers.markov_jump_hmc import ControlHMC
 from mjhmc.misc.distributions import Gaussian
@@ -37,3 +38,18 @@ def ladder_numerical_err_hist(distr=None, n_steps=int(1e5)):
     for ladder_energies in energies:
         centered_energies += list(ladder_energies - ladder_energies[0])
     return centered_energies
+
+def fit_inv_pdf(ladder_energies):
+    """ Fit an interpolant to the inverse pdf of ladder energies
+    Nasty hack to allow drawing energies from arbitrary distributions of ladder_energies
+
+    Args:
+      ladder_energies: array, output of ladder_numerical_err_hist
+
+    Returns:
+      interp_inv_pdf: inverse pdf interpolant
+    """
+    hist, bin_edges = np.histogram(ladder_energies, bins='auto')
+    bin_mdpts = (np.diff(bin_edges) / 2) + bin_edges[:-1]
+    pdf = np.cumsum(hist) / np.sum(hist)
+    return UnivariateSpline(pdf, bin_mdpts, bbox=[0, 1], k=1)
