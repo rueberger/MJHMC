@@ -18,18 +18,24 @@ def ladder_numerical_err_hist(distr=None, n_steps=int(1e5)):
 
     Returns:
      energies = {E(L^j \zeta) : j \in {0, ..., k}}^{n_batch}
+     run_lengths: list of observed ladder sizes
     """
     distr = distr or Gaussian(nbatch=1)
     sampler = ControlHMC(distribution=distr)
 
     # [[ladder_energies]]
     energies = []
+    run_lengths = []
     r_counts = [0]
     ladder_energies = [np.squeeze(sampler.state.H())]
+    run_length = 0
     for _ in range(n_steps):
         if sampler.r_count == r_counts[-1]:
+            run_length += 1
             ladder_energies.append(np.squeeze(sampler.state.H()))
         else:
+            run_lengths.append(run_length)
+            run_length = 0
             energies.append(np.array(ladder_energies))
             ladder_energies = [np.squeeze(sampler.state.H())]
         r_counts.append(sampler.r_count)
@@ -37,7 +43,7 @@ def ladder_numerical_err_hist(distr=None, n_steps=int(1e5)):
     centered_energies = []
     for ladder_energies in energies:
         centered_energies += list(ladder_energies - ladder_energies[0])
-    return centered_energies
+    return centered_energies, run_lengths
 
 def fit_inv_pdf(ladder_energies):
     """ Fit an interpolant to the inverse pdf of ladder energies
