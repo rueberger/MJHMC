@@ -51,5 +51,10 @@ def fit_inv_pdf(ladder_energies):
     """
     hist, bin_edges = np.histogram(ladder_energies, bins='auto')
     bin_mdpts = (np.diff(bin_edges) / 2) + bin_edges[:-1]
+    # interpolation backward using slope bin_mdpts[1] - bin_mdpts[0]
+    zero_interp_mdpt = -2 * bin_mdpts[0] + bin_mdpts[1]
     pdf = np.cumsum(hist) / np.sum(hist)
+    # we add zero so that the interpolation is defined everywhere on [0, 1]
+    pdf = np.concatenate([[0], pdf])
+    bin_mdpts = np.concatenate([[zero_interp_mdpt], bin_mdpts])
     return UnivariateSpline(pdf, bin_mdpts, bbox=[0, 1], k=1)
