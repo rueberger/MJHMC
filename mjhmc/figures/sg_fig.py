@@ -19,6 +19,7 @@ from os.path import expanduser
 
 from mjhmc.samplers.algebraic_hmc import (AlgebraicHMC, AlgebraicDiscrete,
                                     AlgebraicContinuous, AlgebraicReducedFlip)
+from mjhmc.experiments.spectral import fit_inv_pdf, ladder_numerical_err_hist
 
 # green blue palette
 sns.set_palette("cubehelix", n_colors=2)
@@ -39,7 +40,7 @@ def sg(algebraic_sampler, full):
 
 
 def plot_spectral_gaps(max_n_dims, n_trials=25,
-                       full=True, save_directory='~/Desktop'):
+                       full=True, save_directory='~/tmp/figs/mjhmc'):
     """ Generates the spectral gap figure
 
     :param max_n_dims: max number of dimensions to go up to
@@ -49,6 +50,9 @@ def plot_spectral_gaps(max_n_dims, n_trials=25,
     :returns: None, saves a figure at the specified path
     :rtype: None
     """
+    print("Computing empirical energy distribution")
+    energy_hist = ladder_numerical_err_hist()
+    inv_pdf = fit_inv_pdf(energy_hist)
     hmc_sg = []
     rf_sg = []
     sgs = []
@@ -59,7 +63,7 @@ def plot_spectral_gaps(max_n_dims, n_trials=25,
         hmc_trials = []
         rf_trials = []
         for _ in xrange(n_trials):
-            H = np.random.randn(order / 2)
+            H = inv_pdf(np.random.random(order / 2))
             hmc = AlgebraicHMC(order, energies=H)
             rf = AlgebraicReducedFlip(order, energies=H)
             hmc_trials.append(sg(hmc, full))
