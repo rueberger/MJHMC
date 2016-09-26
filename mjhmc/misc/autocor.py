@@ -3,8 +3,6 @@ This module contains utilities for computing the autocorrelation of a sequence o
 """
 import pandas as pd
 import numpy as np
-import theano
-import theano.tensor as T
 from time import time
 
 def calculate_autocorrelation(sampler, distribution,
@@ -58,6 +56,8 @@ def autocorrelation(history, half_window=True, normalize=True, cached_var=None, 
             print "Calculating autocor"
             ac_squeeze = sess.run(ac_op, feed_dict={samples_pl: samples})
     else:
+        import theano
+        import theano.tensor as T
         print "Now compiling autocorrelation function"
         start_time = time()
         theano_ac = compile_autocor_func(half_window)
