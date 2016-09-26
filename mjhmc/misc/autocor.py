@@ -138,7 +138,6 @@ def build_autocor_op(n_dims, n_batch, n_samples, half_window=True):
        samples_pl: placeholder for samples - [n_dims, n_batch, n_samples]
     """
     import tensorflow as tf
-    trace = tf.placeholder(tf.float32, shape=[None, None, None])
     if half_window:
         max_t = (n_samples / 2) - 1
     else:
@@ -148,7 +147,7 @@ def build_autocor_op(n_dims, n_batch, n_samples, half_window=True):
 
     ac_at_t = []
     for t_idx in range(max_t):
-        ac_at_t.append(tf.reduce_mean(samples[:, :, :-t_idx] * samples[:, :, t_idx:]))
+        ac_at_t.append(tf.reduce_mean(samples_pl[:, :, :-t_idx] * samples_pl[:, :, t_idx:]))
 
     return tf.squeeze(tf.pack(ac_at_t)), samples_pl
 
