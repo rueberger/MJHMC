@@ -149,6 +149,7 @@ def build_autocor_op(n_dims, n_batch, n_samples, half_window=True):
         tf.reduce_mean(samples_pl[:, :, :n_samples - t_idx] * samples_pl[:, :, t_idx:])
 
     autocor = tf.map_fn(ac_elem, tf.constant(np.arange(1, max_t)),
+                        dtype=tf.float32,
                         parallel_iterations=50,
                         back_prop=False,
                         swap_memory=True)
