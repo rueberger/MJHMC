@@ -51,7 +51,7 @@ def plot_spectral_gaps(max_n_dims, n_trials=25,
     :rtype: None
     """
     print("Computing empirical energy distribution")
-    energy_hist = ladder_numerical_err_hist()
+    energy_hist, _  = ladder_numerical_err_hist()
     inv_pdf = fit_inv_pdf(energy_hist)
     hmc_sg = []
     rf_sg = []
