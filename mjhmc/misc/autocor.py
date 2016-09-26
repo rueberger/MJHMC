@@ -33,28 +33,41 @@ def calculate_autocorrelation(sampler, distribution,
     print "Calculating autocorrelation..."
     return autocorrelation(sample_df, half_window, cached_var=cached_var)
 
-def autocorrelation(history, half_window=False, normalize=True, cached_var=None):
-    print "Now compiling autocorrelation function"
-    start_time = time()
-    theano_ac = compile_autocor_func(half_window)
-    print "Took {} seconds".format(time() - start_time)
-
+def autocorrelation(history, half_window=True, normalize=True, cached_var=None, use_tf=True):
     n_samples = len(history)
     n_dims, n_batch = history.loc[0]['X'].shape
 
     samples = np.zeros((n_dims, n_batch, n_samples))
 
-    print "Now copying samples to array..."
+    print "Copying samples to array"
     start_time = time()
     for idx in range(n_samples):
         samples[:, :, idx] = history.loc[idx]['X']
     print "Took {} seconds".format(time() - start_time)
 
-    print "Now running compiled autocorrelation function..."
-    start_time = time()
-    raw_autocor = theano_ac(samples.astype('float32'))
-    print "Took {} seconds".format(time() - start_time)
 
+    if use_tf:
+        import tensorflow as tf
+        with tf.Graph().as_default(), tf.Session() as sess:
+            print "Building autocor op"
+            ac_op, samples_pl = build_autocor_op(n_dims, n_batch, n_samples, half_window=half_window)
+
+            print "Initializing variables"
+            sess.run(tf.initialize_all_variables())
+
+            print "Calculating autocor"
+            ac_squeeze = sess.run(ac_op, feed_dict={samples_pl: samples})
+    else:
+        print "Now compiling autocorrelation function"
+        start_time = time()
+        theano_ac = compile_autocor_func(half_window)
+        print "Took {} seconds".format(time() - start_time)
+
+        print "Now running compiled autocorrelation function..."
+        start_time = time()
+        raw_autocor = theano_ac(samples.astype('float32'))
+        print "Took {} seconds".format(time() - start_time)
+        ac_squeeze = np.squeeze(raw_autocor[0])
 
     if cached_var is None:
         # variance given assumption of *zero mean*
@@ -65,7 +78,7 @@ def autocorrelation(history, half_window=False, normalize=True, cached_var=None)
 
     print "Now moving result to dataframe"
     start_time = time()
-    ac_squeeze = np.squeeze(raw_autocor[0])
+
     if normalize:
         ac_squeeze = ac_squeeze / var
         # theano doesn't play nice with the first element but it's just the variance
@@ -110,6 +123,34 @@ def compile_autocor_func(half_window):
     theano_ac = theano.function(inputs=[X], outputs=[result], updates=updates)
     return theano_ac
 
+def build_autocor_op(n_dims, n_batch, n_samples, half_window=True):
+    """ Builds a tensorflow op to comptue the autocorrelation of a sequence of samples
+
+    Args:
+       half_window: If true, computes autocorrelation out to half of the length of the
+          input sequence, to reduce noise
+       n_dims: int
+       n_batch: int
+       n_samples: int
+
+    Returns:
+       autocorrelation: tensor - [max_t]
+       samples_pl: placeholder for samples - [n_dims, n_batch, n_samples]
+    """
+    import tensorflow as tf
+    trace = tf.placeholder(tf.float32, shape=[None, None, None])
+    if half_window:
+        max_t = (tf.shape(trace)[2] / 2) - 1
+    else:
+        max_t = tf.shape(trace)[2] / 2
+
+    samples_pl = tf.placeholder(tf.float32, shape=(n_dims, n_batch, n_samples), name='samples_pl')
+
+    ac_at_t = []
+    for t_idx in range(max_t):
+        ac_at_t.append(tf.reduce_mean(samples[:, :, :-t_idx] * samples[:, :, t_idx:]))
+
+    return tf.squeeze(tf.pack(ac_at_t)), samples_pl
 
 
 def slow_autocorrelation(history, half_window=False):
