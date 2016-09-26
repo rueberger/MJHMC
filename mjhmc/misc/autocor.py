@@ -146,8 +146,8 @@ def build_autocor_op(n_dims, n_batch, n_samples, half_window=True):
     samples_pl = tf.placeholder(tf.float32, shape=(n_dims, n_batch, n_samples), name='samples_pl')
 
     ac_at_t = []
-    for t_idx in range(max_t):
-        ac_at_t.append(tf.reduce_mean(samples_pl[:, :, :-t_idx] * samples_pl[:, :, t_idx:]))
+    for t_idx in range(1, max_t):
+        ac_at_t.append(tf.reduce_mean(samples_pl[:, :, :n_samples - t_idx] * samples_pl[:, :, t_idx:]))
 
     return tf.squeeze(tf.pack(ac_at_t)), samples_pl
 
