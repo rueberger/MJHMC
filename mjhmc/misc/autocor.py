@@ -145,11 +145,16 @@ def build_autocor_op(n_dims, n_batch, n_samples, half_window=True):
 
     samples_pl = tf.placeholder(tf.float32, shape=(n_dims, n_batch, n_samples), name='samples_pl')
 
-    ac_at_t = []
-    for t_idx in range(1, max_t):
-        ac_at_t.append(tf.reduce_mean(samples_pl[:, :, :n_samples - t_idx] * samples_pl[:, :, t_idx:]))
+    def ac_elem(t_idx):
+        tf.reduce_mean(samples_pl[:, :, :n_samples - t_idx] * samples_pl[:, :, t_idx:])
 
-    return tf.squeeze(tf.pack(ac_at_t)), samples_pl
+    autocor = tf.map_fn(ac_elem, tf.constant(np.arange(1, max_t)),
+                        parallel_iterations=50,
+                        back_prop=False,
+                        swap_memory=True)
+
+
+    return autocor, samples_pl
 
 
 def slow_autocorrelation(history, half_window=False):
