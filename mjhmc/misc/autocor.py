@@ -140,9 +140,9 @@ def build_autocor_op(n_dims, n_batch, n_samples, half_window=True):
     import tensorflow as tf
     trace = tf.placeholder(tf.float32, shape=[None, None, None])
     if half_window:
-        max_t = (tf.shape(trace)[2] / 2) - 1
+        max_t = (n_samples / 2) - 1
     else:
-        max_t = tf.shape(trace)[2] / 2
+        max_t = n_samples - 1
 
     samples_pl = tf.placeholder(tf.float32, shape=(n_dims, n_batch, n_samples), name='samples_pl')
 
