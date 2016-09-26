@@ -40,7 +40,7 @@ def sg(algebraic_sampler, full):
 
 
 def plot_spectral_gaps(max_n_dims, n_trials=25,
-                       full=True, save_directory='~/tmp/figs/mjhmc'):
+                       full=False, save_directory='~/tmp/figs/mjhmc'):
     """ Generates the spectral gap figure
 
     :param max_n_dims: max number of dimensions to go up to
@@ -96,5 +96,9 @@ def plot_spectral_gaps(max_n_dims, n_trials=25,
     plt.xlabel("Number of states in ladder")
     plt.yscale('log')
     plt.title("Spectral gap vs. number of system states")
-    plt.savefig("{}/sg_gap_{}_energies_{}_trials.pdf".format(
-        expanduser(save_directory), max_n_dims, n_trials))
+    if full:
+        plt.savefig("{}/sg_gap_full_{}_energies_{}_trials.pdf".format(
+            expanduser(save_directory), max_n_dims, n_trials))
+    else:
+        plt.savefig("{}/sg_gap_half_{}_energies_{}_trials.pdf".format(
+            expanduser(save_directory), max_n_dims, n_trials))
