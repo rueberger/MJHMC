@@ -82,10 +82,10 @@ def autocorrelation(history, half_window=True, normalize=True, cached_var=None, 
     if normalize:
         ac_squeeze = ac_squeeze / var
         # theano doesn't play nice with the first element but it's just the variance
-        autocor = np.vstack((1., ac_squeeze.reshape(raw_autocor[0].shape[0], 1)))
+        autocor = np.vstack((1., ac_squeeze.reshape(-1, 1)))
     else:
        # theano doesn't play nice with the first element but it's just the variance
-        autocor = np.vstack((var, ac_squeeze.reshape(raw_autocor[0].shape[0], 1)))
+        autocor = np.vstack((var, ac_squeeze.reshape(-1, 1)))
 
 
 
