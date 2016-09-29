@@ -31,7 +31,7 @@ def calculate_autocorrelation(sampler, distribution,
     print "Calculating autocorrelation..."
     return autocorrelation(sample_df, half_window, cached_var=cached_var)
 
-def autocorrelation(history, half_window=True, normalize=True, cached_var=None, use_tf=True):
+def autocorrelation(history, half_window=True, normalize=True, cached_var=None, use_tf=False):
     n_samples = len(history)
     n_dims, n_batch = history.loc[0]['X'].shape
 
