@@ -167,6 +167,8 @@ class SparseImageCode(TensorflowDistribution):
            n_patches: number of patches to simultaneously run inference over - must be a perfect square
            n_batches: number of batches to run at once
         """
+        patch_size = 16
+        self.lambda = 0.1
 
         assert int(sqrt(n_patches)) == sqrt(n_patches)
 
@@ -185,7 +187,6 @@ class SparseImageCode(TensorflowDistribution):
         self.n_patches = n_patches
 
         # select a square set of patches from the image starting from the upper left
-        patch_size = 16
         patch_list = []
         for x_idx in range(sqrt(n_patches)):
             for y_idx in range(sqrt(n_patches)):
@@ -207,9 +208,25 @@ class SparseImageCode(TensorflowDistribution):
             self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
             shaped_state = tf.reshape(self.state, [self.n_patches, self.nbatch, self.n_coeffs, 1], name='shaped_state')
             shaped_basis = tf.reshape(self.basis, [1, 1, self.img_size, self.n_coeffs], name='shaped_basis')
-            # [self.n_patches, self.nbatch, self.img_size, self.n_coeffs]
+            # [n_patches, nbatch, img_size, n_coeffs]
             shaped_basis = tf.tile(shaped_basis, [self.n_patches, self.nbatch, 1, 1], name='tiled_basis')
-            # [self.n_patches, self.nbatch, self.img_size]
+            # [n_patches, nbatch, img_size]
             reconstructions = tf.batch_matmul(shaped_basis, shaped_state)
-            # [self.n_patches, self.nbatch]
+            # [n_patches, nbatch]
             reconstruction_error = tf.reduce_sum(0.5 * (self.patches - reconstructions) ** 2, -1)
+            # [nbatch]
+            reconstruction_error = tf.reduce_mean(reconstruction_error, 0, name='reconstruction_error')
+
+            # [nbatch]
+            sp_penalty = self.lambda * tf.reduce_sum(tf.abs(self.state), 0, name='sp_penalty')
+            return reconstruction_error + sp_penalty
+
+    @overrides(Distribution)
+    def __hash__(self):
+        # so they can be hashed
+        self.imgs.flags.writeable = False
+        self.basis.flags.writeable = False
+        hash(hash(self.imgs.data),
+             hash(self.basis.data),
+             hash(self.lambda),
+             hash(self.n_patches))
