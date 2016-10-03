@@ -1,5 +1,5 @@
 """
-  This module contains the TensorflowDistribution base class and distributions that inherit from it
+This module contains the TensorflowDistribution base class and distributions that inherit from it
 """
 
 import numpy as np
@@ -7,7 +7,10 @@ import tensorflow as tf
 from .utils import overrides, package_path
 import os
 from scipy import stats
+from scipy.io import loadmat
 import pickle
+from math import sqrt
+
 
 from mjhmc.misc.distributions import Distribution
 
@@ -152,3 +155,61 @@ class TFGaussian(TensorflowDistribution):
     @overrides(Distribution)
     def __hash__(self):
         return hash((self.ndims, self.sigma))
+
+class SparseImageCode(TensorflowDistribution):
+    """ Distribution over the coefficients in an inference model of sparse coding on natural images a la Olshausen and Field
+    """
+
+    def __init__(self, n_patches, n_batches=10, **kwargs):
+        """ Construct a SparseImageCode object
+
+        Args:
+           n_patches: number of patches to simultaneously run inference over - must be a perfect square
+           n_batches: number of batches to run at once
+        """
+
+        assert int(sqrt(n_patches)) == sqrt(n_patches)
+
+        img_path = os.path.expanduser('~/data/mjhmc/IMAGES.mat')
+        basis_path = os.path.expanduser('~/data/mjhmc/basis.mat')
+
+        # [512, 512, 10]
+        imgs = loadmat(img_path)['IMAGES']
+        # [256, 256], [img_size, n_coeffs]
+        self.basis = loadmat(basis_path)['basis']
+
+        # n_coeffs per patch
+        self.img_size, self.n_coeffs = self.basis.shape
+        self.ndims = n_patches * self.n_coeffs
+        self.nbatch = n_batches
+        self.n_patches = n_patches
+
+        # select a square set of patches from the image starting from the upper left
+        patch_size = 16
+        patch_list = []
+        for x_idx in range(sqrt(n_patches)):
+            for y_idx in range(sqrt(n_patches)):
+                patch_list.append(imgs[x_idx * patch_size: (x_idx + 1) * patch_size, y_idx * patch_size: (y_idx + 1) * patch_size, 0].ravel())
+        # [n_patches, 1, img_size]
+        self.patches = tf.reshape(tf.pack(patch_list), [self.n_patches, 1, self.img_size])
+
+
+
+        super(SparseImageCode, self).__init___(name='SparseImageCode', **kwargs)
+
+
+    @overrides(TensorflowDistribution):
+    def build_energy_op(self):
+        with self.graph.as_default(), tf.device(self.device):
+            # self.state is ndims, nbatch
+            # reshape into individual sets of coefficients then reduce sum basis.dot(coeff)
+            # NOTE TO SELF: DO NOT RESHAPE HERE
+            self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
+            shaped_state = tf.reshape(self.state, [self.n_patches, self.nbatch, self.n_coeffs, 1], name='shaped_state')
+            shaped_basis = tf.reshape(self.basis, [1, 1, self.img_size, self.n_coeffs], name='shaped_basis')
+            # [self.n_patches, self.nbatch, self.img_size, self.n_coeffs]
+            shaped_basis = tf.tile(shaped_basis, [self.n_patches, self.nbatch, 1, 1], name='tiled_basis')
+            # [self.n_patches, self.nbatch, self.img_size]
+            reconstructions = tf.batch_matmul(shaped_basis, shaped_state)
+            # [self.n_patches, self.nbatch]
+            reconstruction_error = tf.reduce_sum(0.5 * (self.patches - reconstructions) ** 2, -1)
