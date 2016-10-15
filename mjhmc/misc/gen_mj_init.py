@@ -1,7 +1,9 @@
 """
  This module contains methods for generating and caching fair initializations for MJHMC
 """
+
 import pickle
+import numpy as np
 from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
 from .utils import package_path
 
@@ -34,7 +36,15 @@ def generate_initialization(distribution):
 
     # otherwise will go into recursive loop
     distribution.mjhmc = False
-    control = ControlHMC(distribution=distribution.reset())
+    try:
+        distribution.gen_init_X()
+    except NotImplementedError:
+        print("No explicit init method found, using mjhmc endpoint")
+
+    distribution.E_count = 0
+    distribution.dEdX_count = 0
+
+    control = ControlHMC(distribution=distribution)
     for _ in xrange(BURN_IN_STEPS - VAR_STEPS):
         control.sampling_iteration()
     true_var_estimate, control = online_variance(control, distribution)

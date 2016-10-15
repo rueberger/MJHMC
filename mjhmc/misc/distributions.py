@@ -156,7 +156,8 @@ class Distribution(object):
         """
         self.E_count = 0
         self.dEdX_count = 0
-        self.init_X()
+        if not self.generation_instance:
+            self.init_X()
         return self
 
     def __call__(self, X):
