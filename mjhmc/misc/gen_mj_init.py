@@ -2,8 +2,6 @@
  This module contains methods for generating and caching fair initializations for MJHMC
 """
 import pickle
-import numpy as np
-from copy import deepcopy
 from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
 from .utils import package_path
 
@@ -32,7 +30,7 @@ def generate_initialization(distribution):
 
     emc_var_estimate, mjhmc = online_variance(mjhmc, distribution)
     # we discard v since p(x,v) = p(x)p(v)
-    fair_x = mjhmc.state.copy().X
+    mjhmc_endpt = mjhmc.state.copy().X
 
     # otherwise will go into recursive loop
     distribution.mjhmc = False
@@ -40,8 +38,9 @@ def generate_initialization(distribution):
     for _ in xrange(BURN_IN_STEPS - VAR_STEPS):
         control.sampling_iteration()
     true_var_estimate, control = online_variance(control, distribution)
+    control_endpt = control.state.copy().X
 
-    return (fair_x, emc_var_estimate, true_var_estimate)
+    return mjhmc_endpt, emc_var_estimate, true_var_estimate, control_endpt
 
 def cache_initialization(distribution):
     """ Generates fair initialization for mjhmc on distribution and then caches it
@@ -52,12 +51,12 @@ def cache_initialization(distribution):
     """
     distr_name = type(distribution).__name__
     distr_hash = hash(distribution)
-    fair_init, emc_var_estimate, true_var_estimate = generate_initialization(distribution)
+    mjhmc_endpt, emc_var_estimate, true_var_estimate, control_endpt = generate_initialization(distribution)
 
     file_name = '{}_{}.pickle'.format(distr_name, distr_hash)
     file_prefix = '{}/initializations'.format(package_path())
     with open('{}/{}'.format(file_prefix, file_name), 'wb') as cache_file:
-        pickle.dump((fair_init, emc_var_estimate, true_var_estimate), cache_file)
+        pickle.dump((mjhmc_endpt, emc_var_estimate, true_var_estimate, control_endpt), cache_file)
     print "Fair initialization for {} saved as {}".format(distr_name, file_name)
     print "The embedded jump process on {} has estimated variance of {}".format(
         distr_name, emc_var_estimate)
