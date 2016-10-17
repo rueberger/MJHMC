@@ -48,22 +48,18 @@ class TensorflowDistribution(Distribution):
         self.device = device
         with self.graph.as_default(), tf.device(self.device):
             self.sess = sess or tf.Session()
-
-
-            ndims, nbatch = self.build_graph()
+            self.build_graph()
             self.name = name or self.energy_op.op.name
 
         self.backend = 'tensorflow'
-        super(TensorflowDistribution, self).__init__(ndims=ndims, nbatch=nbatch)
+        super(TensorflowDistribution, self).__init__(ndims=self.ndims, nbatch=self.nbatch)
 
 
     def build_graph(self):
         with self.graph.as_default(), tf.device(self.device):
-            ndims, nbatch = self.state.get_shape().as_list()
-            self.state_pl = tf.placeholder(tf.float32, [ndims, None])
+            self.state_pl = tf.placeholder(tf.float32, [self.ndims, None])
             self.build_energy_op()
             self.sess.run(tf.initialize_all_variables())
-            return ndims, nbatch
 
 
     def energy_op_singlet(self, singlet_state):
