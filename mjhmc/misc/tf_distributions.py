@@ -171,7 +171,7 @@ class TFGaussian(TensorflowDistribution):
         super(TFGaussian, self).__init__(name='TFGaussian', **kwargs)
 
     @overrides(TensorflowDistribution)
-    def build_energy_op(self, singlet_state):
+    def energy_op_singlet(self, singlet_state):
         with self.graph.as_default(), tf.device(self.device):
             self.energy_op = tf.reduce_sum(singlet_state ** 2) / (2 * self.sigma ** 2)
 
@@ -227,7 +227,7 @@ class SparseImageCode(TensorflowDistribution):
 
 
     @overrides(TensorflowDistribution)
-    def build_energy_op(self, singlet_state):
+    def energy_op_singlet(self, singlet_state):
         with self.graph.as_default(), tf.device(self.device):
             shaped_state = tf.reshape(singlet_state, [self.n_patches, self.n_coeffs, 1], name='shaped_state')
             shaped_basis = tf.reshape(self.basis, [1, self.img_size, self.n_coeffs], name='shaped_basis')
