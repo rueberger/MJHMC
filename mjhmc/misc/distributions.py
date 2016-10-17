@@ -124,7 +124,7 @@ class Distribution(object):
 
             # must rebuild now that nbatch is changed back
             if self.backend == 'tensorflow':
-                _, _ = self.build_graph()
+                self.build_graph()
 
             # start with biased initializations
             # changes self.nbatch
@@ -141,7 +141,7 @@ class Distribution(object):
             self.generation_instance = False
             # must rebuild now that nbatch is changed back
             if self.backend == 'tensorflow':
-                _, _ = self.build_graph()
+                 self.build_graph()
             self.cached_init_X()
 
 
