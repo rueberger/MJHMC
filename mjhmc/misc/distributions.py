@@ -35,7 +35,8 @@ class Distribution(object):
         # TensorflowDistributions require some special treatment
         # this attribute is to be used instead of isinstance, as that would require
         # tensorflow to be imported globally
-        self.backend = 'numpy'
+        if not hasattr(self, 'backend'):
+            self.backend = 'numpy'
 
         # true iff being sampled with a jump process
         self.mjhmc = None
@@ -120,6 +121,10 @@ class Distribution(object):
             old_nbatch = self.nbatch
             self.nbatch = MAX_N_PARTICLES
             self.generation_instance = True
+
+            # must rebuild now that nbatch is changed back
+            if self.backend == 'tensorflow':
+                _, _ = self.build_graph()
 
             # start with biased initializations
             # changes self.nbatch
