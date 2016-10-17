@@ -53,25 +53,57 @@ class TensorflowDistribution(Distribution):
             ndims, nbatch = self.build_graph()
             self.name = name or self.energy_op.op.name
 
-        super(TensorflowDistribution, self).__init__(ndims=ndims, nbatch=nbatch)
         self.backend = 'tensorflow'
+        super(TensorflowDistribution, self).__init__(ndims=ndims, nbatch=nbatch)
+
 
     def build_graph(self):
         with self.graph.as_default(), tf.device(self.device):
-            self.build_energy_op()
             ndims, nbatch = self.state.get_shape().as_list()
             self.state_pl = tf.placeholder(tf.float32, [ndims, None])
-
-            self.assign_op = self.state.assign(self.state_pl)
-            self.grad_op = tf.gradients(self.energy_op, self.state)[0]
+            self.build_energy_op()
             self.sess.run(tf.initialize_all_variables())
             return ndims, nbatch
 
 
-    def build_energy_op(self):
-        """ Sets self.state and self.energy_op
+    def energy_op_singlet(self, singlet_state):
+        """ Build the energy op for a single particle
+        Output must be a scalar
+        This is what you should set to define your distribution
+
+        Args:
+          singlet_state: tensor with state of single particle - [n_dims]
+
+        Sets self.singlet_energy_op, which depends on self.singlet_state_pl
         """
         raise NotImplementedError("this method must be defined to subclass TensorflowDistribution")
+
+    def grad_op_singlet(self, singlet_state):
+        """ Build the gradient op for a single particle
+
+        Args:
+          singlet_state: tensor with state of single particle - [n_dims]
+        """
+        return tf.gradient(self.energy_op_singlet(singlet_state), singlet_state)[0]
+
+
+    def build_energy_op(self):
+        """ Builds an energy op over all particles use self.singlet_energy_op and tf.map_fn
+        """
+        # TODO: unclear what's the right number of parallel_itrs
+        # also unclear if swapping memory helps
+        # unpacks along first dimension
+        # [self.state_pl.shape[1]]
+        self.energy_op = tf.map_fn(self.energy_op_singlet, tf.transpose(self.state_pl),
+                           back_prop=False,
+                           swap_memory=True,
+                           name='energy')
+        # [self.state_pl.shape[1], ndims]
+        self.grad_op = tf.map_fn(self.grad_op_singlet, tf.transpose(self.state_pl),
+                                 back_prop=False,
+                                 swap_memory=True,
+                                 name='grad_T')
+        self.grad_op = tf.transpose(self.grad_op, name='grad')
 
 
     @overrides(Distribution)
@@ -168,7 +200,7 @@ class SparseImageCode(TensorflowDistribution):
            n_batches: number of batches to run at once
         """
         patch_size = 16
-        self.lambda = 0.1
+        self.lmda = 0.1
 
         assert int(sqrt(n_patches)) == sqrt(n_patches)
 
@@ -199,12 +231,11 @@ class SparseImageCode(TensorflowDistribution):
         super(SparseImageCode, self).__init___(name='SparseImageCode', **kwargs)
 
 
-    @overrides(TensorflowDistribution):
+    @overrides(TensorflowDistribution)
     def build_energy_op(self):
         with self.graph.as_default(), tf.device(self.device):
             # self.state is ndims, nbatch
             # reshape into individual sets of coefficients then reduce sum basis.dot(coeff)
-            # NOTE TO SELF: DO NOT RESHAPE HERE
             self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
             shaped_state = tf.reshape(self.state, [self.n_patches, self.nbatch, self.n_coeffs, 1], name='shaped_state')
             shaped_basis = tf.reshape(self.basis, [1, 1, self.img_size, self.n_coeffs], name='shaped_basis')
@@ -218,7 +249,7 @@ class SparseImageCode(TensorflowDistribution):
             reconstruction_error = tf.reduce_mean(reconstruction_error, 0, name='reconstruction_error')
 
             # [nbatch]
-            sp_penalty = self.lambda * tf.reduce_sum(tf.abs(self.state), 0, name='sp_penalty')
+            sp_penalty = self.lmbda * tf.reduce_sum(tf.abs(self.state), 0, name='sp_penalty')
             return reconstruction_error + sp_penalty
 
     @overrides(Distribution)
@@ -228,5 +259,10 @@ class SparseImageCode(TensorflowDistribution):
         self.basis.flags.writeable = False
         hash(hash(self.imgs.data),
              hash(self.basis.data),
-             hash(self.lambda),
+             hash(self.lmbda),
              hash(self.n_patches))
+
+    @overrides(Distribution)
+    def gen_init_X(self):
+        # fista
+        pass
