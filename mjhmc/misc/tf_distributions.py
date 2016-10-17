@@ -107,13 +107,13 @@ class TensorflowDistribution(Distribution):
     @overrides(Distribution)
     def E_val(self, X):
         with self.graph.as_default(), tf.device(self.device):
-            _, energy = self.sess.run([self.assign_op, self.energy_op], feed_dict={self.state_pl: X})
+            energy = self.sess.run(self.energy_op, feed_dict={self.state_pl: X})
             return energy
 
     @overrides(Distribution)
     def dEdX_val(self, X):
         with self.graph.as_default(), tf.device(self.device):
-            _, grad = self.sess.run([self.assign_op, self.grad_op], feed_dict={self.state_pl: X})
+            grad = self.sess.run(self.grad_op, feed_dict={self.state_pl: X})
             return grad
 
     @overrides(Distribution)
