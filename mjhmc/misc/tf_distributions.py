@@ -213,18 +213,18 @@ class SparseImageCode(TensorflowDistribution):
         self.ndims = n_patches * self.n_coeffs
         self.nbatch = n_batches
         self.n_patches = n_patches
+        sqrt_n_patches = int(sqrt(n_patches))
 
         # select a square set of patches from the image starting from the upper left
         patch_list = []
-        for x_idx in range(sqrt(n_patches)):
-            for y_idx in range(sqrt(n_patches)):
+        for x_idx in range(sqrt_n_patches):
+            for y_idx in range(sqrt_n_patches):
                 patch_list.append(imgs[x_idx * patch_size: (x_idx + 1) * patch_size, y_idx * patch_size: (y_idx + 1) * patch_size, 0].ravel())
         # [n_patches, 1, img_size]
         self.patches = tf.reshape(tf.pack(patch_list), [self.n_patches, 1, self.img_size])
 
 
-
-        super(SparseImageCode, self).__init___(name='SparseImageCode', **kwargs)
+        super(SparseImageCode, self).__init__(name='SparseImageCode', **kwargs)
 
 
     @overrides(TensorflowDistribution)
