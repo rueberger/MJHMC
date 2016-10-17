@@ -24,7 +24,7 @@ def generate_initialization(distribution):
     assert distribution.nbatch == MAX_N_PARTICLES
     # must rebuild graph to nbatch=MAX_N_PARTICLES
     if distribution.backend == 'tensorflow':
-                _, _ = distribution.build_graph()
+        distribution.build_graph()
     mjhmc = MarkovJumpHMC(distribution=distribution, resample=False)
     for _ in xrange(BURN_IN_STEPS - VAR_STEPS):
         mjhmc.sampling_iteration()
