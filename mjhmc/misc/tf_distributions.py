@@ -89,6 +89,7 @@ class TensorflowDistribution(Distribution):
 
     def build_energy_op(self):
         """ Builds an energy op over all particles use self.singlet_energy_op and tf.map_fn
+        Also builds the gradient op
         """
         # TODO: unclear what's the right number of parallel_itrs
         # also unclear if swapping memory helps
@@ -142,15 +143,14 @@ class Funnel(TensorflowDistribution):
         super(Funnel, self).__init__(name='Funnel', **kwargs)
 
     @overrides(TensorflowDistribution)
-    def build_energy_op(self):
+    def energy_op_singlet(self, singlet_state):
         with self.graph.as_default(), tf.device(self.device):
-            self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
-            # [1, nbatch]
-            e_x_0 = tf.neg((self.state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
-            # [ndims - 1, nbatch]
-            e_x_k = tf.neg((self.state[1:, :] ** 2) / tf.exp(self.state[0, :]), name='E_x_k')
-            # [nbatch]
-            self.energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
+            # [1]
+            e_x_0 = tf.neg((singlet_state[0] ** 2) / (self.scale ** 2), name='E_x_0')
+            # [ndims - 1]
+            e_x_k = tf.neg((singlet_state[1:] ** 2) / tf.exp(singlet_state[0]), name='E_x_k')
+            # [1]
+            self.energy_op = tf.squeeze(e_x_0 + tf.reduce_sum(e_x_k), name='singlet_energy_op')
 
 
     @overrides(Distribution)
@@ -175,10 +175,9 @@ class TFGaussian(TensorflowDistribution):
         super(TFGaussian, self).__init__(name='TFGaussian', **kwargs)
 
     @overrides(TensorflowDistribution)
-    def build_energy_op(self):
+    def build_energy_op(self, singlet_state):
         with self.graph.as_default(), tf.device(self.device):
-            self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
-            self.energy_op = tf.reduce_sum(self.state ** 2, 0) / (2 * self.sigma ** 2)
+            self.energy_op = tf.reduce_sum(singlet_state ** 2) / (2 * self.sigma ** 2)
 
     @overrides(Distribution)
     def gen_init_X(self):
@@ -232,24 +231,19 @@ class SparseImageCode(TensorflowDistribution):
 
 
     @overrides(TensorflowDistribution)
-    def build_energy_op(self):
+    def build_energy_op(self, singlet_state):
         with self.graph.as_default(), tf.device(self.device):
-            # self.state is ndims, nbatch
-            # reshape into individual sets of coefficients then reduce sum basis.dot(coeff)
-            self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
-            shaped_state = tf.reshape(self.state, [self.n_patches, self.nbatch, self.n_coeffs, 1], name='shaped_state')
-            shaped_basis = tf.reshape(self.basis, [1, 1, self.img_size, self.n_coeffs], name='shaped_basis')
-            # [n_patches, nbatch, img_size, n_coeffs]
-            shaped_basis = tf.tile(shaped_basis, [self.n_patches, self.nbatch, 1, 1], name='tiled_basis')
-            # [n_patches, nbatch, img_size]
+            shaped_state = tf.reshape(singlet_state, [self.n_patches, self.n_coeffs, 1], name='shaped_state')
+            shaped_basis = tf.reshape(self.basis, [1, self.img_size, self.n_coeffs], name='shaped_basis')
+            # [n_patches, img_size, n_coeffs]
+            shaped_basis = tf.tile(shaped_basis, [self.n_patches, 1, 1], name='tiled_basis')
+            # [n_patches, img_size]
             reconstructions = tf.batch_matmul(shaped_basis, shaped_state)
-            # [n_patches, nbatch]
-            reconstruction_error = tf.reduce_sum(0.5 * (self.patches - reconstructions) ** 2, -1)
-            # [nbatch]
-            reconstruction_error = tf.reduce_mean(reconstruction_error, 0, name='reconstruction_error')
+            #[n_patches]
+            reconstruction_error = tf.reduce_sum(0.5 * (self.patches - reconstructions) ** 2, -1, name='reconstruction_error')
 
-            # [nbatch]
-            sp_penalty = self.lmbda * tf.reduce_sum(tf.abs(self.state), 0, name='sp_penalty')
+            # [1]
+            sp_penalty = self.lmbda * tf.reduce_sum(tf.abs(singlet_state), name='sp_penalty')
             return reconstruction_error + sp_penalty
 
     @overrides(Distribution)
@@ -261,8 +255,3 @@ class SparseImageCode(TensorflowDistribution):
              hash(self.basis.data),
              hash(self.lmbda),
              hash(self.n_patches))
-
-    @overrides(Distribution)
-    def gen_init_X(self):
-        # fista
-        pass
