@@ -70,7 +70,8 @@ class TensorflowDistribution(Distribution):
         Args:
           singlet_state: tensor with state of single particle - [n_dims]
 
-        Sets self.singlet_energy_op, which depends on self.singlet_state_pl
+        Returns:
+          the energy of the singleton
         """
         raise NotImplementedError("this method must be defined to subclass TensorflowDistribution")
 
@@ -80,7 +81,7 @@ class TensorflowDistribution(Distribution):
         Args:
           singlet_state: tensor with state of single particle - [n_dims]
         """
-        return tf.gradient(self.energy_op_singlet(singlet_state), singlet_state)[0]
+        return tf.gradients(self.energy_op_singlet(singlet_state), singlet_state)[0]
 
 
     def build_energy_op(self):
@@ -146,7 +147,7 @@ class Funnel(TensorflowDistribution):
             # [ndims - 1]
             e_x_k = tf.neg((singlet_state[1:] ** 2) / tf.exp(singlet_state[0]), name='E_x_k')
             # [1]
-            self.energy_op = tf.squeeze(e_x_0 + tf.reduce_sum(e_x_k), name='singlet_energy_op')
+            return tf.squeeze(e_x_0 + tf.reduce_sum(e_x_k), name='singlet_energy_op')
 
 
     @overrides(Distribution)
@@ -173,7 +174,7 @@ class TFGaussian(TensorflowDistribution):
     @overrides(TensorflowDistribution)
     def energy_op_singlet(self, singlet_state):
         with self.graph.as_default(), tf.device(self.device):
-            self.energy_op = tf.reduce_sum(singlet_state ** 2) / (2 * self.sigma ** 2)
+            return tf.reduce_sum(singlet_state ** 2) / (2 * self.sigma ** 2)
 
     @overrides(Distribution)
     def gen_init_X(self):
