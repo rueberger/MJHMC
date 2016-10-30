@@ -35,7 +35,8 @@ class Distribution(object):
         # TensorflowDistributions require some special treatment
         # this attribute is to be used instead of isinstance, as that would require
         # tensorflow to be imported globally
-        self.backend = 'numpy'
+        if not hasattr(self, 'backend'):
+            self.backend = 'numpy'
 
         # true iff being sampled with a jump process
         self.mjhmc = None
