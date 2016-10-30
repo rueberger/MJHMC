@@ -94,12 +94,12 @@ class TensorflowDistribution(Distribution):
         # [self.state_pl.shape[1]]
         self.energy_op = tf.map_fn(self.energy_op_singlet, tf.transpose(self.state_pl),
                            back_prop=False,
-                           swap_memory=True,
+                           swap_memory=False,
                            name='energy')
         # [self.state_pl.shape[1], ndims]
         self.grad_op = tf.map_fn(self.grad_op_singlet, tf.transpose(self.state_pl),
                                  back_prop=False,
-                                 swap_memory=True,
+                                 swap_memory=False,
                                  name='grad_T')
         self.grad_op = tf.transpose(self.grad_op, name='grad')
 
@@ -115,10 +115,6 @@ class TensorflowDistribution(Distribution):
         with self.graph.as_default(), tf.device(self.device):
             grad = self.sess.run(self.grad_op, feed_dict={self.state_pl: X})
             return grad
-
-    @overrides(Distribution)
-    def gen_init_X(self):
-        self.Xinit = self.init
 
     @overrides(Distribution)
     def __hash__(self):
@@ -196,7 +192,7 @@ class SparseImageCode(TensorflowDistribution):
            n_batches: number of batches to run at once
         """
         patch_size = 16
-        self.lmda = 0.1
+        self.lmda = 0.01
 
         assert int(sqrt(n_patches)) == sqrt(n_patches)
 
@@ -204,7 +200,7 @@ class SparseImageCode(TensorflowDistribution):
         basis_path = os.path.expanduser('~/data/mjhmc/basis.mat')
 
         # [512, 512, 10]
-        imgs = loadmat(img_path)['IMAGES']
+        self.imgs = loadmat(img_path)['IMAGES']
         # [256, 256], [img_size, n_coeffs]
         self.basis = loadmat(basis_path)['basis']
 
@@ -216,13 +212,10 @@ class SparseImageCode(TensorflowDistribution):
         sqrt_n_patches = int(sqrt(n_patches))
 
         # select a square set of patches from the image starting from the upper left
-        patch_list = []
+        self.patch_list = []
         for x_idx in range(sqrt_n_patches):
             for y_idx in range(sqrt_n_patches):
-                patch_list.append(imgs[x_idx * patch_size: (x_idx + 1) * patch_size, y_idx * patch_size: (y_idx + 1) * patch_size, 0].ravel())
-        # [n_patches, 1, img_size]
-        self.patches = tf.reshape(tf.pack(patch_list), [self.n_patches, 1, self.img_size])
-
+                self.patch_list.append(self.imgs[x_idx * patch_size: (x_idx + 1) * patch_size, y_idx * patch_size: (y_idx + 1) * patch_size, 0].ravel())
 
         super(SparseImageCode, self).__init__(name='SparseImageCode', **kwargs)
 
@@ -230,6 +223,8 @@ class SparseImageCode(TensorflowDistribution):
     @overrides(TensorflowDistribution)
     def energy_op_singlet(self, singlet_state):
         with self.graph.as_default(), tf.device(self.device):
+            # [n_patches, 1, img_size]
+            self.patches = tf.to_float(tf.reshape(tf.pack(self.patch_list), [self.n_patches, 1, self.img_size]), name='patches')
             shaped_state = tf.reshape(singlet_state, [self.n_patches, self.n_coeffs, 1], name='shaped_state')
             shaped_basis = tf.reshape(self.basis, [1, self.img_size, self.n_coeffs], name='shaped_basis')
             # [n_patches, img_size, n_coeffs]
@@ -240,7 +235,7 @@ class SparseImageCode(TensorflowDistribution):
             reconstruction_error = tf.reduce_sum(0.5 * (self.patches - reconstructions) ** 2, -1, name='reconstruction_error')
 
             # [1]
-            sp_penalty = self.lmbda * tf.reduce_sum(tf.abs(singlet_state), name='sp_penalty')
+            sp_penalty = self.lmda * tf.reduce_sum(tf.abs(singlet_state), name='sp_penalty')
             return reconstruction_error + sp_penalty
 
     @overrides(Distribution)
@@ -248,7 +243,7 @@ class SparseImageCode(TensorflowDistribution):
         # so they can be hashed
         self.imgs.flags.writeable = False
         self.basis.flags.writeable = False
-        hash(hash(self.imgs.data),
-             hash(self.basis.data),
-             hash(self.lmbda),
-             hash(self.n_patches))
+        return hash((hash(self.imgs.data),
+                     hash(self.basis.data),
+                     hash(self.lmda),
+                     hash(self.n_patches)))

@@ -346,8 +346,8 @@ class TestGaussian(Distribution):
     def __init__(self, ndims=2, nbatch=100, sigma=1.):
         """Simple default unit variance gaussian for testing samplers
         """
-        super(TestGaussian, self).__init__(ndims, nbatch)
         self.sigma = sigma
+        super(TestGaussian, self).__init__(ndims, nbatch)
 
     @overrides(Distribution)
     def E_val(self, X):
