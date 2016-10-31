@@ -48,28 +48,23 @@ class TensorflowDistribution(Distribution):
         self.device = device
         with self.graph.as_default(), tf.device(self.device):
             self.sess = sess or tf.Session()
+            self.build_graph()
 
+        self.name = name or self.energy_op.op.name
 
-            ndims, nbatch = self.build_graph()
-            self.name = name or self.energy_op.op.name
-
-        super(TensorflowDistribution, self).__init__(ndims=ndims, nbatch=nbatch)
+        super(TensorflowDistribution, self).__init__(ndims=self.ndims, nbatch=self.nbatch)
         self.backend = 'tensorflow'
 
     def build_graph(self):
         with self.graph.as_default(), tf.device(self.device):
+            self.state_pl = tf.placeholder(tf.float32, [self.ndims, None])
             self.build_energy_op()
-            ndims, nbatch = self.state.get_shape().as_list()
-            self.state_pl = tf.placeholder(tf.float32, [ndims, None])
-
-            self.assign_op = self.state.assign(self.state_pl)
-            self.grad_op = tf.gradients(self.energy_op, self.state)[0]
+            self.grad_op = tf.gradients(self.energy_op, self.state_pl)[0]
             self.sess.run(tf.initialize_all_variables())
-            return ndims, nbatch
 
 
     def build_energy_op(self):
-        """ Sets self.state and self.energy_op
+        """ Sets self.energy_op
         """
         raise NotImplementedError("this method must be defined to subclass TensorflowDistribution")
 
@@ -77,18 +72,14 @@ class TensorflowDistribution(Distribution):
     @overrides(Distribution)
     def E_val(self, X):
         with self.graph.as_default(), tf.device(self.device):
-            _, energy = self.sess.run([self.assign_op, self.energy_op], feed_dict={self.state_pl: X})
+            energy = self.sess.run(self.energy_op, feed_dict={self.state_pl: X})
             return energy
 
     @overrides(Distribution)
     def dEdX_val(self, X):
         with self.graph.as_default(), tf.device(self.device):
-            _, grad = self.sess.run([self.assign_op, self.grad_op], feed_dict={self.state_pl: X})
+            grad = self.sess.run(self.grad_op, feed_dict={self.state_pl: X})
             return grad
-
-    @overrides(Distribution)
-    def gen_init_X(self):
-        self.Xinit = self.init
 
     @overrides(Distribution)
     def __hash__(self):
@@ -112,11 +103,10 @@ class Funnel(TensorflowDistribution):
     @overrides(TensorflowDistribution)
     def build_energy_op(self):
         with self.graph.as_default(), tf.device(self.device):
-            self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
             # [1, nbatch]
-            e_x_0 = tf.neg((self.state[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
+            e_x_0 = tf.neg((self.state_pl[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
             # [ndims - 1, nbatch]
-            e_x_k = tf.neg((self.state[1:, :] ** 2) / tf.exp(self.state[0, :]), name='E_x_k')
+            e_x_k = tf.neg((self.state_pl[1:, :] ** 2) / tf.exp(self.state_pl[0, :]), name='E_x_k')
             # [nbatch]
             self.energy_op = tf.reduce_sum(tf.add(e_x_0, e_x_k), 0, name='energy_op')
 
@@ -145,8 +135,7 @@ class TFGaussian(TensorflowDistribution):
     @overrides(TensorflowDistribution)
     def build_energy_op(self):
         with self.graph.as_default(), tf.device(self.device):
-            self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
-            self.energy_op = tf.reduce_sum(self.state ** 2, 0) / (2 * self.sigma ** 2)
+            self.energy_op = tf.reduce_sum(self.state_pl ** 2, 0) / (2 * self.sigma ** 2)
 
     @overrides(Distribution)
     def gen_init_X(self):
@@ -168,7 +157,7 @@ class SparseImageCode(TensorflowDistribution):
            n_batches: number of batches to run at once
         """
         patch_size = 16
-        self.lambda = 0.1
+        self.lmbda = 0.01
 
         assert int(sqrt(n_patches)) == sqrt(n_patches)
 
@@ -176,7 +165,7 @@ class SparseImageCode(TensorflowDistribution):
         basis_path = os.path.expanduser('~/data/mjhmc/basis.mat')
 
         # [512, 512, 10]
-        imgs = loadmat(img_path)['IMAGES']
+        self.imgs = loadmat(img_path)['IMAGES']
         # [256, 256], [img_size, n_coeffs]
         self.basis = loadmat(basis_path)['basis']
 
@@ -187,46 +176,42 @@ class SparseImageCode(TensorflowDistribution):
         self.n_patches = n_patches
 
         # select a square set of patches from the image starting from the upper left
-        patch_list = []
-        for x_idx in range(sqrt(n_patches)):
-            for y_idx in range(sqrt(n_patches)):
-                patch_list.append(imgs[x_idx * patch_size: (x_idx + 1) * patch_size, y_idx * patch_size: (y_idx + 1) * patch_size, 0].ravel())
-        # [n_patches, 1, img_size]
-        self.patches = tf.reshape(tf.pack(patch_list), [self.n_patches, 1, self.img_size])
+        self.patch_list = []
+        for x_idx in range(int(sqrt(n_patches))):
+            for y_idx in range(int(sqrt(n_patches))):
+                self.patch_list.append(self.imgs[x_idx * patch_size: (x_idx + 1) * patch_size, y_idx * patch_size: (y_idx + 1) * patch_size, 0].ravel())
+
+        super(SparseImageCode, self).__init__(name='SparseImageCode', **kwargs)
 
 
-
-        super(SparseImageCode, self).__init___(name='SparseImageCode', **kwargs)
-
-
-    @overrides(TensorflowDistribution):
+    @overrides(TensorflowDistribution)
     def build_energy_op(self):
         with self.graph.as_default(), tf.device(self.device):
-            # self.state is ndims, nbatch
-            # reshape into individual sets of coefficients then reduce sum basis.dot(coeff)
-            # NOTE TO SELF: DO NOT RESHAPE HERE
-            self.state = tf.Variable(np.zeros((self.ndims, self.nbatch)), name='state', dtype=tf.float32)
-            shaped_state = tf.reshape(self.state, [self.n_patches, self.nbatch, self.n_coeffs, 1], name='shaped_state')
+            n_active = tf.shape(self.state_pl)[1]
+            # [n_patches, 1, img_size]
+            self.patches = tf.to_float(tf.reshape(tf.pack(self.patch_list),
+                                                  [self.n_patches, 1, self.img_size]),                                       name='patches')
+            shaped_state = tf.reshape(self.state_pl, [self.n_patches, n_active, self.n_coeffs, 1], name='shaped_state')
             shaped_basis = tf.reshape(self.basis, [1, 1, self.img_size, self.n_coeffs], name='shaped_basis')
             # [n_patches, nbatch, img_size, n_coeffs]
-            shaped_basis = tf.tile(shaped_basis, [self.n_patches, self.nbatch, 1, 1], name='tiled_basis')
+            shaped_basis = tf.tile(shaped_basis, [self.n_patches, n_active, 1, 1], name='tiled_basis')
             # [n_patches, nbatch, img_size]
-            reconstructions = tf.batch_matmul(shaped_basis, shaped_state)
+            reconstructions = tf.squeeze(tf.batch_matmul(shaped_basis, shaped_state), name='reconstructions')
             # [n_patches, nbatch]
             reconstruction_error = tf.reduce_sum(0.5 * (self.patches - reconstructions) ** 2, -1)
             # [nbatch]
             reconstruction_error = tf.reduce_mean(reconstruction_error, 0, name='reconstruction_error')
 
             # [nbatch]
-            sp_penalty = self.lambda * tf.reduce_sum(tf.abs(self.state), 0, name='sp_penalty')
-            return reconstruction_error + sp_penalty
+            sp_penalty = self.lmbda * tf.reduce_sum(tf.abs(self.state_pl), 0, name='sp_penalty')
+            self.energy_op = reconstruction_error + sp_penalty
 
     @overrides(Distribution)
     def __hash__(self):
         # so they can be hashed
         self.imgs.flags.writeable = False
         self.basis.flags.writeable = False
-        hash(hash(self.imgs.data),
-             hash(self.basis.data),
-             hash(self.lambda),
-             hash(self.n_patches))
+        return hash((hash(self.imgs.data),
+                     hash(self.basis.data),
+                     hash(self.lmbda),
+                     hash(self.n_patches)))
