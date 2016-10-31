@@ -62,7 +62,6 @@ class TensorflowDistribution(Distribution):
         with self.graph.as_default(), tf.device(self.device):
             self.state_pl = tf.placeholder(tf.float32, [self.ndims, None])
             self.build_energy_op()
-
             self.grad_op = tf.gradients(self.energy_op, self.state_pl)[0]
             self.sess.run(tf.initialize_all_variables())
 
@@ -72,35 +71,6 @@ class TensorflowDistribution(Distribution):
 
         """
         raise NotImplementedError("this method must be defined to subclass TensorflowDistribution")
-
-    def grad_op_singlet(self, singlet_state):
-        """ Build the gradient op for a single particle
-
-        Args:
-          singlet_state: tensor with state of single particle - [n_dims]
-        """
-        return tf.gradients(self.energy_op_singlet(singlet_state), singlet_state)[0]
-
-
-    def build_energy_op(self):
-        """ Builds an energy op over all particles use self.singlet_energy_op and tf.map_fn
-        Also builds the gradient op
-        """
-        # TODO: unclear what's the right number of parallel_itrs
-        # also unclear if swapping memory helps
-        # unpacks along first dimension
-        # [self.state_pl.shape[1]]
-        self.energy_op = tf.map_fn(self.energy_op_singlet, tf.transpose(self.state_pl),
-                           back_prop=False,
-                           swap_memory=False,
-                           name='energy')
-        # [self.state_pl.shape[1], ndims]
-        self.grad_op = tf.map_fn(self.grad_op_singlet, tf.transpose(self.state_pl),
-                                 back_prop=False,
-                                 swap_memory=False,
-                                 name='grad_T')
-        self.grad_op = tf.transpose(self.grad_op, name='grad')
-
 
     @overrides(Distribution)
     def E_val(self, X):
@@ -134,7 +104,7 @@ class Funnel(TensorflowDistribution):
         super(Funnel, self).__init__(name='Funnel', **kwargs)
 
     @overrides(TensorflowDistribution)
-    def energy_op_singlet(self, singlet_state):
+    def build_energy_op(self):
         with self.graph.as_default(), tf.device(self.device):
             # [1, nbatch]
             e_x_0 = tf.neg((self.state_pl[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
@@ -167,7 +137,7 @@ class TFGaussian(TensorflowDistribution):
         super(TFGaussian, self).__init__(name='TFGaussian', **kwargs)
 
     @overrides(TensorflowDistribution)
-    def energy_op_singlet(self, singlet_state):
+    def build_energy_op(self):
         with self.graph.as_default(), tf.device(self.device):
             self.energy_op = tf.reduce_sum(self.state_pl ** 2, 0) / (2 * self.sigma ** 2)
 
@@ -209,7 +179,6 @@ class SparseImageCode(TensorflowDistribution):
         self.ndims = n_patches * self.n_coeffs
         self.nbatch = n_batches
         self.n_patches = n_patches
-        sqrt_n_patches = int(sqrt(n_patches))
 
         # select a square set of patches from the image starting from the upper left
         self.patch_list = []
