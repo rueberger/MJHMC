@@ -161,6 +161,8 @@ class SparseImageCode(TensorflowDistribution):
            n_patches: number of patches to simultaneously run inference over - must be a perfect square
            n_batches: number of batches to run at once
         """
+        self.max_n_particles = 50
+
         patch_size = 16
         self.lmbda = 0.01
 

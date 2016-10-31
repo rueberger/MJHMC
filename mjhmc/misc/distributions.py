@@ -51,6 +51,9 @@ class Distribution(object):
         # to generate and cache a fair initialization for continuous samplers
         self.generation_instance = False
 
+        # so some distributions may modify the default
+        self.max_n_particles = None
+
         # set the state fairly. calls out to a cache
         self.init_X()
 
@@ -119,7 +122,7 @@ class Distribution(object):
             from mjhmc.misc.gen_mj_init import MAX_N_PARTICLES, cache_initialization
             # modify this object so it can be used by gen_mj_init
             old_nbatch = self.nbatch
-            self.nbatch = MAX_N_PARTICLES
+            self.nbatch = self.max_n_particles or MAX_N_PARTICLES
             self.generation_instance = True
 
             # must rebuild now that nbatch is changed back
