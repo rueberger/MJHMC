@@ -164,7 +164,6 @@ class SparseImageCode(TensorflowDistribution):
         """
         self.max_n_particles = 50
 
-        patch_size = 16
         self.lmbda = 0.01
 
         data_path = "{}/distr_data/dump.pkl".format(package_path())
@@ -183,7 +182,7 @@ class SparseImageCode(TensorflowDistribution):
         self.cauchy = cauchy
 
         # [n_patches, img_size]
-        self.patches = self.imgs[:, :patch_size].T
+        self.patches = self.imgs[:, :n_patches].T
 
         super(SparseImageCode, self).__init__(name='SparseImageCode', **kwargs)
 
