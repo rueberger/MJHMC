@@ -154,39 +154,36 @@ class SparseImageCode(TensorflowDistribution):
     """ Distribution over the coefficients in an inference model of sparse coding on natural images a la Olshausen and Field
     """
 
-    def __init__(self, n_patches, n_batches=10, **kwargs):
+    def __init__(self, n_patches=9, n_batches=10, cauchy=True,**kwargs):
         """ Construct a SparseImageCode object
 
         Args:
-           n_patches: number of patches to simultaneously run inference over - must be a perfect square
+           n_patches: number of patches to simultaneously run inference over
            n_batches: number of batches to run at once
+           cauchy: if True uses Cauchy prior, if False, Laplace
         """
         self.max_n_particles = 50
 
         patch_size = 16
         self.lmbda = 0.01
 
-        assert int(sqrt(n_patches)) == sqrt(n_patches)
-
-        img_path = os.path.expanduser('~/data/mjhmc/IMAGES.mat')
-        basis_path = os.path.expanduser('~/data/mjhmc/basis.mat')
-
-        # [512, 512, 10]
-        self.imgs = loadmat(img_path)['IMAGES']
-        # [256, 256], [img_size, n_coeffs]
-        self.basis = loadmat(basis_path)['basis']
+        data_path = "{}/distr_data/dump.pkl".format(package_path())
+        with open(data_path, 'rb') as dump_file:
+            data = pickle.load(dump_file)
+            # [256, 1024]
+            self.imgs = data['data']
+            # [256,  1024], [img_size, n_coeffs]
+            self.basis = data['basis']
 
         # n_coeffs per patch
         self.img_size, self.n_coeffs = self.basis.shape
         self.ndims = n_patches * self.n_coeffs
         self.nbatch = n_batches
         self.n_patches = n_patches
+        self.cauchy = cauchy
 
-        # select a square set of patches from the image starting from the upper left
-        self.patch_list = []
-        for x_idx in range(int(sqrt(n_patches))):
-            for y_idx in range(int(sqrt(n_patches))):
-                self.patch_list.append(self.imgs[x_idx * patch_size: (x_idx + 1) * patch_size, y_idx * patch_size: (y_idx + 1) * patch_size, 0].ravel())
+        # [n_patches, img_size]
+        self.patches = self.imgs[:, :patch_size].T
 
         super(SparseImageCode, self).__init__(name='SparseImageCode', **kwargs)
 
@@ -196,8 +193,9 @@ class SparseImageCode(TensorflowDistribution):
         with self.graph.as_default(), tf.device(self.device):
             n_active = tf.shape(self.state_pl)[1]
             # [n_patches, 1, img_size]
-            self.patches = tf.to_float(tf.reshape(tf.pack(self.patch_list),
-                                                  [self.n_patches, 1, self.img_size]),                                       name='patches')
+            self.patches = tf.to_float(tf.reshape(self.patches,
+                                                  [self.n_patches, 1, self.img_size]),
+                                       name='patches')
             shaped_state = tf.reshape(self.state_pl, [self.n_patches, n_active, self.n_coeffs, 1], name='shaped_state')
             shaped_basis = tf.reshape(self.basis, [1, 1, self.img_size, self.n_coeffs], name='shaped_basis')
             # [n_patches, nbatch, img_size, n_coeffs]
@@ -209,9 +207,14 @@ class SparseImageCode(TensorflowDistribution):
             # [nbatch]
             reconstruction_error = tf.reduce_mean(reconstruction_error, 0, name='reconstruction_error')
 
-            # [nbatch]
-            sp_penalty = self.lmbda * tf.reduce_sum(tf.abs(self.state_pl), 0, name='sp_penalty')
+            if self.cauchy:
+                sp_penalty = self.lmbda * tf.log(1 + self.state_pl ** 2)
+            else:
+                # [nbatch]
+                sp_penalty = self.lmbda * tf.reduce_sum(tf.abs(self.state_pl), 0, name='sp_penalty')
+
             self.energy_op = reconstruction_error + sp_penalty
+
 
     @overrides(Distribution)
     def __hash__(self):
