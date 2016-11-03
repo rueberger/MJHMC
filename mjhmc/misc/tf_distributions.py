@@ -163,7 +163,6 @@ class SparseImageCode(TensorflowDistribution):
            cauchy: if True uses Cauchy prior, if False, Laplace
         """
         self.max_n_particles = 50
-
         self.lmbda = 0.01
 
         data_path = "{}/distr_data/dump.pkl".format(package_path())
@@ -195,7 +194,7 @@ class SparseImageCode(TensorflowDistribution):
             self.patches = tf.to_float(tf.reshape(self.patches,
                                                   [self.n_patches, 1, self.img_size]),
                                        name='patches')
-            shaped_state = tf.reshape(self.state_pl, [self.n_patches, n_active, self.n_coeffs, 1], name='shaped_state')
+            shaped_state = tf.reshape(self.state_pl, [self.n_patches, -1, self.n_coeffs, 1], name='shaped_state')
             shaped_basis = tf.reshape(self.basis, [1, 1, self.img_size, self.n_coeffs], name='shaped_basis')
             # [n_patches, nbatch, img_size, n_coeffs]
             shaped_basis = tf.tile(shaped_basis, [self.n_patches, n_active, 1, 1], name='tiled_basis')
