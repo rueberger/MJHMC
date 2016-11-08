@@ -207,7 +207,7 @@ class SparseImageCode(TensorflowDistribution):
             reconstruction_error = tf.reduce_mean(reconstruction_error, 0, name='reconstruction_error')
 
             if self.cauchy:
-                sp_penalty = self.lmbda * tf.log(1 + self.state_pl ** 2)
+                sp_penalty = self.lmbda * tf.reduce_sum(tf.log(1 + self.state_pl ** 2), 0, name='sp_penalty')
             else:
                 # [nbatch]
                 sp_penalty = self.lmbda * tf.reduce_sum(tf.abs(self.state_pl), 0, name='sp_penalty')
