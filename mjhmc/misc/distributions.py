@@ -52,7 +52,8 @@ class Distribution(object):
         self.generation_instance = False
 
         # so some distributions may modify the default
-        self.max_n_particles = None
+        if not hasattr(self, 'max_n_particles'):
+            self.max_n_particles = None
 
         # set the state fairly. calls out to a cache
         self.init_X()
