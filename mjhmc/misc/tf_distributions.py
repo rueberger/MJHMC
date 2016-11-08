@@ -200,7 +200,7 @@ class SparseImageCode(TensorflowDistribution):
             shaped_basis = tf.tile(shaped_basis, [self.n_patches, n_active, 1, 1], name='tiled_basis')
             # [n_patches, nbatch, img_size]
             reconstructions = tf.squeeze(tf.batch_matmul(shaped_basis, shaped_state), name='reconstructions')
-            reconstructions.set_shape(self.n_patches, n_active, self.img_size)
+            reconstructions.set_shape([self.n_patches, n_active, self.img_size])
             # [n_patches, nbatch]
             reconstruction_error = tf.reduce_sum(0.5 * (self.patches - reconstructions) ** 2, -1)
             # [nbatch]
