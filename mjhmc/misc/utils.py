@@ -41,7 +41,11 @@ def draw_from(rates):
         elif np.isfinite(rate):
             draws.append(np.random.exponential(scale=1./rate))
         else:
-            raise ValueError("Infinite rate")
+            raise ValueError(("Infinite rate. This occurs when calculating transition rates "
+                              "between states that have a very large energy difference, such that "
+                              "the transition probability is less than the numerical precision. "
+                              "Try decreasing the leapfrog stepsize/number of steps or dividing "
+                              " the energy by a large constant."))
     return np.array(draws).reshape(1, len(rates))
 
 
