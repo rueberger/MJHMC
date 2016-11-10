@@ -87,7 +87,7 @@ class TensorflowDistribution(Distribution):
 
                 energy = self.sess.run(self.energy_op, feed_dict={self.state_pl: X},
                                        options=run_options, run_metadata=run_metadata)
-                tf_tl  = timeline.Timeline(self.run_metadata.step_stats)
+                tf_tl  = timeline.Timeline(run_metadata.step_stats)
                 ctf = tf_tl.generate_chrome_trace_format()
                 log_path = expanduser('~/tmp/logs/tf_{}_energy_timeline_{}.json'.format(self.__name__, time.time()))
                 with open(log_path, 'w') as log_file:
@@ -106,7 +106,7 @@ class TensorflowDistribution(Distribution):
                 grad = self.sess.run(self.grad_op, feed_dict={self.state_pl: X},
                                        options=run_options, run_metadata=run_metadata)
 
-                tf_tl  = timeline.Timeline(self.run_metadata.step_stats)
+                tf_tl  = timeline.Timeline(run_metadata.step_stats)
                 ctf = tf_tl.generate_chrome_trace_format()
                 log_path = expanduser('~/tmp/logs/tf_{}_grad_timeline_{}.json'.format(self.__name__, time.time()))
                 with open(log_path, 'w') as log_file:
