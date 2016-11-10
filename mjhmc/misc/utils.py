@@ -33,9 +33,17 @@ def draw_from(rates):
     returns an array of draws from an exponential distribution with rate
     """
     assert rates.ndim == 1
-    return np.array([np.random.exponential(scale=1./rate)
-                     if rate != 0 else np.inf
-                     for rate in rates]).reshape(1, len(rates))
+    draws = []
+    for rate in rates:
+        if rate == 0:
+            # when the rate is zero, wait time is infinite
+            draws.append(np.inf)
+        elif np.isfinite(rate):
+            draws.append(np.random.exponential(scale=1./rate))
+        else:
+            raise ValueError("Infinite rate")
+    return np.array(draws).reshape(1, len(rates))
+
 
 
 def normalize_by_row(matrix):
