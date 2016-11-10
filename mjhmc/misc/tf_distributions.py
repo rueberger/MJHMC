@@ -4,8 +4,11 @@ This module contains the TensorflowDistribution base class and distributions tha
 
 import numpy as np
 import tensorflow as tf
+from tensorflow.python.client import timeline
 from .utils import overrides, package_path
 import os
+import time
+from os.path import expanduser
 from scipy import stats
 from scipy.io import loadmat
 import pickle
@@ -32,7 +35,7 @@ class TensorflowDistribution(Distribution):
     """
 
     #pylint: disable=too-many-arguments
-    def __init__(self, name=None, sess=None, device='/cpu:0'):
+    def __init__(self, name=None, sess=None, device='/cpu:0', prof_run=False):
         """ Creates a TensorflowDistribution object
 
         ndims and nbatch are inferred from init
@@ -41,14 +44,17 @@ class TensorflowDistribution(Distribution):
         :param name: name of this distribution. use the same name for functionally identical distributions
         :param sess: optional session. If none, one will be created
         :param device: device to execute tf ops on. By default uses cpu to avoid compatibility issues
+        :param prof_run: if True, save a trace so we can profile performance later
         :returns: TensorflowDistribution object
         :rtype: TensorflowDistribution
         """
         self.graph = tf.Graph()
         self.device = device
+        self.prof_run = prof_run
         with self.graph.as_default(), tf.device(self.device):
             self.sess = sess or tf.Session()
             self.build_graph()
+
 
         self.name = name or self.energy_op.op.name
 
@@ -75,13 +81,38 @@ class TensorflowDistribution(Distribution):
     @overrides(Distribution)
     def E_val(self, X):
         with self.graph.as_default(), tf.device(self.device):
-            energy = self.sess.run(self.energy_op, feed_dict={self.state_pl: X})
+            if self.prof_run:
+                run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+                run_metadata = tf.RunMetadata()
+
+                energy = self.sess.run(self.energy_op, feed_dict={self.state_pl: X},
+                                       options=run_options, run_metadata=run_metadata)
+                tf_tl  = timeline.Timeline(self.run_metadata.step_stats)
+                ctf = tf_tl.generate_chrome_trace_format()
+                log_path = expanduser('~/tmp/logs/tf_{}_energy_timeline_{}.json'.format(self.__name__, time.time()))
+                with open(log_path, 'w') as log_file:
+                    log_file.write(ctf)
+            else:
+                energy = self.sess.run(self.energy_op, feed_dict={self.state_pl: X})
             return energy
 
     @overrides(Distribution)
     def dEdX_val(self, X):
         with self.graph.as_default(), tf.device(self.device):
-            grad = self.sess.run(self.grad_op, feed_dict={self.state_pl: X})
+            if self.prof_run:
+                run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
+                run_metadata = tf.RunMetadata()
+
+                grad = self.sess.run(self.grad_op, feed_dict={self.state_pl: X},
+                                       options=run_options, run_metadata=run_metadata)
+
+                tf_tl  = timeline.Timeline(self.run_metadata.step_stats)
+                ctf = tf_tl.generate_chrome_trace_format()
+                log_path = expanduser('~/tmp/logs/tf_{}_grad_timeline_{}.json'.format(self.__name__, time.time()))
+                with open(log_path, 'w') as log_file:
+                    log_file.write(ctf)
+            else:
+                grad = self.sess.run(self.grad_op, feed_dict={self.state_pl: X})
             return grad
 
     @overrides(Distribution)
