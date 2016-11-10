@@ -89,7 +89,7 @@ class TensorflowDistribution(Distribution):
                                        options=run_options, run_metadata=run_metadata)
                 tf_tl  = timeline.Timeline(run_metadata.step_stats)
                 ctf = tf_tl.generate_chrome_trace_format()
-                log_path = expanduser('~/tmp/logs/tf_{}_energy_timeline_{}.json'.format(self.__name__, time.time()))
+                log_path = expanduser('~/tmp/logs/tf_{}_energy_timeline_{}.json'.format(self.name, time.time()))
                 with open(log_path, 'w') as log_file:
                     log_file.write(ctf)
             else:
@@ -108,7 +108,7 @@ class TensorflowDistribution(Distribution):
 
                 tf_tl  = timeline.Timeline(run_metadata.step_stats)
                 ctf = tf_tl.generate_chrome_trace_format()
-                log_path = expanduser('~/tmp/logs/tf_{}_grad_timeline_{}.json'.format(self.__name__, time.time()))
+                log_path = expanduser('~/tmp/logs/tf_{}_grad_timeline_{}.json'.format(self.name, time.time()))
                 with open(log_path, 'w') as log_file:
                     log_file.write(ctf)
             else:
