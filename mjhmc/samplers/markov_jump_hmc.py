@@ -349,7 +349,7 @@ class MarkovJumpHMC(ContinuousTimeHMC):
             self.epsilon *= 0.5
             self.num_leapfrog_steps *= 2
             depth = np.log(old_eps / self.epsilon) / np.log(2)
-            print("Ecountered infinite rate, doubling back. Depth: {}".format(depth)
+            print("Ecountered infinite rate, doubling back. Depth: {}".format(depth))
             # try again
             self.sampling_iteration()
             # restore the old guys
