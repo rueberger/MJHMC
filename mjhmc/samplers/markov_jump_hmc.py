@@ -67,6 +67,9 @@ class HMCBase(object):
         self.epsilon = epsilon
         self.beta = beta or alpha**(1./(self.epsilon*self.num_leapfrog_steps))
 
+        self.original_epsilon = epsilon
+        self.original_l = self.num_leapfrog_steps
+
 
 
         self.n_burn_in = 500
@@ -328,33 +331,30 @@ class MarkovJumpHMC(ContinuousTimeHMC):
         flf_state = self.state.copy().FLF()
         r_state = self.state.copy().R()
 
-        # rates
-        l_rates = self.transition_rates(self.state, l_state)
-        flf_rates = self.transition_rates(self.state, flf_state)
-        f_rates = flf_rates - np.min((flf_rates, l_rates), axis=0)
-        r_rates = self.p_r * np.ones((1, self.nbatch))
 
         try:
+            # rates
+            l_rates = self.transition_rates(self.state, l_state)
+            flf_rates = self.transition_rates(self.state, flf_state)
+            f_rates = flf_rates - np.min((flf_rates, l_rates), axis=0)
+            r_rates = self.p_r * np.ones((1, self.nbatch))
+
             # draws from exponential distributions
             l_draws = draw_from(l_rates[0])
             f_draws = draw_from(f_rates[0])
             r_draws = draw_from(r_rates[0])
         # infinite rate due to taking too large of a step
         except ValueError:
-            # not strictly necessary, but for simplicity
-            # (the other way is to multiply back after the recursive call)
-            old_eps = self.epsilon
-            old_l = self.num_leapfrog_steps
             # take smaller steps, but go the same overall distance
             self.epsilon *= 0.5
             self.num_leapfrog_steps *= 2
-            depth = np.log(old_eps / self.epsilon) / np.log(2)
+            depth = np.log(self.original_epsilon / self.epsilon) / np.log(2)
             print("Ecountered infinite rate, doubling back. Depth: {}".format(depth))
             # try again
             self.sampling_iteration()
             # restore the old guys
-            self.epsilon = old_eps
-            self.num_leapfrog_steps = old_l
+            self.epsilon *= 2
+            self.num_leapfrog_steps *= 0.5
             return
 
         # choose min for each particle
