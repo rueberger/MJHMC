@@ -334,10 +334,28 @@ class MarkovJumpHMC(ContinuousTimeHMC):
         f_rates = flf_rates - np.min((flf_rates, l_rates), axis=0)
         r_rates = self.p_r * np.ones((1, self.nbatch))
 
-        # draws from exponential distributions
-        l_draws = draw_from(l_rates[0])
-        f_draws = draw_from(f_rates[0])
-        r_draws = draw_from(r_rates[0])
+        try:
+            # draws from exponential distributions
+            l_draws = draw_from(l_rates[0])
+            f_draws = draw_from(f_rates[0])
+            r_draws = draw_from(r_rates[0])
+        # infinite rate due to taking too large of a step
+        except ValueError:
+            # not strictly necessary, but for simplicity
+            # (the other way is to multiply back after the recursive call)
+            old_eps = self.epsilon
+            old_l = self.num_leapfrog_steps
+            # take smaller steps, but go the same overall distance
+            self.epsilon *= 0.5
+            self.num_leapfrog_steps *= 2
+            depth = np.log(old_eps / self.epsilon) / np.log(2)
+            print("Ecountered infinite rate, doubling back. Depth: {}".format(depth)
+            # try again
+            self.sampling_iteration()
+            # restore the old guys
+            self.epsilon = old_eps
+            self.num_leapfrog_steps = old_l
+            return
 
         # choose min for each particle
         l_idx, f_idx, r_idx = min_idx([l_draws, f_draws, r_draws])
