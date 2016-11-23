@@ -356,7 +356,7 @@ class MarkovJumpHMC(ContinuousTimeHMC):
             self.sampling_iteration()
             # restore the old guys
             self.epsilon *= 2
-            self.num_leapfrog_steps *= 0.5
+            self.num_leapfrog_steps = int(self.num_leapfrog_steps / 2)
             return
 
         # choose min for each particle
