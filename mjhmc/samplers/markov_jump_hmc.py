@@ -22,7 +22,7 @@ class HMCBase(object):
 
 
     def __init__(self, Xinit=None, E=None, dEdX=None,
-                 epsilon=1e-5, alpha=0.2, beta=None,
+                 epsilon=1e-4, alpha=0.2, beta=None,
                  num_leapfrog_steps=5, distribution=None):
         """ Construct and return a new HMCBase instance
 
