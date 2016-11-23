@@ -141,3 +141,8 @@ class HMCState(object):
         """
         # to be called from update
         self.cache_active[idx] = False
+
+    def reset_flf_cache(self):
+        """ Entirely wipes the cache
+        """
+        self.cache_active = self.zeros_like(self.cache_active)
