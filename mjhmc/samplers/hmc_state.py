@@ -145,4 +145,4 @@ class HMCState(object):
     def reset_flf_cache(self):
         """ Entirely wipes the cache
         """
-        self.cache_active = self.zeros_like(self.cache_active)
+        self.cache_active = np.zeros_like(self.cache_active)
