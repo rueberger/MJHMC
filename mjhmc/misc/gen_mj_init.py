@@ -7,8 +7,8 @@ import numpy as np
 from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
 from .utils import package_path
 
-BURN_IN_STEPS = int(2E6)
-VAR_STEPS = int(1E6)
+BURN_IN_STEPS = int(1E6)
+VAR_STEPS = int(5E5)
 MAX_N_PARTICLES = 1000
 
 def generate_initialization(distribution):
