@@ -65,7 +65,7 @@ class TensorflowDistribution(Distribution):
         super(TensorflowDistribution, self).__init__(ndims=self.ndims, nbatch=self.nbatch)
 
 
-    def build_graph(self)
+    def build_graph(self):
         with self.graph.as_default(), tf.device(self.device):
             self.state_pl = tf.placeholder(tf.float32, [self.ndims, None])
             self.build_energy_op()
