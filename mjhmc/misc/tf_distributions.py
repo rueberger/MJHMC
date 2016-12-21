@@ -52,7 +52,8 @@ class TensorflowDistribution(Distribution):
         self.device = device
         self.prof_run = prof_run
         with self.graph.as_default(), tf.device(self.device):
-            self.sess = sess or tf.Session()
+            sess_config = tf.ConfigProto(allow_soft_placement=True)
+            self.sess = sess or tf.Session(config=sess_config)
             self.build_graph()
 
 
@@ -64,7 +65,7 @@ class TensorflowDistribution(Distribution):
         super(TensorflowDistribution, self).__init__(ndims=self.ndims, nbatch=self.nbatch)
 
 
-    def build_graph(self):
+    def build_graph(self)
         with self.graph.as_default(), tf.device(self.device):
             self.state_pl = tf.placeholder(tf.float32, [self.ndims, None])
             self.build_energy_op()
