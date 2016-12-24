@@ -146,7 +146,7 @@ def ladder_generator(distribution, epsilon, num_leapfrog_steps, beta, max_steps=
 
 def sp_img_ladder_generator(*args, **kwargs):
     from mjhmc.misc.tf_distributions import SparseImageCode
-    sp_img = SparseImageCode(n_patches=1, n_batches=1)
+    sp_img = SparseImageCode(n_patches=9, n_batches=1)
     return ladder_generator(sp_img, *args, **kwargs)
 
 def test_fig(max_steps=int(1e4), full=True):
