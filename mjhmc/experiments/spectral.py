@@ -174,3 +174,6 @@ def test_fig(max_steps=int(1e4), full=True):
 
     plt.scatter(ladder_lens, mjhmc_sgs, marker='x', label='MJHMC')
     plt.scatter(ladder_lens, mjhmc_sgs, marker='o', label='control')
+    plt.legend()
+    ax = plt.gca()
+    ax.set_yscale('log')
