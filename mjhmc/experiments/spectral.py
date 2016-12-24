@@ -98,8 +98,7 @@ def sp_img_ladder_generator(epsilon, num_leapfrog_steps, beta, max_steps=int(1e5
     ladder_group = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
     # initialized randomly otherwise
     ladder_group.state = [0, 0]
-    for step_idx in range(max_steps):
-        # do a sampling iteration bro
+    for _ in range(max_steps):
         mjhmc.sampling_iteration()
         # last operator was R
         if mjhmc.r_count != last_r_count:
@@ -119,10 +118,10 @@ def sp_img_ladder_generator(epsilon, num_leapfrog_steps, beta, max_steps=int(1e5
                 else:
                     break
             assert len(forward_energies) + len(backwards_energies) < (MAX_ORDER / 2)
-            yield np.array(backward_energies[::-1] + forward_energies)
+            yield np.array(backwards_energies[::-1] + forward_energies)
 
             # reset ladder group
-            ladder_group = StateGroup(order=MAX_ORDER, np.zeros(MAX_ORDER / 2))
+            ladder_group = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
             # initialized randomly otherwise
             ladder_group.state = [0, 0]
             steps_per_ladder.append(last_r_count + last_l_count + last_f_count - steps_per_ladder[-1])
