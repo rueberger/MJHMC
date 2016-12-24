@@ -65,11 +65,12 @@ def fit_inv_pdf(ladder_energies):
     bin_mdpts = np.concatenate([[zero_interp_mdpt], bin_mdpts])
     return UnivariateSpline(pdf, bin_mdpts, bbox=[0, 1], k=1)
 
-def sp_img_ladder_generator(epsilon, num_leapfrog_steps, beta, max_steps=int(1e5)):
+def ladder_generator(distribution, epsilon, num_leapfrog_steps, beta, max_steps=int(1e5)):
     """ Returns a generator over ladders encountered while sampling from
     the SparseImageCode distribution
 
     Args:
+      distribution: the distribution to test. must have nbatch==1 - Distribution
       epsilon: integrator step size - float
       num_leapfrog_steps: number of integrator steps per L application - int
       beta: rate of momentum corruption - float
@@ -78,15 +79,19 @@ def sp_img_ladder_generator(epsilon, num_leapfrog_steps, beta, max_steps=int(1e5
     Returns:
       ladder_generator: next returns an array of ladder energies of length (order / 2)
     """
+    from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
+    from mjhmc.samplers.algebraic_hmc import StateGroup
+    from mjhmc.misc.distributions import Distribution
+
     # max order for an individual ladder
     # error is thrown if ever exceeded
     MAX_ORDER = 100000
 
-    from mjhmc.misc.tf_distributions import SparseImageCode
-    from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
-    from mjhmc.samplers.algebraic_hmc import StateGroup
-    sp_img_code = SparseImageCode(n_patches=1, n_batches=1)
-    mjhmc = MarkovJumpHMC(distribution=sp_img_code,
+    # check that distribution is as required
+    assert isinstance(distribution, Distribution)
+    assert distribution.nbatch == 1
+
+    mjhmc = MarkovJumpHMC(distribution=distribution,
                           epsilon=epsilon,
                           num_leapfrog_steps=num_leapfrog_steps,
                           beta=beta)
@@ -136,3 +141,8 @@ def sp_img_ladder_generator(epsilon, num_leapfrog_steps, beta, max_steps=int(1e5
         elif mjhmc.f_count != last_f_count:
             last_f_count += 1
             ladder_group.F()
+
+def sp_img_ladder_generator(*args, **kwargs):
+    from mjhmc.misc.tf_distributions import SparseImageCode
+    sp_img = SparseImageCode(n_patches=1, n_batches=1)
+    return ladder_generator(sp_img, *args, **kwargs)
