@@ -64,3 +64,68 @@ def fit_inv_pdf(ladder_energies):
     pdf = np.concatenate([[0], pdf])
     bin_mdpts = np.concatenate([[zero_interp_mdpt], bin_mdpts])
     return UnivariateSpline(pdf, bin_mdpts, bbox=[0, 1], k=1)
+
+def sp_img_ladder_generator(epsilon, num_leapfrog_steps, beta, max_steps=int(1e5)):
+    """ Returns a generator over ladders encountered while sampling from
+    the SparseImageCode distribution
+
+    Args:
+      epsilon: integrator step size - float
+      num_leapfrog_steps: number of integrator steps per L application - int
+      beta: rate of momentum corruption - float
+      max_steps: number of sampling steps to run the generator for - int
+
+    Returns:
+      ladder_generator: next returns an array of ladder energies of length (order / 2)
+    """
+    # max order for an individual ladder
+    # error is thrown if ever exceeded
+    MAX_ORDER = 10000
+
+    from mjhmc.misc.tf_distributions import SparseImageCode
+    from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
+    from mjhmc.samplers.algebraic_hmc import StateGroup
+    sp_img_code = SparseImageCode(n_patches=9, n_batches=1)
+    mjhmc = MarkovJumpHMC(distribution=sp_img_code,
+                          epsilon=epsilon,
+                          num_leapfrog_steps=num_leapfrog_steps,
+                          beta=beta)
+    last_r_count = 0
+    last_l_count = 0
+    last_f_count = 0
+    ladder_energies = []
+    ladder_group = StateGroup(order=MAX_ORDER, np.zeros(MAX_ORDER / 2))
+    # initialized randomly otherwise
+    ladder_group.state = [0, 0]
+    for _ in range(max_steps):
+        # last operator was R
+        if mjhmc.r_count != last_r_count:
+            yield np.array(ladder_energies)
+            # reset ladder group
+            ladder_group = StateGroup(order=MAX_ORDER, np.zeros(MAX_ORDER / 2))
+            # initialized randomly otherwise
+            ladder_group.state = [0, 0]
+        # last operator was L
+        elif mjhmc.l_count != last_l_count:
+            last_l_count += 1
+            ladder_group.
+
+
+
+    run_lengths = []
+
+    ladder_energies = [np.squeeze(mjhmc.state.H())]
+    run_length = 0
+    for _ in range(max_steps):
+        if mjhmc.r_count == last_r_count:
+            run_length += 1
+            ladder_energies.append(np.squeeze(mjhmc.state.H()))
+        else:
+            run_lengths.append(run_length)
+            run_length = 0
+            energies.append(np.array(ladder_energies))
+            ladder_energies = [np.squeeze(sampler.state.H())]
+        last_r_coutn = mjhmc.r_count
+        r_counts.append(sampler.r_count)
+        sampler.sampling_iteration()
+    centered_energies = []
