@@ -177,4 +177,4 @@ def test_fig(max_steps=int(1e4), full=True):
     plt.legend()
     ax = plt.gca()
     ax.set_yscale('log')
-    return mjhmc_sgs, control_sgs
+    return mjhmc_sgs, control_sgs, ladder_lens
