@@ -498,6 +498,13 @@ class StateGroup(object):
         """
         self.state[0] = (self.state[0] + 1) % 2
 
+    def L(self):
+        """
+        Composes L with the current state
+        """
+        self.FL()
+        self.F()
+
 
     def idx(self):
         """returns the current state (not from the extended distribution)
