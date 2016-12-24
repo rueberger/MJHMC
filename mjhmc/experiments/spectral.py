@@ -103,6 +103,7 @@ def ladder_generator(distribution, epsilon, num_leapfrog_steps, beta, max_steps=
     ladder_group = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
     # initialized randomly otherwise
     ladder_group.state = [0, 0]
+    ladder_group.energies[0] = np.squeeze(mjhmc.state.H())
     for _ in range(max_steps):
         mjhmc.sampling_iteration()
         # last operator was R
@@ -131,6 +132,7 @@ def ladder_generator(distribution, epsilon, num_leapfrog_steps, beta, max_steps=
             ladder_group = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
             # initialized randomly otherwise
             ladder_group.state = [0, 0]
+            ladder_group.energies[0] = np.squeeze(mjhmc.state.H())
             steps_per_ladder.append(last_r_count + last_l_count + last_f_count - steps_per_ladder[-1])
         # last operator was L
         elif mjhmc.l_count != last_l_count:
