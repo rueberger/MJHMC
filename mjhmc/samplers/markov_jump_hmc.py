@@ -58,6 +58,7 @@ class HMCBase(object):
                 assert E is not None
                 assert dEdX is not None
                 self.ndims = Xinit.shape[0]
+
                 self.nbatch = Xinit.shape[1]
                 self.energy_func = E
                 self.grad_func = dEdX

@@ -434,6 +434,7 @@ class State(object):
             ladder.F()
         return self
 
+
     def copy(self):
         """returns a deep copy of this object
         """
@@ -480,6 +481,7 @@ class StateGroup(object):
         self.state = [np.random.randint(0, 2), np.random.randint(0, order / 2)]
         self.energies = energies
 
+
     def FL(self):
         """composes FL with the current state
         """
@@ -495,6 +497,7 @@ class StateGroup(object):
         Composes F with the current state
         """
         self.state[0] = (self.state[0] + 1) % 2
+
 
     def idx(self):
         """returns the current state (not from the extended distribution)
