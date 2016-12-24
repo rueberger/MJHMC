@@ -85,7 +85,7 @@ def sp_img_ladder_generator(epsilon, num_leapfrog_steps, beta, max_steps=int(1e5
     from mjhmc.misc.tf_distributions import SparseImageCode
     from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
     from mjhmc.samplers.algebraic_hmc import StateGroup
-    sp_img_code = SparseImageCode(n_patches=9, n_batches=1)
+    sp_img_code = SparseImageCode(n_patches=1, n_batches=1)
     mjhmc = MarkovJumpHMC(distribution=sp_img_code,
                           epsilon=epsilon,
                           num_leapfrog_steps=num_leapfrog_steps,
@@ -102,6 +102,8 @@ def sp_img_ladder_generator(epsilon, num_leapfrog_steps, beta, max_steps=int(1e5
         mjhmc.sampling_iteration()
         # last operator was R
         if mjhmc.r_count != last_r_count:
+            # increment r count
+            last_r_count += 1
             # extract the observed ladder energies
             # ladder_group.energies is of the form
             # [e_0, e_1.... e_n, 0, 0, ..., e_{n+1},... e_m]
