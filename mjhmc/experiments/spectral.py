@@ -148,3 +148,29 @@ def sp_img_ladder_generator(*args, **kwargs):
     from mjhmc.misc.tf_distributions import SparseImageCode
     sp_img = SparseImageCode(n_patches=1, n_batches=1)
     return ladder_generator(sp_img, *args, **kwargs)
+
+def test_fig(max_steps=int(1e4), full=True):
+    """ Simple test figure to make sure everything is good to go
+    Poor mans integration test
+    """
+    from mjhmc.samplers.algebraic_hmc import AlgebraicHMC, AlgebraicReducedFlip
+    from mjhmc.figures.sg_fig import sg
+    import matplotlib.pyplot as plt
+
+    ladders = [l for l in sp_img_ladder_generator(1e-3, 1, 0.01, max_steps=max_steps)]
+    ladder_lens = [len(l) for l in ladders]
+
+    print("Computing spectral gaps for {} ladders".format(len(ladders)))
+
+    mjhmc_sgs = []
+    control_sgs = []
+
+    for ladder in ladders:
+        algebraic_mjhmc = AlgebraicReducedFlip(len(ladder) * 2, energies=ladder)
+        algebraic_hmc = AlgebraicHMC(len(ladder) * 2, energies=ladder)
+
+        mjhmc_sgs.append(sg(algebraic_mjhmc, full))
+        control_sgs.append(sg(algebraic_hmc, full))
+
+    plt.scatter(ladder_lens, mjhmc_sgs, marker='x', label='MJHMC')
+    plt.scatter(ladder_lens, mjhmc_sgs, marker='o', label='control')
