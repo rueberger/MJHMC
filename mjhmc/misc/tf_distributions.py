@@ -54,7 +54,7 @@ class TensorflowDistribution(Distribution):
         self.device = device
         self.prof_run = prof_run
         with self.graph.as_default(), tf.device(self.device):
-            gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_frac)
+            gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_frac, allow_growth=True)
             sess_config = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options)
             self.sess = sess or tf.Session(config=sess_config)
             self.build_graph()
