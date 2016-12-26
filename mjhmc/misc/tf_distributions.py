@@ -35,7 +35,8 @@ class TensorflowDistribution(Distribution):
     """
 
     #pylint: disable=too-many-arguments
-    def __init__(self, name=None, sess=None, device='/cpu:0', prof_run=False):
+    def __init__(self, name=None, sess=None, device='/cpu:0', prof_run=False,
+                 gpu_frac=1):
         """ Creates a TensorflowDistribution object
 
         ndims and nbatch are inferred from init
@@ -45,6 +46,7 @@ class TensorflowDistribution(Distribution):
         :param sess: optional session. If none, one will be created
         :param device: device to execute tf ops on. By default uses cpu to avoid compatibility issues
         :param prof_run: if True, save a trace so we can profile performance later
+        :param gpu_frac: fraction of GPU memory to allocate.
         :returns: TensorflowDistribution object
         :rtype: TensorflowDistribution
         """
@@ -52,7 +54,8 @@ class TensorflowDistribution(Distribution):
         self.device = device
         self.prof_run = prof_run
         with self.graph.as_default(), tf.device(self.device):
-            sess_config = tf.ConfigProto(allow_soft_placement=True)
+            gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_frac)
+            sess_config = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options)
             self.sess = sess or tf.Session(config=sess_config)
             self.build_graph()
 
