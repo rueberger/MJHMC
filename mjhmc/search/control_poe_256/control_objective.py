@@ -13,5 +13,5 @@ def main(job_id, params):
     rand_val = rand(ndims,nbasis/2,density=0.25)
     W = np.concatenate([rand_val.toarray(), -rand_val.toarray()],axis=1)
     logalpha = np.random.randn(nbasis, 1)
-    print "job id: {}, params: {}".format(job_id, params)
+    print("job id: {}, params: {}".format(job_id, params))
     return obj_func(ControlHMC, ProductOfT(nbatch=250,ndims=ndims,nbasis=nbasis, W=W, logalpha=logalpha), job_id, **params)

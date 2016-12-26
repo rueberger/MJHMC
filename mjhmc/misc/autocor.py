@@ -13,22 +13,22 @@ def calculate_autocorrelation(sampler, distribution,
     just a helper function
     refer to the docstrings for the respective methods
     """
-    print "Now generating samples..."
+    print("Now generating samples...")
     start_time = time()
     smp, sample_df = sample_to_df(sampler, distribution.reset(), num_steps, num_grad_steps,
                       sample_steps, **kwargs)
-    print "Took {} seconds".format(time() - start_time)
+    print("Took {} seconds".format(time() - start_time))
 
     cached_var = None
     if use_cached_var:
-        print "Using cached variance"
+        print("Using cached variance")
         _, emc_var_estimate, true_var_estimate = distribution.load_cache()
         if smp.distribution.mjhmc:
             cached_var = emc_var_estimate
         else:
             cached_var = true_var_estimate
 
-    print "Calculating autocorrelation..."
+    print("Calculating autocorrelation...")
     return autocorrelation(sample_df, half_window, cached_var=cached_var)
 
 def autocorrelation(history, half_window=True, normalize=True, cached_var=None, use_tf=False):
@@ -37,46 +37,46 @@ def autocorrelation(history, half_window=True, normalize=True, cached_var=None, 
 
     samples = np.zeros((n_dims, n_batch, n_samples))
 
-    print "Copying samples to array"
+    print("Copying samples to array")
     start_time = time()
     for idx in range(n_samples):
         samples[:, :, idx] = history.loc[idx]['X']
-    print "Took {} seconds".format(time() - start_time)
+    print("Took {} seconds".format(time() - start_time))
 
 
     if use_tf:
         import tensorflow as tf
         with tf.Graph().as_default(), tf.Session() as sess:
-            print "Building autocor op"
+            print("Building autocor op")
             ac_op, samples_pl = build_autocor_op(n_dims, n_batch, n_samples, half_window=half_window)
 
-            print "Initializing variables"
+            print("Initializing variables")
             sess.run(tf.initialize_all_variables())
 
-            print "Calculating autocor"
+            print("Calculating autocor")
             ac_squeeze = sess.run(ac_op, feed_dict={samples_pl: samples})
     else:
         import theano
         import theano.tensor as T
-        print "Now compiling autocorrelation function"
+        print("Now compiling autocorrelation function")
         start_time = time()
         theano_ac = compile_autocor_func(half_window)
-        print "Took {} seconds".format(time() - start_time)
+        print("Took {} seconds".format(time() - start_time))
 
-        print "Now running compiled autocorrelation function..."
+        print("Now running compiled autocorrelation function...")
         start_time = time()
         raw_autocor = theano_ac(samples.astype('float32'))
-        print "Took {} seconds".format(time() - start_time)
+        print("Took {} seconds".format(time() - start_time))
         ac_squeeze = np.squeeze(raw_autocor[0])
 
     if cached_var is None:
         # variance given assumption of *zero mean*
-        print "Computing sample variance with numpy..."
+        print("Computing sample variance with numpy...")
         var = np.mean(samples**2, keepdims=True)[0][0]
     else:
         var = cached_var
 
-    print "Now moving result to dataframe"
+    print("Now moving result to dataframe")
     start_time = time()
 
     if normalize:
@@ -97,7 +97,7 @@ def autocorrelation(history, half_window=True, normalize=True, cached_var=None, 
     else:
         ac_df = history[:-1]
     ac_df.loc[:, 'autocorrelation'] = autocor
-    print "Took {} seconds".format(time() - start_time)
+    print("Took {} seconds".format(time() - start_time))
     return ac_df[['num energy', 'num grad', 'autocorrelation']]
 
 
@@ -224,7 +224,7 @@ def sample_to_df(sampler, distribution, num_steps=None, num_grad_steps=None,
     recs = {}
     smp.burn_in()
     distribution.reset()
-    for t in xrange(num_steps):
+    for t in range(num_steps):
         recs[t] = {
             'X': smp.sample(sample_steps),
             # cumulative

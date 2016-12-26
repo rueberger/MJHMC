@@ -47,7 +47,7 @@ def find(directory, num_params=3):
     if len(files) == 0:
         return None
     for fname in files:
-        result = [None for _ in xrange(num_params + 1)]
+        result = [None for _ in range(num_params + 1)]
         for line in open(fname,'r'):
             if re.search('u\'main\':',line):
                 split_line = line.split('}]')
@@ -57,7 +57,7 @@ def find(directory, num_params=3):
                 else:
                     continue
             if re.search('epsilon',line):
-                for idx in xrange(1, num_params + 1):
+                for idx in range(1, num_params + 1):
                     split_line = line.split('array([')
                     if len(split_line) != 0:
                         uncast_param = split_line[idx].split('])')[0]
@@ -89,8 +89,8 @@ def write_best(results, directory):
         'beta' : float(best_par[2]),
         'num_leapfrog_steps' : int(best_par[3])
     }
-    print "{}: score of {}".format(directory, best_par[0])
-    print params
+    print("{}: score of {}".format(directory, best_par[0]))
+    print(params)
     if len(best_par) == 5:
         params.update({'num_look_ahead_steps' : int(best_par[4])})
     with open("{}/params.json".format(directory), 'w') as d:
@@ -109,7 +109,7 @@ def write_all():
 
         results = find("{}/output/".format(directory), num_params)
         if results == None:
-            print "No valid output found for {}".format(directory)
+            print("No valid output found for {}".format(directory))
         else:
             write_best(results, directory)
-            print "Parameters succesfully updated for {}".format(directory)
+            print("Parameters succesfully updated for {}".format(directory))

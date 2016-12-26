@@ -141,13 +141,13 @@ def plot_best(distribution, num_steps=100000, update_params=False, **kwargs):
     """
 
     if update_params:
-        print 'Searching through output logs to find the best parameters...'
+        print('Searching through output logs to find the best parameters...')
         write_all()
     else:
-        print "Making plot based off cached parameter jsons..."
+        print("Making plot based off cached parameter jsons...")
     control_params, mjhmc_params, lahmc_params = load_params(distribution)
-    print control_params
-    print mjhmc_params
+    print(control_params)
+    print(mjhmc_params)
     plot_ac(distribution, control_params, mjhmc_params, lahmc_params, num_steps, **kwargs)
 
 def plot_std(distribution):

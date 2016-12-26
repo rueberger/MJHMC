@@ -18,14 +18,14 @@ def generate_initialization(distribution):
     :returns: a set of fair initial states and an estimate of the variance for emc and true both
     :rtype: tuple: (array of shape (distribution.ndims, MAX_N_PARTICLES), float, float)
     """
-    print('Generating fair initialization for {} by burning in {} steps'.format(
-        type(distribution).__name__, BURN_IN_STEPS))
+    print(('Generating fair initialization for {} by burning in {} steps'.format(
+        type(distribution).__name__, BURN_IN_STEPS)))
     assert BURN_IN_STEPS > VAR_STEPS
     # must rebuild graph to nbatch=MAX_N_PARTICLES
     if distribution.backend == 'tensorflow':
         distribution.build_graph()
     mjhmc = MarkovJumpHMC(distribution=distribution, resample=False)
-    for _ in xrange(BURN_IN_STEPS - VAR_STEPS):
+    for _ in range(BURN_IN_STEPS - VAR_STEPS):
         mjhmc.sampling_iteration()
     assert mjhmc.resample == False
 
@@ -44,7 +44,7 @@ def generate_initialization(distribution):
     distribution.dEdX_count = 0
 
     control = ControlHMC(distribution=distribution)
-    for _ in xrange(BURN_IN_STEPS - VAR_STEPS):
+    for _ in range(BURN_IN_STEPS - VAR_STEPS):
         control.sampling_iteration()
     true_var_estimate, control = online_variance(control, distribution)
     control_endpt = control.state.copy().X
@@ -66,11 +66,11 @@ def cache_initialization(distribution):
     file_prefix = '{}/initializations'.format(package_path())
     with open('{}/{}'.format(file_prefix, file_name), 'wb') as cache_file:
         pickle.dump((mjhmc_endpt, emc_var_estimate, true_var_estimate, control_endpt), cache_file)
-    print "Fair initialization for {} saved as {}".format(distr_name, file_name)
-    print "The embedded jump process on {} has estimated variance of {}".format(
-        distr_name, emc_var_estimate)
-    print "Meanwhile {} itself has an estimated variance of {}".format(
-        distr_name, true_var_estimate)
+    print("Fair initialization for {} saved as {}".format(distr_name, file_name))
+    print("The embedded jump process on {} has estimated variance of {}".format(
+        distr_name, emc_var_estimate))
+    print("Meanwhile {} itself has an estimated variance of {}".format(
+        distr_name, true_var_estimate))
 
 
 def online_variance(sampler, distribution):
@@ -87,7 +87,7 @@ def online_variance(sampler, distribution):
     curr_mean = 0
     curr_sumsq = 0
     trial_idx = 0
-    for _ in xrange(VAR_STEPS):
+    for _ in range(VAR_STEPS):
         # very slow but safe
         for val in  sampler.sample(1).ravel():
             trial_idx += 1

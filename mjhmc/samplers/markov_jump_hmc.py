@@ -153,7 +153,7 @@ class HMCBase(object):
         """
         # to do: unroll samples
         samples = []
-        for _ in xrange(n_samples):
+        for _ in range(n_samples):
             self.sampling_iteration()
             samples.append(self.state.copy().X)
         return np.concatenate(samples, axis=1)
@@ -161,7 +161,7 @@ class HMCBase(object):
     def burn_in(self):
         """Runs the sample for a number of burn in sampling iterations
         """
-        for _ in xrange(self.n_burn_in):
+        for _ in range(self.n_burn_in):
             self.sampling_iteration()
 
 
@@ -288,7 +288,7 @@ class ContinuousTimeHMC(HMCBase):
 
             self.sampling_iteration()
             samples_k.append(self.state.copy().X)
-            for _ in xrange(n_samples):
+            for _ in range(n_samples):
                 dwell_t_k.append(self.dwelling_times.copy())
                 self.sampling_iteration()
                 samples_k.append(self.state.copy().X)
@@ -304,7 +304,7 @@ class ContinuousTimeHMC(HMCBase):
             return resamples
         else:
             samples = []
-            for _ in xrange(n_samples):
+            for _ in range(n_samples):
                 self.sampling_iteration()
                 samples.append(self.state.copy().X)
             return np.concatenate(samples, axis=1)
@@ -351,7 +351,7 @@ class MarkovJumpHMC(ContinuousTimeHMC):
             self.num_leapfrog_steps *= 2
 
             depth = np.log(self.original_epsilon / self.epsilon) / np.log(2)
-            print("Ecountered infinite rate, doubling back. Depth: {}".format(depth))
+            print(("Ecountered infinite rate, doubling back. Depth: {}".format(depth)))
             # try again
             self.state.reset_flf_cache()
             self.sampling_iteration()

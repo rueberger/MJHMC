@@ -63,13 +63,13 @@ def obj_func_helper(sampler, distr, unpack, kwargs):
         default_args["resample"] = False
     kwargs.update(default_args)
 
-    print "Calculating autocorrelation for {} grad evals".format(num_target_grad_evals)
+    print("Calculating autocorrelation for {} grad evals".format(num_target_grad_evals))
     ac_df = calculate_autocorrelation(sampler, distr, **kwargs)
     n_grad_evals = ac_df['num grad'].values.astype(int)
     # necessary to keep curve_fit from borking: THIS IS VERY IMPORTANT
     normed_n_grad_evals = n_grad_evals / (0.5 * num_target_grad_evals)
     autocor = ac_df['autocorrelation'].values
-    print "Fitting curve"
+    print("Fitting curve")
     exp_coef, cos_coef = fit(normed_n_grad_evals.copy(), autocor.copy())
     return cos_coef, normed_n_grad_evals, exp_coef, autocor, kwargs
 
@@ -90,7 +90,7 @@ def unpack_params(params):
     probably not a problem, but just in case
     """
     unpacked_params = {}
-    for key, item in params.iteritems():
+    for key, item in params.items():
         unpacked_params[key] = item[0]
     return unpacked_params
 

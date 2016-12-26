@@ -4,5 +4,5 @@ from mjhmc.misc.distributions import Gaussian
 
 
 def main(job_id, params):
-    print "job id: {}, params: {}".format(job_id, params)
+    print("job id: {}, params: {}".format(job_id, params))
     return obj_func(ControlHMC, Gaussian(ndims=10, nbatch=200), job_id, **params)

@@ -76,9 +76,9 @@ class AlgebraicDiscrete(object):
         """Calls sampling_iteration iterations times
         """
         if burn_in and self.n < self.burn_in_steps:
-            for _ in xrange(self.burn_in_steps - self.n):
+            for _ in range(self.burn_in_steps - self.n):
                 self.sampling_iteration()
-        for _ in xrange(iterations):
+        for _ in range(iterations):
             self.sampling_iteration()
 
     def burn_in(self):
@@ -147,7 +147,7 @@ class AlgebraicDiscrete(object):
         # no nice way to have private variables...
         T_full = np.zeros((self.order, self.order))
 
-        for idx in xrange(self.order):
+        for idx in range(self.order):
             self.update_transition_matrix(idx, T_full)
 
         if full:
@@ -181,7 +181,7 @@ class AlgebraicDiscrete(object):
 
         for l_i, l_j in itertools.product(
                 np.arange(n_energies), np.arange(n_energies)):
-            T_l[l_i, l_j] = np.sum(T_full[zip(*get_eq_idxs(l_i, l_j))])
+            T_l[l_i, l_j] = np.sum(T_full[list(zip(*get_eq_idxs(l_i, l_j)))])
 
         return T_l
 
@@ -208,7 +208,7 @@ class AlgebraicDiscrete(object):
         """Returns the distribution predicted by theory
         """
         p = np.zeros(self.order / 2)
-        for idx in xrange(self.order / 2):
+        for idx in range(self.order / 2):
             p[idx] = np.exp(-self.ladder_states.energies[idx])
         return p / np.sum(p)
 
@@ -411,7 +411,7 @@ class State(object):
             self.energies = energies
         else:
             self.energies = np.random.randn(self.order / 2)
-        self.states = np.array([StateGroup(self.order, self.energies) for _ in xrange(self.nbatch)])
+        self.states = np.array([StateGroup(self.order, self.energies) for _ in range(self.nbatch)])
 
     def H(self):
         """Returns an array with the energies of this state

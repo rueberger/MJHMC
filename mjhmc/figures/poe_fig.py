@@ -53,37 +53,37 @@ def generate_figure_samples(samples_per_frame, n_frames, burnin = int(1e4)):
     # x_init = nuts_samples[0, :].reshape(ndims, 1)
 
     ## burnin
-    print "MJHMC burnin"
+    print("MJHMC burnin")
     x_init = poe.Xinit #[:, [0]]
     mjhmc = MarkovJumpHMC(distribution=poe.reset(), **mjhmc_params)
     mjhmc.state = HMCState(x_init.copy(), mjhmc)
     mjhmc_samples = mjhmc.sample(burnin)
-    print mjhmc_samples.shape
+    print(mjhmc_samples.shape)
     x_init = mjhmc_samples[:, [0]]
 
     # control HMC
-    print "Control"
+    print("Control")
     hmc = ControlHMC(distribution=poe.reset(), **control_params)
     hmc.state = HMCState(x_init.copy(), hmc)
     hmc_samples = hmc.sample(n_samples)
-    hmc_frames = [hmc_samples[:, f_idx * samples_per_frame].copy() for f_idx in xrange(0, n_frames)]
+    hmc_frames = [hmc_samples[:, f_idx * samples_per_frame].copy() for f_idx in range(0, n_frames)]
 
     # MJHMC
-    print "MJHMC"
+    print("MJHMC")
     mjhmc = MarkovJumpHMC(distribution=poe.reset(), resample=False, **mjhmc_params)
     mjhmc.state = HMCState(x_init.copy(), mjhmc)
     mjhmc_samples = mjhmc.sample(n_samples)
-    mjhmc_frames = [mjhmc_samples[:, f_idx * samples_per_frame].copy() for f_idx in xrange(0, n_frames)]
+    mjhmc_frames = [mjhmc_samples[:, f_idx * samples_per_frame].copy() for f_idx in range(0, n_frames)]
 
-    print mjhmc.r_count, hmc.r_count
-    print mjhmc.l_count, hmc.l_count
-    print mjhmc.f_count, hmc.f_count
-    print mjhmc.fl_count, hmc.fl_count
+    print(mjhmc.r_count, hmc.r_count)
+    print(mjhmc.l_count, hmc.l_count)
+    print(mjhmc.f_count, hmc.f_count)
+    print(mjhmc.fl_count, hmc.fl_count)
 
 
     frames = [mjhmc_frames, hmc_frames]
     names = ['MJHMC', 'ControlHMC']
-    frame_grads = [f_idx * samples_per_frame for f_idx in xrange(0, n_frames)]
+    frame_grads = [f_idx * samples_per_frame for f_idx in range(0, n_frames)]
     return frames, names, frame_grads
 
 
@@ -154,8 +154,8 @@ def plot_concat_imgs(imgs, border_thickness=2, axis=None, normalize=False):
     concat_length = layer_length * img_length + (layer_length - 1) * border_thickness
     border_color = np.nan
     concat_rf = np.ones((concat_length, concat_length)) * border_color
-    for x_idx, y_idx in itertools.product(xrange(layer_length),
-                                          xrange(layer_length)):
+    for x_idx, y_idx in itertools.product(range(layer_length),
+                                          range(layer_length)):
         # this keys into imgs
         flat_idx = x_idx * layer_length + y_idx
         x_offset = border_thickness * x_idx

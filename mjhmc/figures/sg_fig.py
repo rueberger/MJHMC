@@ -62,7 +62,7 @@ def plot_spectral_gaps(max_n_dims, n_trials=25,
         t_start = time.clock()
         hmc_trials = []
         rf_trials = []
-        for _ in xrange(n_trials):
+        for _ in range(n_trials):
             H = inv_pdf(np.random.random(order / 2))
             hmc = AlgebraicHMC(order, energies=H)
             rf = AlgebraicReducedFlip(order, energies=H)
@@ -70,11 +70,11 @@ def plot_spectral_gaps(max_n_dims, n_trials=25,
             rf_trials.append(sg(rf, full))
         hmc_sg.append(hmc_trials)
         rf_sg.append(rf_trials)
-        print "order {} took {} seconds".format(order, time.clock() - t_start)
+        print("order {} took {} seconds".format(order, time.clock() - t_start))
     hmc_sg = np.array(hmc_sg)
     rf_sg = np.array(rf_sg)
     # putting into dataframe for seaborn
-    for idx in xrange(n_trials):
+    for idx in range(n_trials):
         hmc_df = pd.DataFrame(dict(
             Sampler=["Discrete-time HMC"] * len(orders),
             subj=["subj{}".format(idx)] * len(orders),
@@ -90,7 +90,7 @@ def plot_spectral_gaps(max_n_dims, n_trials=25,
     sgs_df = pd.concat(sgs)
 
 
-    print "computation finished. total time elapsed: {}".format(time.clock() - t_begin)
+    print("computation finished. total time elapsed: {}".format(time.clock() - t_begin))
     sns.tsplot(sgs_df, time="order", unit="subj", condition="Sampler", value="sg")
     plt.ylabel("Spectral gap (log)")
     plt.xlabel("Number of states in ladder")

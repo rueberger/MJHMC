@@ -10,7 +10,7 @@ def get_eigs(sampler, order, steps=1000, energies=None):
     """Runs the sampler, returns the l1 normalized eigs
     """
     hmc = sampler(order, energies=energies)
-    for _ in xrange(steps):
+    for _ in range(steps):
         hmc.sampling_iteration()
     t = hmc.get_transition_matrix()
     return eig(t, left=True, right=False)
@@ -24,16 +24,16 @@ def mixing_times(H, trials=10):
     c_tm = np.zeros(trials)
     d_tm = np.zeros(trials)
 
-    for i in xrange(trials):
+    for i in range(trials):
         # todo: add reset methods
-        print "trial: {}".format(i)
+        print("trial: {}".format(i))
         hmc = AlgebraicDiscrete(order, energies=H)
         chmc = AlgebraicContinuous(order, energies=H)
         d_tm[i] = hmc.calculate_mixing_time()
         c_tm[i] = chmc.calculate_mixing_time()
 
-    print "Average mixing time for discrete sampler: {}".format(np.mean(d_tm))
-    print "Average mixing time for continuous sampler: {}".format(np.mean(c_tm))
+    print("Average mixing time for discrete sampler: {}".format(np.mean(d_tm)))
+    print("Average mixing time for continuous sampler: {}".format(np.mean(c_tm)))
 
 def test_sampler(sampler, H, steps=1000):
     """Runs the sampler on the given energy
@@ -46,11 +46,11 @@ def test_sampler(sampler, H, steps=1000):
     smp.sample(steps)
     t_obs = smp.get_transition_matrix()
 
-    print "Predicted distribution: {}  \n".format(smp.prd_distr)
-    print "Observed distribution: {} \n".format(smp.get_distr())
-    print "Sampling error (L1): {} \n".format(smp.sampling_err())
-    print "Observed transition matrix: \n {} \n".format(t_obs)
-    print "Eigenspectrum of observed transition matrix: \n"
+    print("Predicted distribution: {}  \n".format(smp.prd_distr))
+    print("Observed distribution: {} \n".format(smp.get_distr()))
+    print("Sampling error (L1): {} \n".format(smp.sampling_err()))
+    print("Observed transition matrix: \n {} \n".format(t_obs))
+    print("Eigenspectrum of observed transition matrix: \n")
     eigs = rectify_evecs(eig(t_obs, left=True, right=False))
     pprint_eigs(eigs)
 
@@ -61,8 +61,8 @@ def pprint_eigs(eigs):
     pretty prints the results
     """
     for l, vec in zip(eigs[0], eigs[1]):
-        print "Eigenvalue: {} \n".format(l)
-        print "Eigenvector: {} \n".format(list(vec))
+        print("Eigenvalue: {} \n".format(l))
+        print("Eigenvector: {} \n".format(list(vec)))
 
 def rectify_evecs(eigs):
     """
@@ -97,9 +97,9 @@ def calc_spectral_gaps(order, trials=1, n_sample_step=1000):
     c_sg = np.zeros(trials)
     h_sg = np.zeros(trials)
 
-    print "Order: {}".format(order)
+    print("Order: {}".format(order))
 
-    for i in xrange(trials):
+    for i in range(trials):
         hmc = AlgebraicDiscrete(order, energies=H)
         chmc = AlgebraicContinuous(order, energies=H)
         # runs until close to equilibrium distribution
@@ -107,8 +107,8 @@ def calc_spectral_gaps(order, trials=1, n_sample_step=1000):
         n_chmc = chmc.calculate_mixing_time()
         h_sg[i] = sg(hmc)
         c_sg[i] = sg(chmc)
-        print "{} samplings steps for hmc to approach equilibirium".format(n_hmc)
-        print "{} samplings steps for chmc to approach equilibirium".format(n_chmc)
+        print("{} samplings steps for hmc to approach equilibirium".format(n_hmc))
+        print("{} samplings steps for chmc to approach equilibirium".format(n_chmc))
 
     return np.mean(h_sg), np.std(h_sg), np.mean(c_sg), np.std(c_sg)
 
@@ -134,7 +134,7 @@ def plot_sgs(max_ord=100):
     plt.ion()
     orders = np.arange(2, max_ord) * 2
     sgs = [calc_spectral_gaps(o) for o in orders]
-    avg_h_sg, std_h_sg, avg_c_sg, std_c_sg = zip(*sgs)
+    avg_h_sg, std_h_sg, avg_c_sg, std_c_sg = list(zip(*sgs))
     plt.errorbar(orders, avg_h_sg, yerr=std_h_sg, label='Discrete sampler')
     plt.errorbar(orders, avg_c_sg, yerr=std_c_sg, label='Continuous sampler')
     plt.title("Spectral gaps on random gaussian state ladders")

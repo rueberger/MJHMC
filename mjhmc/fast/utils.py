@@ -25,7 +25,7 @@ def min_idx(draws):
     """
     cdraws = np.concatenate(draws, axis=0)
     transition_idx = np.argmin(cdraws, axis=0)
-    return [np.where(transition_idx == i)[0] for i in xrange(len(draws))]
+    return [np.where(transition_idx == i)[0] for i in range(len(draws))]
 
 
 def draw_from(rates):

@@ -160,7 +160,7 @@ def test_fig(max_steps=int(1e4), full=True):
     ladders = [l for l in sp_img_ladder_generator(1e-3, 1, 0.01, max_steps=max_steps) if len(l) > 1]
     ladder_lens = [len(l) for l in ladders]
 
-    print("Computing spectral gaps for {} ladders".format(len(ladders)))
+    print(("Computing spectral gaps for {} ladders".format(len(ladders))))
 
     mjhmc_sgs = []
     control_sgs = []

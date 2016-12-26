@@ -1,5 +1,5 @@
 import numpy as np
-from find_best_params import find
+from .find_best_params import find
 import sys
 import matplotlib
 matplotlib.use('Agg')
@@ -8,11 +8,11 @@ import ipdb
 
 if __name__=="__main__":
     print('MJHMC Path')
-    print(sys.argv[1])
+    print((sys.argv[1]))
     print('Control Path')
-    print(sys.argv[2])
+    print((sys.argv[2]))
     print('Save Path')
-    print(sys.argv[3])
+    print((sys.argv[3]))
     #Calculating logs for mjhmc
     mjhmc = find(sys.argv[1],0)
     #Calculating logs for control

@@ -9,7 +9,7 @@ np.random.seed(2015)
 def main(job_id, params):
     ndims = 36
     nbasis = 36
-    print "job id: {}, params: {}".format(job_id, params)
+    print("job id: {}, params: {}".format(job_id, params))
     weights, lognu = init_weights(ndims, nbasis)
     return obj_func(ControlHMC, ProductOfT(nbatch=25, ndims=ndims, nbasis=nbasis, lognu=lognu, W=weights), job_id, **params)
 

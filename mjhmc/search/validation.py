@@ -38,7 +38,7 @@ def plot_all_best(custom_params=None):
                 params = [custom_params] * 3
             active_params = params[:-1]
             for sampler, hparams in zip(samplers, active_params):
-                print "Now running for {} on {}".format(sampler, distribution)
+                print("Now running for {} on {}".format(sampler, distribution))
                 cos_coef, n_grad_evals, exp_coef, autocor, _ = obj_func_helper(
                     sampler, distribution.reset(), False, hparams)
                 fig = plot_fit(n_grad_evals,

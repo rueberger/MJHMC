@@ -438,7 +438,7 @@ class ProductOfT(Distribution):
         #hack to remap samples from a generic product of experts to
         #the model we are actually going to generate samples from
         Zinit = np.zeros((self.ndims, self.nbatch))
-        for ii in xrange(self.ndims):
+        for ii in range(self.ndims):
             Zinit[ii] = stats.t.rvs(self.nu.get_value()[ii], size=self.nbatch)
 
         Yinit = Zinit - self.bias.get_value().reshape((-1, 1))

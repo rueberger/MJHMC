@@ -37,7 +37,7 @@ def benchmark_batch_size_scaling(sampler_cls=MarkovJumpHMC,
     for n_batch in batch_sizes:
         distribution = distribution_cls(ndims=ndims, nbatch=n_batch)
         sampler = sampler_cls(distribution=distribution)
-        print "now doing batch size {}".format(n_batch)
+        print("now doing batch size {}".format(n_batch))
         times = np.zeros(n_itrs)
         for idx in range(n_itrs):
             t_i = time.time()
@@ -73,7 +73,7 @@ def benchmark_ac_batch_size_scaling(sampler_cls=MarkovJumpHMC,
     batch_sizes = np.arange(1, 500, 25)
     for n_batch in batch_sizes:
         distribution = distribution_cls(ndims=ndims, nbatch=n_batch)
-        print "now doing batch size {}".format(n_batch)
+        print("now doing batch size {}".format(n_batch))
         times = np.zeros(n_itrs)
         for idx in range(n_itrs):
             t_i = time.time()
@@ -109,14 +109,14 @@ def autocorrelation_vs_n_samples(sampler_cls=MarkovJumpHMC,
     sample_sizes = np.arange(100, 10000, 250)
     for n_samples in izes:
         distribution = distribution_cls(ndims=ndims, nbatch=n_batch)
-        print "now running for {} samples".format(n_samples)
+        print("now running for {} samples".format(n_samples))
         times = np.zeros(n_itrs)
         for idx in range(n_itrs):
             t_i = time.time()
             _ = calculate_autocorrelation(sampler_cls, distribution, num_steps=n_samples, half_window=True)
             t_f = time.time()
             times[idx] = t_f - t_i
-        print "last run took time {}".format(times[-1])
+        print("last run took time {}".format(times[-1]))
         run_time.append(np.mean(times))
     fig = plt.figure()
     axis = fig.add_subplot(111)
@@ -135,7 +135,7 @@ def time_per_sample(sampler, trials=10, n_samples=1000):
     :rtype: float
     """
     times = np.zeros(trials)
-    for tr_idx in xrange(trials):
+    for tr_idx in range(trials):
         t_i = time.time()
         sampler.sample(n_samples)
         t_f = time.time()
@@ -167,14 +167,14 @@ def sampler_speedometer():
     m_p_nr_avg = time_per_sample(mjhmc_pot_nr)
     c_p_avg = time_per_sample(control_pot)
 
-    print "Average times per samples..."
-    print "resampled MJHMC numpy gradient: {}".format(m_g_r_avg)
-    print "not resampled MJHMC numpy gradient: {}".format(m_g_nr_avg)
-    print "control HMC numpy gradient: {}".format(c_g_avg)
+    print("Average times per samples...")
+    print("resampled MJHMC numpy gradient: {}".format(m_g_r_avg))
+    print("not resampled MJHMC numpy gradient: {}".format(m_g_nr_avg))
+    print("control HMC numpy gradient: {}".format(c_g_avg))
 
-    print "resampled MJHMC theano gradient: {}".format(m_p_r_avg)
-    print "not resampled MJHMC theano gradient: {}".format(m_p_nr_avg)
-    print "control HMC theano gradient: {}".format(c_p_avg)
+    print("resampled MJHMC theano gradient: {}".format(m_p_r_avg))
+    print("not resampled MJHMC theano gradient: {}".format(m_p_nr_avg))
+    print("control HMC theano gradient: {}".format(c_p_avg))
 
 
 def check_variance():
@@ -187,7 +187,7 @@ def check_variance():
     np.random.seed(2015)
     poe = ProductOfT(nbatch=1000, ndims=36, nbasis=36)
     var_estimates = []
-    for trial_idx in xrange(100):
+    for trial_idx in range(100):
         _, var_estimate = generate_initialization(poe.reset())
         var_estimates.append(var_estimate)
         with open("var_log.txt", 'a') as vlog:
