@@ -17,7 +17,7 @@ grad_evals = {
     'RoughWell' : int(5E4),
     'MultimodalGaussian' : int(2E5),
     'ProductOfT' : int(1E5),
-    'Funnel': int(1E5)
+    'Funnel': int(1E5),
     'SparseImageCode': int(5E4)
 }
 
