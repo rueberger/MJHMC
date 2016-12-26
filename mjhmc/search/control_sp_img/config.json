@@ -1,7 +1,7 @@
 {
     "language"        : "PYTHON",
     "main-file"       : "control_objective.py",
-    "experiment-name" : "control_sp_img_1",
+    "experiment-name" : "control_sp_img_2",
     "likelihood"      : "GAUSSIAN",
     "variables" : {
         "num_leapfrog_steps" : {
@@ -19,7 +19,7 @@
         "beta" : {
             "type" : "FLOAT",
             "size" : 1,
-            "min"  : 0.1,
+            "min"  : 0.00001,
             "max" : 0.9999999
         }
     },
