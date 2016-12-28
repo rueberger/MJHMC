@@ -1,7 +1,7 @@
 {
     "language"        : "PYTHON",
     "main-file"       : "mjhmc_objective.py",
-    "experiment-name" : "MJHMC_sp_img_3",
+    "experiment-name" : "MJHMC_sp_img_4",
     "likelihood"      : "GAUSSIAN",
     "variables" : {
         "num_leapfrog_steps" : {
