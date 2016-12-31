@@ -2,6 +2,7 @@
 This module contains utilities for computing the autocorrelation of a sequence of samples
 """
 import pandas as pd
+import mklfft.fftpack import fftn, ifftn
 import numpy as np
 from time import time
 
@@ -33,34 +34,52 @@ def calculate_autocorrelation(sampler, distribution,
     print "Calculating autocorrelation..."
     return autocorrelation(samples, e_evals, grad_evals, half_window, cached_var=cached_var)
 
+def fft_autocor(samples):
+    """ Calculate autocorrelation using the cross-correlation theorem
+
+    Args:
+      samples: array of samples - [n_dims, n_batch, n_samples]
+
+    Returns:
+       autocor: [n_samples]
+    """
+    assert samples.ndim == 3
+    fft_samples = fftn(samples, axes=[-1])
+    return np.mean(ifftn(fft_samples * np.conj(fft_samples), axes=[-1]), axis=(0, 1))
+
+
 def autocorrelation(samples, e_evals, grad_evals, half_window=True,
-                    normalize=True, cached_var=None, use_tf=False):
+                    normalize=True, cached_var=None, brute_force=False,
+                    use_tf=False):
     n_dims, n_batch, n_samples = samples.shape
 
-    if use_tf:
-        import tensorflow as tf
-        with tf.Graph().as_default(), tf.Session() as sess:
-            print "Building autocor op"
-            ac_op, samples_pl = build_autocor_op(n_dims, n_batch, n_samples, half_window=half_window)
+    if brute_force:
+        if use_tf:
+            import tensorflow as tf
+            with tf.Graph().as_default(), tf.Session() as sess:
+                print "Building autocor op"
+                ac_op, samples_pl = build_autocor_op(n_dims, n_batch, n_samples, half_window=half_window)
 
-            print "Initializing variables"
-            sess.run(tf.initialize_all_variables())
+                print "Initializing variables"
+                sess.run(tf.initialize_all_variables())
 
-            print "Calculating autocor"
-            ac_squeeze = sess.run(ac_op, feed_dict={samples_pl: samples})
+                print "Calculating autocor"
+                ac_squeeze = sess.run(ac_op, feed_dict={samples_pl: samples})
+        else:
+            import theano
+            import theano.tensor as T
+            print "Now compiling autocorrelation function"
+            start_time = time()
+            theano_ac = compile_autocor_func(half_window)
+            print "Took {} seconds".format(time() - start_time)
+
+            print "Now running compiled autocorrelation function..."
+            start_time = time()
+            raw_autocor = theano_ac(samples.astype('float32'))
+            print "Took {} seconds".format(time() - start_time)
+            ac_squeeze = np.squeeze(raw_autocor[0])
     else:
-        import theano
-        import theano.tensor as T
-        print "Now compiling autocorrelation function"
-        start_time = time()
-        theano_ac = compile_autocor_func(half_window)
-        print "Took {} seconds".format(time() - start_time)
-
-        print "Now running compiled autocorrelation function..."
-        start_time = time()
-        raw_autocor = theano_ac(samples.astype('float32'))
-        print "Took {} seconds".format(time() - start_time)
-        ac_squeeze = np.squeeze(raw_autocor[0])
+        ac_squeeze = fft_autocor(samples)
 
     if cached_var is None:
         # variance given assumption of *zero mean*
