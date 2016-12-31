@@ -64,11 +64,11 @@ def obj_func_helper(sampler, distr, unpack, kwargs):
     kwargs.update(default_args)
 
     print "Calculating autocorrelation for {} grad evals".format(num_target_grad_evals)
-    ac_df = calculate_autocorrelation(sampler, distr, **kwargs)
-    n_grad_evals = ac_df['num grad'].values.astype(int)
+    # grad evals was previously cast to int, why?
+    autocor, _, n_grad_evals = calculate_autocorrelation(sampler, distr, **kwargs)
+
     # necessary to keep curve_fit from borking: THIS IS VERY IMPORTANT
     normed_n_grad_evals = n_grad_evals / (0.5 * num_target_grad_evals)
-    autocor = ac_df['autocorrelation'].values
     print "Fitting curve"
     exp_coef, cos_coef = fit(normed_n_grad_evals.copy(), autocor.copy())
     return cos_coef, normed_n_grad_evals, exp_coef, autocor, kwargs

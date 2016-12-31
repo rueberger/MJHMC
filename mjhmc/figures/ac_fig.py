@@ -29,6 +29,7 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
     runs the sampler for max steps and then truncates the output to autocorrelation 0.5
     throws an error if ac 0.5 is not reached
     """
+    # TODO: bring up to speed of DF-less calc autocor
     plt.clf()
     print('Calculating AutoCorrelation for ControlHMC')
     control_ac = calculate_autocorrelation(ControlHMC, distribution,

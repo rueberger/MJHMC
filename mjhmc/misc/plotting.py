@@ -158,6 +158,7 @@ def plot_autocorrelation(distribution, ndims=2,
 
     set to be deprecated
     """
+    # TODO: bring up to speed of DF-less calc autocor
     distr = distribution(ndims, nbatch)
     d_ac = calculate_autocorrelation(HMCBase, distr, num_steps, sample_steps)
     c_ac = calculate_autocorrelation(ContinuousTimeHMC, distr, num_steps, sample_steps)

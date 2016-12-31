@@ -5,6 +5,8 @@ import pandas as pd
 import numpy as np
 from time import time
 
+
+
 def calculate_autocorrelation(sampler, distribution,
                               num_steps=None, num_grad_steps=None,
                               sample_steps=1, half_window=False,
@@ -15,34 +17,27 @@ def calculate_autocorrelation(sampler, distribution,
     """
     print "Now generating samples..."
     start_time = time()
-    smp, sample_df = sample_to_df(sampler, distribution.reset(), num_steps, num_grad_steps,
-                      sample_steps, **kwargs)
+    # smp, sample_df = sample_to_df(sampler, distribution.reset(), num_steps, num_grad_steps,
+    #                   sample_steps, **kwargs)
+    samples, e_evals, grad_evals = generate_samples(sampler, distribution.reset(),
+                                                    num_steps, num_grad_steps, **kwargs)
     print "Took {} seconds".format(time() - start_time)
 
     cached_var = None
     if use_cached_var:
         print "Using cached variance"
         _, emc_var_estimate, true_var_estimate = distribution.load_cache()
-        if smp.distribution.mjhmc:
+        if sampler.__name__ == "MarkovJumpHMC":
             cached_var = emc_var_estimate
         else:
             cached_var = true_var_estimate
 
     print "Calculating autocorrelation..."
-    return autocorrelation(sample_df, half_window, cached_var=cached_var)
+    return autocorrelation(samples, e_evals, grad_evals, half_window, cached_var=cached_var)
 
-def autocorrelation(history, half_window=True, normalize=True, cached_var=None, use_tf=False):
-    n_samples = len(history)
-    n_dims, n_batch = history.loc[0]['X'].shape
-
-    samples = np.zeros((n_dims, n_batch, n_samples))
-
-    print "Copying samples to array"
-    start_time = time()
-    for idx in range(n_samples):
-        samples[:, :, idx] = history.loc[idx]['X']
-    print "Took {} seconds".format(time() - start_time)
-
+def autocorrelation(samples, e_evals, grad_evals, half_window=True,
+                    normalize=True, cached_var=None, use_tf=False):
+    n_dims, n_batch, n_samples = samples.shape
 
     if use_tf:
         import tensorflow as tf
@@ -88,17 +83,18 @@ def autocorrelation(history, half_window=True, normalize=True, cached_var=None, 
         autocor = np.vstack((var, ac_squeeze.reshape(-1, 1)))
 
 
-
-    #This drops the last sample out of the data frame. Unclear, if this is the best way to do things but
+    #This drops the last sample. Unclear, if this is the best way to do things but
     #it is the only way we can align the total number of samples from sample generation to
     #computing autocorrelation
     if half_window:
-        ac_df = history[:int(n_samples / 2) - 1]
+        e_evals = e_evals[:int(n_samples / 2) - 1]
+        grad_evals = grad_evals[:int(n_samples / 2) - 1]
+
     else:
-        ac_df = history[:-1]
-    ac_df.loc[:, 'autocorrelation'] = autocor
+        e_evals = e_evals[:-1]
+        grad_evals = grad_evals[:-1]
     print "Took {} seconds".format(time() - start_time)
-    return ac_df[['num energy', 'num grad', 'autocorrelation']]
+    return autocor, e_evals, grad_evals
 
 
 
@@ -158,7 +154,7 @@ def build_autocor_op(n_dims, n_batch, n_samples, half_window=True):
     return autocor, samples_pl
 
 
-def slow_autocorrelation(history, half_window=False):
+def slow_autocorrelation(samples, e_evals, grad_evals, half_window=False):
     """
     calculate the autocorrelation
     history a dataframe
@@ -167,40 +163,76 @@ def slow_autocorrelation(history, half_window=False):
 
     returns the dataframe: autocorrelation gradient evaluations energy evaluations
     """
-    # number of steps
-    T = len(history)
-    # distribution dimensions, batch size
-    N, nbatch = history.loc[0]['X'].shape
 
-    X = np.zeros((N, nbatch, T))
-    for tt in range(T):
-        X[:, :, tt] = history.loc[tt]['X']
+    N, nbatch, T = samples.shape
 
     if not half_window:
         c = np.zeros((T-1,))
         # variance given assumption of zero mean
-        c[0] = np.mean(X**2)
+        c[0] = np.mean(samples**2)
         for t_gap in range(1, T-1):
-            c[t_gap] = np.mean(X[:,:,:-t_gap]*X[:,:,t_gap:])
+            c[t_gap] = np.mean(samples[:,:,:-t_gap]*samples[:,:,t_gap:])
 
         # can't have full length window
         # not sure that truncating at the end is the proper thing to do
-        ac_df = history[:-1]
-        ac_df.loc[:, 'autocorrelation'] = c/c[0]
+        autocor = c / c[0]
 
     if half_window:
         c = np.zeros(((T/2)-1,))
         # variance given assumption of zero mean
-        c[0] = np.mean(X**2)
+        c[0] = np.mean(samples**2)
         for t_gap in range(1, (T/2)-1):
-            c[t_gap] = np.mean(X[:,:,:-t_gap]*X[:,:,t_gap:])
+            c[t_gap] = np.mean(samples[:,:,:-t_gap]*samples[:,:,t_gap:])
 
         # can't have full length window
         # not sure that truncating at the end is the proper thing to do
-        ac_df = history[:(T/2)-1]
-        ac_df.loc[:, 'autocorrelation'] = c/c[0]
+        autocor = c / c[0]
 
-    return ac_df[['num energy', 'num grad', 'autocorrelation']]
+    return autocor, e_evals, grad_evals
+
+def generate_samples(sampler, distribution, num_steps=None, num_grad_steps=None,
+                     **kwargs):
+    """ Generate samples *without* using a dataframe
+
+    Args:
+       sampler: sampler class
+       distribution: distribution object
+       num_steps: number of desired steps - optional
+       num_grad_steps: number of desired grad steps - optional
+
+    Returns:
+       (samples - [n_dims, n_batch, n_samples]
+        e_evals - [n_samples]
+        grad_evals - [n_samples])
+    """
+    # ridiculous assert to make sure only one of them is ever None
+    assert (((num_steps is None) and (num_grad_steps is not None)) or
+            (num_steps is not None) and (num_grad_steps is None))
+    smp = sampler(distribution=distribution, **kwargs)
+    # fudge factor because grad per sampler step is only approximate
+    num_steps = num_steps or num_grad_steps / smp.grad_per_sample_step + 100
+
+    n_dims = distribution.ndims
+    n_batch = distribution.nbatch
+    # [n_dims, n_batch, num_steps]
+    samples = np.zeros(n_dims, n_batch, num_steps)
+
+    grad_evals = np.zeros(num_steps)
+    e_evals = np.zeros(num_steps)
+
+    # reset counters
+    distribution.reset()
+    for t_idx in range(num_steps):
+        samples[:, :, t_idx] = sampler.sample(1)
+        grad_evals[t_idx] = distribution.dEdX_count / float(n_batch)
+        e_evals[t_idx] = distribution.E_count / float(n_batch)
+
+    if num_grad_steps is not None:
+        assert grad_evals[-1] >= num_grad_steps
+        grad_sel = (grad_evals <= num_grad_steps)
+        return samples[:, :, grad_sel], e_evals[grad_sel], grad_evals[grad_sel]
+    else:
+        return samples, e_evals, grad_evals
 
 
 def sample_to_df(sampler, distribution, num_steps=None, num_grad_steps=None,
