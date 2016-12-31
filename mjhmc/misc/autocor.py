@@ -45,7 +45,7 @@ def fft_autocor(samples):
     """
     assert samples.ndim == 3
     fft_samples = fftn(samples, axes=[-1])
-    return np.mean(ifftn(fft_samples * np.conj(fft_samples), axes=[-1]), axis=(0, 1))
+    return np.real(np.mean(ifftn(fft_samples * np.conj(fft_samples), axes=[-1]), axis=(0, 1)))
 
 
 def autocorrelation(samples, e_evals, grad_evals, half_window=True,
