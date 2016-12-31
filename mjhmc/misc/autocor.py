@@ -2,7 +2,7 @@
 This module contains utilities for computing the autocorrelation of a sequence of samples
 """
 import pandas as pd
-import mklfft.fftpack import fftn, ifftn
+from mklfft.fftpack import fftn, ifftn
 import numpy as np
 from time import time
 
