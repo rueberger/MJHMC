@@ -17,8 +17,6 @@ def calculate_autocorrelation(sampler, distribution,
     """
     print "Now generating samples..."
     start_time = time()
-    # smp, sample_df = sample_to_df(sampler, distribution.reset(), num_steps, num_grad_steps,
-    #                   sample_steps, **kwargs)
     samples, e_evals, grad_evals = generate_samples(sampler, distribution.reset(),
                                                     num_steps, num_grad_steps, **kwargs)
     print "Took {} seconds".format(time() - start_time)
@@ -215,7 +213,7 @@ def generate_samples(sampler, distribution, num_steps=None, num_grad_steps=None,
     n_dims = distribution.ndims
     n_batch = distribution.nbatch
     # [n_dims, n_batch, num_steps]
-    samples = np.zeros(n_dims, n_batch, num_steps)
+    samples = np.zeros((n_dims, n_batch, num_steps))
 
     grad_evals = np.zeros(num_steps)
     e_evals = np.zeros(num_steps)
