@@ -147,16 +147,31 @@ class HMCBase(object):
         self.f_count += len(F_idx - FL_idx)
         self.fl_count += len(FL_idx - F_idx)
 
-    def sample(self, n_samples=1000):
+    def sample(self, n_samples=1000, preserve_order=False):
         """
         Draws nsamples, returns them all
+
+        Args:
+           n_samples: number of samples to draw - int
+           preserve_order: if True, time is given it's own axis.
+              otherwise, it is rolled into the batch axis
+
+        Returns:
+           if preserve_order:
+               samples - [n_dim, n_batch, n_samples]
+           else:
+               samples - [n_dim, n_batch * n_samples]
         """
         # to do: unroll samples
         samples = []
         for _ in xrange(n_samples):
             self.sampling_iteration()
             samples.append(self.state.copy().X)
-        return np.concatenate(samples, axis=1)
+        if preserve_order:
+            return np.stack(samples, axis=-1)
+        else:
+            return np.concatenate(samples, axis=1)
+
 
     def burn_in(self):
         """Runs the sample for a number of burn in sampling iterations
@@ -275,11 +290,21 @@ class ContinuousTimeHMC(HMCBase):
         self.r_count += len(r_idx)
 
     @overrides(HMCBase)
-    def sample(self, n_samples=1000):
+    def sample(self, n_samples=1000, preserve_order=False):
         """ Runs sampler and returns a list of n_samples (resampled to be fair)
 
-        :param n_samples: number of samples_k to generated
-        :rtype: array
+        Args:
+           n_samples: number of samples to draw - int
+           preserve_order: if True, time is given it's own axis.
+              otherwise, it is rolled into the batch axis
+              has no effect if resample is enabled
+
+        Returns:
+           if preserve_order:
+               samples - [n_dim, n_batch, n_samples]
+           else:
+               samples - [n_dim, n_batch * n_samples]
+
         """
         if self.resample:
             samples_k = []
@@ -307,7 +332,10 @@ class ContinuousTimeHMC(HMCBase):
             for _ in xrange(n_samples):
                 self.sampling_iteration()
                 samples.append(self.state.copy().X)
-            return np.concatenate(samples, axis=1)
+            if preserve_order:
+                return np.stack(samples, axis=-1)
+            else:
+                return np.concatenate(samples, axis=1)
 
 
     def transition_rates(self, Z1, Z2):
