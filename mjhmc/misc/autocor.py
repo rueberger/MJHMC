@@ -45,7 +45,8 @@ def fft_autocor(samples):
     """
     assert samples.ndim == 3
     fft_samples = fftn(samples, axes=[-1])
-    return np.real(np.mean(ifftn(fft_samples * np.conj(fft_samples), axes=[-1]), axis=(0, 1)))
+    fft_ac = np.real(np.mean(ifftn(fft_samples * np.conj(fft_samples), axes=[-1]), axis=(0, 1)))
+    return fft_ac / fft_ac[0]
 
 
 def autocorrelation(samples, e_evals, grad_evals, half_window=True,
@@ -80,6 +81,7 @@ def autocorrelation(samples, e_evals, grad_evals, half_window=True,
             ac_squeeze = np.squeeze(raw_autocor[0])
     else:
         ac_squeeze = fft_autocor(samples)
+
 
     if cached_var is None:
         # variance given assumption of *zero mean*
