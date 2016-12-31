@@ -242,7 +242,7 @@ def generate_samples(sampler, distribution, num_steps=None, num_grad_steps=None,
     # reset counters
     distribution.reset()
     for t_idx in range(num_steps):
-        samples[:, :, t_idx] = sampler.sample(1)
+        samples[:, :, t_idx] = smp.sample(1)
         grad_evals[t_idx] = distribution.dEdX_count / float(n_batch)
         e_evals[t_idx] = distribution.E_count / float(n_batch)
 
