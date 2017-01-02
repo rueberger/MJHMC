@@ -25,7 +25,7 @@ def calculate_autocorrelation(sampler, distribution,
     cached_var = None
     if use_cached_var:
         print "Using cached variance"
-        _, emc_var_estimate, true_var_estimate = distribution.load_cache()
+        _, emc_var_estimate, true_var_estimate, _ = distribution.load_cache()
         if sampler.__name__ == "MarkovJumpHMC":
             cached_var = emc_var_estimate
         else:
