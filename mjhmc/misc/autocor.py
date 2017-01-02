@@ -79,40 +79,44 @@ def autocorrelation(samples, e_evals, grad_evals, half_window=True,
             raw_autocor = theano_ac(samples.astype('float32'))
             print "Took {} seconds".format(time() - start_time)
             ac_squeeze = np.squeeze(raw_autocor[0])
+
+        if cached_var is None:
+            # variance given assumption of *zero mean*
+            print "Computing sample variance with numpy..."
+            var = np.mean(samples**2, keepdims=True)[0][0]
+        else:
+            var = cached_var
+
+
+        if normalize:
+            ac_squeeze = ac_squeeze / var
+            # theano doesn't play nice with the first element but it's just the variance
+            autocor = np.vstack((1., ac_squeeze.reshape(-1, 1)))
+        else:
+           # theano doesn't play nice with the first element but it's just the variance
+            autocor = np.vstack((var, ac_squeeze.reshape(-1, 1)))
+
+
+        #This drops the last sample. Unclear, if this is the best way to do things but
+        #it is the only way we can align the total number of samples from sample generation to
+        #computing autocorrelation
+        if half_window:
+            e_evals = e_evals[:int(n_samples / 2) - 1]
+            grad_evals = grad_evals[:int(n_samples / 2) - 1]
+
+        else:
+            e_evals = e_evals[:-1]
+            grad_evals = grad_evals[:-1]
+
     else:
-        ac_squeeze = fft_autocor(samples)
+        autocor = fft_autocor(samples)
+        print("Warning: not using cached emc variance!!")
+        assert autocor.shape == e_evals.shape
+        assert e_evals.shape == grad_evals
 
 
-    if cached_var is None:
-        # variance given assumption of *zero mean*
-        print "Computing sample variance with numpy..."
-        var = np.mean(samples**2, keepdims=True)[0][0]
-    else:
-        var = cached_var
-
-    print "Now moving result to dataframe"
-    start_time = time()
-
-    if normalize:
-        ac_squeeze = ac_squeeze / var
-        # theano doesn't play nice with the first element but it's just the variance
-        autocor = np.vstack((1., ac_squeeze.reshape(-1, 1)))
-    else:
-       # theano doesn't play nice with the first element but it's just the variance
-        autocor = np.vstack((var, ac_squeeze.reshape(-1, 1)))
 
 
-    #This drops the last sample. Unclear, if this is the best way to do things but
-    #it is the only way we can align the total number of samples from sample generation to
-    #computing autocorrelation
-    if half_window:
-        e_evals = e_evals[:int(n_samples / 2) - 1]
-        grad_evals = grad_evals[:int(n_samples / 2) - 1]
-
-    else:
-        e_evals = e_evals[:-1]
-        grad_evals = grad_evals[:-1]
-    print "Took {} seconds".format(time() - start_time)
     return autocor, e_evals, grad_evals
 
 
@@ -245,6 +249,12 @@ def generate_samples(sampler, distribution, num_steps=None, num_grad_steps=None,
         samples[:, :, t_idx] = smp.sample(1)
         grad_evals[t_idx] = distribution.dEdX_count / float(n_batch)
         e_evals[t_idx] = distribution.E_count / float(n_batch)
+
+        if (num_grad_steps is not None) and grad_evals[t_idx] >= num_grad_steps:
+            samples = samples[:, :, :t_idx + 1]
+            grad_evals = grad_evals[:t_idx + 1]
+            e_evals = e_evals[:t_idx + 1]
+            return samples, e_evals, grad_evals
 
     if num_grad_steps is not None:
         assert grad_evals[-1] >= num_grad_steps
