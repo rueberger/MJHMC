@@ -112,7 +112,7 @@ def autocorrelation(samples, e_evals, grad_evals, half_window=True,
         autocor = fft_autocor(samples)
         print("Warning: not using cached emc variance!!")
         assert autocor.shape == e_evals.shape
-        assert e_evals.shape == grad_evals
+        assert e_evals.shape == grad_evals.shape
 
     return autocor, e_evals, grad_evals
 
