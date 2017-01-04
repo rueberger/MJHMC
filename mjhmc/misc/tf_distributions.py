@@ -232,7 +232,7 @@ class SparseImageCode(TensorflowDistribution):
             shaped_state = tf.reshape(self.state_pl, [self.n_patches, -1, self.n_coeffs, 1], name='shaped_state')
 
             # [n_patches, nbatch, img_size, n_coeffs]
-            full_tiled_basis_arr = np.tile(np.reshape(self.basis, (1, 1, self.img_size, self.n_coeffs))
+            full_tiled_basis_arr = np.tile(np.reshape(self.basis, (1, 1, self.img_size, self.n_coeffs)),
                                            (self.n_patches, self.nbatch, 1, 1))
             full_tiled_basis_tf = tf.constant(full_tiled_basis_arr)
             # [n_patches, n_active, img_size, n_coeffs]
