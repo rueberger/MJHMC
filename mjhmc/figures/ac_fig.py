@@ -106,7 +106,7 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
 def load_params(distribution, update_best=False):
     from mjhmc.misc.utils import package_path
     if update_best:
-        print("Updating best parameters")
+        print("Warning: searching through search logs to update best params")
         write_all()
     dist_to_extension = {
         'RoughWell' : "rw",
