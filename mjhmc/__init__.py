@@ -3,7 +3,8 @@
 """
 __all__ = ['figures', 'misc', 'samplers', 'tests']
 
+from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
+
 import mjhmc.figures
 import mjhmc.misc
-import mjhmc.samplers
 import mjhmc.tests
