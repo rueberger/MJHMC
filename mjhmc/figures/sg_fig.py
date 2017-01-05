@@ -147,9 +147,9 @@ def generate_sp_img_ladders(max_steps=int(1e5), has_gpu=True, verbose=True):
     print("Collecting control ladders...")
     control_ladder_itr = ladder_generator(ControlHMC,
                                           sp_img.reset(),
-                                          mjhmc_params['epsilon'],
-                                          mjhmc_params['num_leapfrog_steps'],
-                                          mjhmc_params['beta'],
+                                          control_params['epsilon'],
+                                          control_params['num_leapfrog_steps'],
+                                          control_params['beta'],
                                           max_steps = max_steps
     )
 
