@@ -65,8 +65,10 @@ class TensorflowDistribution(Distribution):
             self.grad_device = device
             self.energy_device = device
 
+        self.device = self.energy_device
+
         self.prof_run = prof_run
-        with self.graph.as_default():
+        with self.graph.as_default(), tf.device(self.device):
             gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_frac, allow_growth=allow_growth)
             sess_config = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options,
                                          log_device_placement=log_placement)
@@ -83,7 +85,7 @@ class TensorflowDistribution(Distribution):
 
 
     def build_graph(self):
-        with self.graph.as_default():
+        with self.graph.as_default(), tf.device(self.device):
             self.state_pl = tf.placeholder(tf.float32, [self.ndims, None])
             self.build_energy_op()
             self.grad_op = tf.gradients(self.energy_op, self.state_pl)[0]
@@ -237,7 +239,7 @@ class SparseImageCode(TensorflowDistribution):
 
     @overrides(TensorflowDistribution)
     def build_energy_op(self):
-        with self.graph.as_default(), tf.device(self.energy_device):
+        with self.graph.as_default(), tf.device(self.device):
             n_active = tf.shape(self.state_pl)[1]
             # [n_patches, 1, img_size]
             self.patches = tf.to_float(tf.reshape(self.patches,
