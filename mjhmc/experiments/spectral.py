@@ -65,12 +65,13 @@ def fit_inv_pdf(ladder_energies):
     bin_mdpts = np.concatenate([[zero_interp_mdpt], bin_mdpts])
     return UnivariateSpline(pdf, bin_mdpts, bbox=[0, 1], k=1)
 
-def ladder_generator(distribution, epsilon, num_leapfrog_steps, beta, max_steps=int(1e5)):
+def ladder_generator(sampler_class, distribution, epsilon, num_leapfrog_steps, beta, max_steps=int(1e5)):
     """ Returns a generator over ladders encountered while sampling from
     the SparseImageCode distribution
 
     Args:
-      distribution: the distribution to test. must have nbatch==1 - Distribution
+      sampler_class: sampler to use - sampler class, ie not an object, the initializer
+      distribution: the distribution to test. must have nbatch==1 - Distribution object
       epsilon: integrator step size - float
       num_leapfrog_steps: number of integrator steps per L application - int
       beta: rate of momentum corruption - float
@@ -91,10 +92,10 @@ def ladder_generator(distribution, epsilon, num_leapfrog_steps, beta, max_steps=
     assert isinstance(distribution, Distribution)
     assert distribution.nbatch == 1
 
-    mjhmc = MarkovJumpHMC(distribution=distribution,
-                          epsilon=epsilon,
-                          num_leapfrog_steps=num_leapfrog_steps,
-                          beta=beta)
+    sampler = sampler_class(distribution=distribution,
+                            epsilon=epsilon,
+                            num_leapfrog_steps=num_leapfrog_steps,
+                            beta=beta)
     # ignore first element
     steps_per_ladder = [0]
     last_r_count = 0
@@ -103,11 +104,11 @@ def ladder_generator(distribution, epsilon, num_leapfrog_steps, beta, max_steps=
     ladder_group = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
     # initialized randomly otherwise
     ladder_group.state = [0, 0]
-    ladder_group.energies[0] = np.squeeze(mjhmc.state.H())
+    ladder_group.energies[0] = np.squeeze(sampler.state.H())
     for _ in range(max_steps):
-        mjhmc.sampling_iteration()
+        sampler.sampling_iteration()
         # last operator was R
-        if mjhmc.r_count != last_r_count:
+        if sampler.r_count != last_r_count:
             # increment r count
             last_r_count += 1
             # extract the observed ladder energies
@@ -132,15 +133,15 @@ def ladder_generator(distribution, epsilon, num_leapfrog_steps, beta, max_steps=
             ladder_group = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
             # initialized randomly otherwise
             ladder_group.state = [0, 0]
-            ladder_group.energies[0] = np.squeeze(mjhmc.state.H())
+            ladder_group.energies[0] = np.squeeze(sampler.state.H())
             steps_per_ladder.append(last_r_count + last_l_count + last_f_count - steps_per_ladder[-1])
         # last operator was L
-        elif mjhmc.l_count != last_l_count:
+        elif sampler.l_count != last_l_count:
             last_l_count += 1
             ladder_group.L()
-            ladder_group.energies[ladder_group.idx()] = np.squeeze(mjhmc.state.H())
+            ladder_group.energies[ladder_group.idx()] = np.squeeze(sampler.state.H())
         # last operator was F
-        elif mjhmc.f_count != last_f_count:
+        elif sampler.f_count != last_f_count:
             last_f_count += 1
             ladder_group.F()
 
