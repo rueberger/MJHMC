@@ -103,8 +103,11 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
     plt.savefig("{}_{}_dim_ac_{}_steps.pdf".format(type(distribution).__name__, distribution.ndims, max_steps))
     plt.show()
 
-def load_params(distribution):
+def load_params(distribution, update_best=False):
     from mjhmc.misc.utils import package_path
+    if update_best:
+        print("Updating best parameters")
+        write_all()
     dist_to_extension = {
         'RoughWell' : "rw",
         'Gaussian' : 'log_gauss',
