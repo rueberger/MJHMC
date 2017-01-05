@@ -103,22 +103,125 @@ def plot_spectral_gaps(max_n_dims, n_trials=25,
         plt.savefig("{}/sg_gap_half_{}_energies_{}_trials.pdf".format(
             expanduser(save_directory), max_n_dims, n_trials))
 
-def generate_sp_img_ladders(max_steps=int(1e6)):
+def generate_sp_img_ladders(max_steps=int(1e5), has_gpu=True, verbose=True):
     """ Run MJHMC and control for a while on sp_img, save the ladders
     to the ladder table
 
     Args:
        max_steps: number of steps to run samples for - int
+       has_gpu: if True, uses optimal device allocation
+       verbose: if True, periodically print info
 
     """
+    print("Setting up...")
+
     from mjhmc.figures.ac_fig import load_params
     from mjhmc.misc.tf_distributions import SparseImageCode
+    from mjhmc.experiments.spectral import ladder_generator
     from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
 
-    sp_img = SparseImageCode()
+    if has_gpu:
+        # counter-intuitively, benchmarks indicate that this is optimal
+        device_dict = {'grad': '/cpu:0',
+                       'energy': '/gpu:0'}
 
-    # open table, iterate through ladder gen append to table
-    # append ladder energies as groups with indices in metadata
+        sp_img = SparseImageCode(device=device_dict, nbatch=1)
+    else:
+        sp_img = SparseImageCode(nbatch=1)
+
+    control_params, mjhmc_params, _ = load_params(sp_img, update_best=True)
+
+    print("Collecting MJHMC ladders...")
+    mjhmc_ladder_itr = ladder_generator(MarkovJumpHMC,
+                                        sp_img,
+                                        mjhmc_params['epsilon'],
+                                        mjhmc_params['num_leapfrog_steps'],
+                                        mjhmc_params['beta'],
+                                        max_steps = max_steps
+    )
+
+    insert_from_iterator(mjhmc_ladder_itr, True, hash(sp_img), verbose=verbose)
+
+
+
+    print("Collecting control ladders...")
+    control_ladder_itr = ladder_generator(ControlHMC,
+                                          sp_img.reset(),
+                                          mjhmc_params['epsilon'],
+                                          mjhmc_params['num_leapfrog_steps'],
+                                          mjhmc_params['beta'],
+                                          max_steps = max_steps
+    )
+
+    insert_from_iterator(control_ladder_itr, False, hash(sp_img), verbose=verbose)
+
+
+def insert_from_iterator(ladder_iterator, is_mjhmc, params, distr_hash, verbose=True):
+    """ Helper function to insert ladders from ladder_iterator into table
+
+    Args:
+       ladder_iterator: iterator over ladders as defined in mjhmc.experiments.spectral.ladder_generator
+       is_mjhmc: if True, iterator is running MJHMC - bool
+       params: param dict - dict with keys for the hyperparams
+       distr_hash: hash of the distribution - int
+       verbose: if True, print periodic updates - bool
+    """
+    start_time = time.time()
+    with tables.open_file(ladder_table_path(), mode='r+') as ladder_file:
+        metadata_table = ladder_file.root.ladder_metadata
+        metadata_table.autoindex = False
+        metadata_row = metadata_table.row
+
+        # list of ladder sizes for verbose mode
+        encountered_ladder_sizes = []
+
+        #  smallest unused index
+        curr_lad_idx = np.max(metadata_table.cols.ladder_idx) + 1
+
+        if verbose:
+            print("Starting ladder_idx: {}".format(curr_lad_idx))
+
+
+        # ladder - [e_0, ..., e_k]
+        for itr_idx, ladder in enumerate(ladder_iterator):
+            encountered_ladder_sizes.append(len(ladder))
+            if verbose and (itr_idx % 100) == 0:
+                print("Now inserting {}th ladder with size {}".format(itr_idx, len(ladder)))
+                print("Ladder sizes so far: max {}, min {}, mean {}, std {}".format(
+                    np.max(encountered_ladder_sizes),
+                    np.min(encountered_ladder_sizes),
+                    np.mean(encountered_ladder_sizes),
+                    np.std(encountered_ladder_sizes)))
+
+
+            # insert ladder energies as new group
+            ladder_file.create_array('/ladders',
+                                     'ladder_{}'.format(curr_lad_idx),
+                                     ladder)
+
+            # create row for metadata
+            metadata_row['epsilon'] = params['epsilon']
+            metadata_row['num_leapfrog_steps'] = params['num_leapfrog_steps']
+            metadata_row['beta'] = params['beta']
+            metadata_row['ladder_idx'] = curr_lad_idx
+            metadata_row['distr_hash'] = distr_hash
+            metadata_row['mjhmc'] = is_mjhmc
+
+            metadata_row.append()
+            curr_lad_idx += 1
+
+        if verbose:
+            print("Rebuilding table indices")
+
+        metadata_table.reindex_dirty()
+
+        if verbose:
+            print("Flushing file buffer")
+
+        ladder_file.flush()
+
+        if verbose:
+            print("Insert finished in {} seconds".format(time.time() - start_time))
 
 
 def init_ladder_table():
@@ -134,6 +237,8 @@ def init_ladder_table():
         metadata_table.cols.num_leapfrog_steps.create_csindex()
         metadata_table.cols.beta.create_csindex()
         metadata_table.cols.distr_hash.create_csindex()
+
+
 
 
 
