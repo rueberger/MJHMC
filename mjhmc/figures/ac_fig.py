@@ -110,6 +110,7 @@ def load_params(distribution):
         'Gaussian' : 'log_gauss',
         'MultimodalGaussian' : 'mm_gauss',
         'ProductOfT' : 'poe_36'
+        'SparseImageCode': 'sp_img'
     }
     file_name = "params.json"
     extension = dist_to_extension[type(distribution).__name__]
