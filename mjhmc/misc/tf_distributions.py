@@ -66,7 +66,7 @@ class TensorflowDistribution(Distribution):
             self.energy_device = device
 
         self.prof_run = prof_run
-        with self.graph.as_default(), tf.device(self.device):
+        with self.graph.as_default():
             gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_frac, allow_growth=allow_growth)
             sess_config = tf.ConfigProto(allow_soft_placement=True, gpu_options=gpu_options,
                                          log_device_placement=log_placement)
@@ -154,7 +154,7 @@ class Funnel(TensorflowDistribution):
 
     @overrides(TensorflowDistribution)
     def build_energy_op(self):
-        with self.graph.as_default(), tf.device(self.device):
+        with self.graph.as_default(), tf.device(self.energy_device):
             # [1, nbatch]
             e_x_0 = tf.neg((self.state_pl[0, :] ** 2) / (self.scale ** 2), name='E_x_0')
             # [ndims - 1, nbatch]
@@ -187,7 +187,7 @@ class TFGaussian(TensorflowDistribution):
 
     @overrides(TensorflowDistribution)
     def build_energy_op(self):
-        with self.graph.as_default(), tf.device(self.device):
+        with self.graph.as_default(), tf.device(self.energy_device):
             self.energy_op = tf.reduce_sum(self.state_pl ** 2, 0) / (2 * self.sigma ** 2)
 
 
@@ -237,7 +237,7 @@ class SparseImageCode(TensorflowDistribution):
 
     @overrides(TensorflowDistribution)
     def build_energy_op(self):
-        with self.graph.as_default(), tf.device(self.device):
+        with self.graph.as_default(), tf.device(self.energy_device):
             n_active = tf.shape(self.state_pl)[1]
             # [n_patches, 1, img_size]
             self.patches = tf.to_float(tf.reshape(self.patches,
