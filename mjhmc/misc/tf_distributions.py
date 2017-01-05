@@ -53,7 +53,18 @@ class TensorflowDistribution(Distribution):
         :rtype: TensorflowDistribution
         """
         self.graph = tf.Graph()
-        self.device = device
+
+
+        # if dictionary, use custom device for energy and grad
+        if isinstance(device, dict):
+            assert 'grad' in device
+            assert 'energy' in device
+            self.grad_device = device['grad']
+            self.energy_device = device['energy']
+        elif isinstance(device, str):
+            self.grad_device = device
+            self.energy_device = device
+
         self.prof_run = prof_run
         with self.graph.as_default(), tf.device(self.device):
             gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=gpu_frac, allow_growth=allow_growth)
@@ -72,7 +83,7 @@ class TensorflowDistribution(Distribution):
 
 
     def build_graph(self):
-        with self.graph.as_default(), tf.device(self.device):
+        with self.graph.as_default():
             self.state_pl = tf.placeholder(tf.float32, [self.ndims, None])
             self.build_energy_op()
             self.grad_op = tf.gradients(self.energy_op, self.state_pl)[0]
@@ -87,7 +98,7 @@ class TensorflowDistribution(Distribution):
 
     @overrides(Distribution)
     def E_val(self, X):
-        with self.graph.as_default(), tf.device(self.device):
+        with self.graph.as_default(), tf.device(self.energy_device):
             if self.prof_run:
                 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
                 run_metadata = tf.RunMetadata()
@@ -105,7 +116,7 @@ class TensorflowDistribution(Distribution):
 
     @overrides(Distribution)
     def dEdX_val(self, X):
-        with self.graph.as_default(), tf.device(self.device):
+        with self.graph.as_default(), tf.device(self.grad_device):
             if self.prof_run:
                 run_options = tf.RunOptions(trace_level=tf.RunOptions.FULL_TRACE)
                 run_metadata = tf.RunMetadata()
