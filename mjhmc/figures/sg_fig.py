@@ -228,8 +228,7 @@ def init_ladder_table():
     """ Create the table where ladders are stored
     """
     with tables.open_file(ladder_table_path(), mode='w', title='ladder_table') as l_file:
-        metadata_table = l_file.create_table('/', 'ladder_metdata', description=LadderTableSchema,
-                                           expected_rows=int(5e4))
+        metadata_table = l_file.create_table('/', 'ladder_metdata', description=LadderTableSchema)
         ladder_group = l_file.create_group('/', 'ladders', 'ladder_energies')
 
         # set metadata table indices
