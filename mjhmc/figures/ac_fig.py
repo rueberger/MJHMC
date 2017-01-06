@@ -6,9 +6,6 @@ import json
 
 from LAHMC import LAHMC
 
-from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
-from mjhmc.misc.autocor import calculate_autocorrelation, autocorrelation
-from mjhmc.misc.nutshell import sample_nuts_to_df
 from mjhmc.search.find_best_params import write_all
 
 # green blue palette
@@ -29,6 +26,9 @@ def plot_ac(distribution, control_params, mjhmc_params, lahmc_params, max_steps=
     runs the sampler for max steps and then truncates the output to autocorrelation 0.5
     throws an error if ac 0.5 is not reached
     """
+    from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
+    from mjhmc.misc.autocor import calculate_autocorrelation, autocorrelation
+    from mjhmc.misc.nutshell import sample_nuts_to_df
     # TODO: bring up to speed of DF-less calc autocor
     plt.clf()
     print('Calculating AutoCorrelation for ControlHMC')
@@ -112,7 +112,7 @@ def load_params(distribution, update_best=False):
         'RoughWell' : "rw",
         'Gaussian' : 'log_gauss',
         'MultimodalGaussian' : 'mm_gauss',
-        'ProductOfT' : 'poe_36'
+        'ProductOfT' : 'poe_36',
         'SparseImageCode': 'sp_img'
     }
     file_name = "params.json"
@@ -144,7 +144,6 @@ def plot_best(distribution, num_steps=100000, update_params=False, **kwargs):
     :returns: None, makes a plot
     :rtype: None
     """
-
     if update_params:
         print 'Searching through output logs to find the best parameters...'
         write_all()
@@ -156,6 +155,8 @@ def plot_best(distribution, num_steps=100000, update_params=False, **kwargs):
     plot_ac(distribution, control_params, mjhmc_params, lahmc_params, num_steps, **kwargs)
 
 def plot_std(distribution):
+    from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC, ControlHMC
+    from mjhmc.misc.autocor import calculate_autocorrelation
     # change this!!!
     steps = int(1E4)
     plt.clf()
