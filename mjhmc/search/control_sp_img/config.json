@@ -1,7 +1,7 @@
 {
     "language"        : "PYTHON",
     "main-file"       : "control_objective.py",
-    "experiment-name" : "control_sp_img_7",
+    "experiment-name" : "control_sp_img_8",
     "likelihood"      : "GAUSSIAN",
     "variables" : {
         "num_leapfrog_steps" : {
