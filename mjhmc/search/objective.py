@@ -72,7 +72,7 @@ def obj_func_helper(sampler, distr, unpack, kwargs):
     # necessary to keep curve_fit from borking: THIS IS VERY IMPORTANT
     normed_n_grad_evals = n_grad_evals / (0.5 * num_target_grad_evals)
     print "Fitting curve"
-    exp_coef, cos_coef = fit(normed_n_grad_evals.copy(), autocor.copy())
+    exp_coef, cos_coef = tf_fit(normed_n_grad_evals.copy(), autocor.copy())
     return cos_coef, normed_n_grad_evals, exp_coef, autocor, kwargs
 
 
@@ -96,7 +96,7 @@ def unpack_params(params):
         unpacked_params[key] = item[0]
     return unpacked_params
 
-def fit(t_data, y_data, use_tf=True):
+def fit(t_data, y_data):
     """ Fit a complex exponential to y_data
 
     :param t_data: array of values for t-axis (x-axis)
