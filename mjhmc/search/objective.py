@@ -7,7 +7,10 @@ In short, the objective function is the Re(r) where
 """
 
 import numpy as np
+import pickle
+import os
 import tensorflow as tf
+import time
 
 from scipy.optimize import curve_fit
 from mjhmc.misc.autocor import calculate_autocorrelation
@@ -24,6 +27,8 @@ grad_evals = {
 }
 
 debug = True
+SAVE_TRACE = True
+TRACE_PATH = os.path.expanduser('~/data/mjhmc/autocor_traces')
 
 
 def obj_func(sampler, distr, job_id, **kwargs):
@@ -73,7 +78,24 @@ def obj_func_helper(sampler, distr, unpack, kwargs):
     normed_n_grad_evals = n_grad_evals / (0.5 * num_target_grad_evals)
     print "Fitting curve"
     exp_coef, cos_coef = tf_fit(normed_n_grad_evals.copy(), autocor.copy())
+
+    if SAVE_TRACE:
+        formatted_time = time.strftime("%Y%m%d-%H%M%S")
+        trace_name = '{}_{}'.format(type(distr).__name__, formatted_time)
+        save_trace(normed_n_grad_evals, autocor, exp_coef, cos_coef, trace_name)
     return cos_coef, normed_n_grad_evals, exp_coef, autocor, kwargs
+
+def save_trace(t_data, y_data, tf_ec, tf_cc, trace_name):
+    """ Save the trace for later inspection
+    """
+    with open('{}/{}.pkl'.format(TRACE_PATH, trace_name), 'wb') as pkl_file:
+        trace_dict = {
+            'grad_evals': t_data,
+            'autocor': y_data,
+            'tf_exp_coeff': tf_ec,
+            'tf_cos_coeff': tf_cc
+        }
+        pickle.dump(trace_dict, pkl_file)
 
 
 def min_idx(ac_df, target):
@@ -144,7 +166,7 @@ def tf_fit(t_data, y_data, n_steps=1e4, learning_rate=0.01):
         # run training for n_steps
         for _ in n_steps:
             loss_val, ec_val, cc_val, _ = sess.run([loss, exp_coeff, cos_coeff, train_op],
-                                                  feed_dict={t_pl: t_data, y_pl: y_data})
+                                                   feed_dict={t_pl: t_data, y_pl: y_data})
             losses.append(loss_val)
             exp_coeffs.append(ec_val)
             cos_coeffs.append(cc_val)
