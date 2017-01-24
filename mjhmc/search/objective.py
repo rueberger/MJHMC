@@ -7,6 +7,8 @@ In short, the objective function is the Re(r) where
 """
 
 import numpy as np
+import tensorflow as tf
+
 from scipy.optimize import curve_fit
 from mjhmc.misc.autocor import calculate_autocorrelation
 from mjhmc.misc.plotting import plot_fit, plot_search_ac
@@ -94,7 +96,7 @@ def unpack_params(params):
         unpacked_params[key] = item[0]
     return unpacked_params
 
-def fit(t_data, y_data):
+def fit(t_data, y_data, use_tf=True):
     """ Fit a complex exponential to y_data
 
     :param t_data: array of values for t-axis (x-axis)
@@ -106,10 +108,64 @@ def fit(t_data, y_data):
     if not np.isnan(np.sum(y_data)):
         # p_0 = estimate_params(t_data, y_data)
         p_0 = None
-        opt_params = curve_fit(curve, t_data, y_data, p0=p_0, maxfev=1000)[0]
+        opt_params = curve_fit(curve_fn, t_data, y_data, p0=p_0, maxfev=1000)[0]
         return opt_params
     else:
         return 1E3, 0
+
+def tf_fit(t_data, y_data, n_steps=1e4, learning_rate=0.01):
+    """ Fit a complex exponential using gradient descent
+    """
+    t_data = np.asarray(t_data).squeeze()
+    y_data = np.asarray(y_data).squeeze()
+
+    exp_coeff_init, cos_coeff_init = estimate_params(t_data, y_data)
+
+    with tf.Graph().as_default(), tf.Session() as sess:
+        # build graph
+        exp_coeff = tf.Variable(exp_coeff_init, name='exp_coeff')
+        cos_coeff = tf.Variable(cos_coeff_init, name='cos_coeff')
+        t_pl = tf.placeholder(tf.float32, shape=t_data.shape)
+        y_pl = tf.placeholder(tf.float32, shape=y_data.shape)
+
+        curve = tf.exp(exp_coeff * t_pl) * tf.cos(cos_coeff * t_pl)
+        loss = tf.reduce_sum((y_pl - curve) ** 2, name='loss')
+
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+        train_op = optimizer.minimize(loss)
+
+        # initialize graph
+        init_op = tf.global_variables_initalizer()
+        sess.run(init_op)
+
+        losses = []
+        exp_coeffs = []
+        cos_coeffs = []
+        # run training for n_steps
+        for _ in n_steps:
+            loss_val, ec_val, cc_val, _ = sess.run([loss, exp_coeff, cos_coeff, train_op],
+                                                  feed_dict={t_pl: t_data, y_pl: y_data})
+            losses.append(loss_val)
+            exp_coeffs.append(ec_val)
+            cos_coeffs.append(cc_val)
+
+        min_loss_idx = np.argmin(losses)
+        best_params = exp_coeffs[min_loss_idx], cos_coeffs[min_loss_idx]
+        print("Achieved final loss of {}. Final parameters: ec {} cc {}".format(losses[-1],
+                                                                                exp_coeffs[-1],
+                                                                                cos_coeffs[-1]
+        ))
+        print("Best loss was {} with parameters ec {} cc {}".format(losses[min_loss_idx],
+                                                                    best_params[0],
+                                                                    best_params[1]
+        ))
+
+    return best_params
+
+
+
+
+
 
 def estimate_params(t_data, y_data):
     """ Estimate the parameters to the complex exponential fit
@@ -141,5 +197,5 @@ def estimate_params(t_data, y_data):
 
 
 
-def curve(n, a, b):
+def curve_fn(n, a, b):
     return np.exp(a * n) * np.cos(b * n)
