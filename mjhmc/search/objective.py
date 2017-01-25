@@ -157,7 +157,7 @@ def tf_fit(t_data, y_data, n_steps=1e4, learning_rate=0.01):
         train_op = optimizer.minimize(loss)
 
         # initialize graph
-        init_op = tf.global_variables_initalizer()
+        init_op = tf.global_variables_initializer()
         sess.run(init_op)
 
         losses = []
