@@ -147,8 +147,8 @@ def tf_fit(t_data, y_data, n_steps=1e4, learning_rate=0.01):
         # build graph
         exp_coeff = tf.Variable(exp_coeff_init, name='exp_coeff')
         cos_coeff = tf.Variable(cos_coeff_init, name='cos_coeff')
-        t_pl = tf.placeholder(tf.float32, shape=t_data.shape)
-        y_pl = tf.placeholder(tf.float32, shape=y_data.shape)
+        t_pl = tf.placeholder(tf.float64, shape=t_data.shape)
+        y_pl = tf.placeholder(tf.float64, shape=y_data.shape)
 
         curve = tf.exp(exp_coeff * t_pl) * tf.cos(cos_coeff * t_pl)
         loss = tf.reduce_sum((y_pl - curve) ** 2, name='loss')
