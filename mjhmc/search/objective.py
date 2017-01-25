@@ -145,8 +145,8 @@ def tf_fit(t_data, y_data, n_steps=1e4, learning_rate=0.01):
 
     with tf.Graph().as_default(), tf.Session() as sess:
         # build graph
-        exp_coeff = tf.Variable(exp_coeff_init, name='exp_coeff')
-        cos_coeff = tf.Variable(cos_coeff_init, name='cos_coeff')
+        exp_coeff = tf.Variable(exp_coeff_init, name='exp_coeff', dtype=tf.float64)
+        cos_coeff = tf.Variable(cos_coeff_init, name='cos_coeff', dtype=tf.float64)
         t_pl = tf.placeholder(tf.float64, shape=t_data.shape)
         y_pl = tf.placeholder(tf.float64, shape=y_data.shape)
 
