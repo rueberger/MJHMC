@@ -164,7 +164,7 @@ def tf_fit(t_data, y_data, n_steps=1e4, learning_rate=0.01):
         exp_coeffs = []
         cos_coeffs = []
         # run training for n_steps
-        for _ in n_steps:
+        for _ in range(n_steps):
             loss_val, ec_val, cc_val, _ = sess.run([loss, exp_coeff, cos_coeff, train_op],
                                                    feed_dict={t_pl: t_data, y_pl: y_data})
             losses.append(loss_val)
