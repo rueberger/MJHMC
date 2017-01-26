@@ -1,7 +1,7 @@
 {
     "language"        : "PYTHON",
     "main-file"       : "mjhmc_objective.py",
-    "experiment-name" : "MJHMC_rw_aistats_1",
+    "experiment-name" : "MJHMC_rw_aistats_2",
     "likelihood"      : "GAUSSIAN",
     "variables" : {
         "num_leapfrog_steps" : {
