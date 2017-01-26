@@ -143,7 +143,7 @@ def tf_fit(t_data, y_data, n_steps=1e4, learning_rate=0.01):
 
     exp_coeff_init, cos_coeff_init = estimate_params(t_data, y_data)
 
-    with tf.Graph().as_default(), tf.Session() as sess:
+    with tf.Graph().as_default(), tf.Session() as sess, tf.device('/cpu:0'):
         # build graph
         exp_coeff = tf.Variable(exp_coeff_init, name='exp_coeff', dtype=tf.float64)
         cos_coeff = tf.Variable(cos_coeff_init, name='cos_coeff', dtype=tf.float64)
