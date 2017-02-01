@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import json
 
-from LAHMC import LAHMC
+#from LAHMC import LAHMC
 
 from mjhmc.search.find_best_params import write_all
 
