@@ -41,7 +41,7 @@ def sg(algebraic_sampler, full):
         raise Exception("no eval with value 1")
     return 1 - np.absolute(w_ord[1])
 
-def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/mjhmc'):
+def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/mjhmc', log=True):
     """ Generates the empirical spectral gap figure
 
     Args:
@@ -49,6 +49,7 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
          if left unset all ladders are shown
        full: (optional) whether to include flips as separate states - bool
        save_directory: (optional) save dir - str
+       log: (optional) use log scale for y axis
 
     Returns:
        fig: the drawn figure
@@ -100,7 +101,8 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
     ax.legend()
     ax.set_xlabel('Ladder size')
     ax.set_ylabel("Spectral gap")
-    ax.set_yscale('log', nonposy='clip')
+    if log:
+        ax.set_yscale('log', nonposy='clip')
     fig.set_canvas(plt.gcf().canvas)
 
     formatted_time = time.strftime("%Y%m%d-%H%M%S")
