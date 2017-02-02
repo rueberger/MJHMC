@@ -143,7 +143,7 @@ def generate_sp_img_ladders(max_steps=int(1e5), has_gpu=True, verbose=True):
                                             max_steps = max_steps
         )
 
-        insert_from_iterator(mjhmc_ladder_itr, True, hash(sp_img), params, verbose=verbose)
+        insert_from_iterator(mjhmc_ladder_itr, True, params, hash(sp_img), verbose=verbose)
 
 
 
@@ -156,7 +156,7 @@ def generate_sp_img_ladders(max_steps=int(1e5), has_gpu=True, verbose=True):
                                               max_steps = max_steps
         )
 
-        insert_from_iterator(control_ladder_itr, False, hash(sp_img), params, verbose=verbose)
+        insert_from_iterator(control_ladder_itr, False, params, hash(sp_img), verbose=verbose)
     else:
         print("Collecting MJHMC ladders...")
         mjhmc_ladder_itr = ladder_generator(MarkovJumpHMC,
@@ -167,7 +167,7 @@ def generate_sp_img_ladders(max_steps=int(1e5), has_gpu=True, verbose=True):
                                             max_steps = max_steps
         )
 
-        insert_from_iterator(mjhmc_ladder_itr, True, hash(sp_img), verbose=verbose)
+        insert_from_iterator(mjhmc_ladder_itr, True, mjhmc_params, hash(sp_img), verbose=verbose)
 
 
 
@@ -180,7 +180,7 @@ def generate_sp_img_ladders(max_steps=int(1e5), has_gpu=True, verbose=True):
                                               max_steps = max_steps
         )
 
-        insert_from_iterator(control_ladder_itr, False, hash(sp_img), verbose=verbose)
+        insert_from_iterator(control_ladder_itr, False, control_params, hash(sp_img), verbose=verbose)
 
 
 def insert_from_iterator(ladder_iterator, is_mjhmc, params, distr_hash, verbose=True):
