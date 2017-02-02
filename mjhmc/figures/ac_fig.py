@@ -123,14 +123,14 @@ def load_params(distribution, update_best=False):
         with open("{}/mjhmc/search/control_{}/{}".format(prefix, extension, file_name), 'r') as control:
             control_params = json.load(control)
     except IOError as io_err:
-        print("Encountered error: {}"format(io_err))
+        print("Encountered error: {}".format(io_err))
         control_params = None
 
     try:
         with open("{}/mjhmc/search/MJHMC_{}/{}".format(prefix, extension, file_name), 'r') as mjhmc:
             mjhmc_params = json.load(mjhmc)
     except IOError as io_err:
-        print("Encountered error: {}"format(io_err))
+        print("Encountered error: {}".format(io_err))
         mjhmc_params = None
 
 
