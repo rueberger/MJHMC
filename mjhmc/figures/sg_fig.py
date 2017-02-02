@@ -8,9 +8,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import seaborn as sns
 import tables
+import time
+import os
 
 import numpy as np
 from scipy.linalg import eig
+from warnings import warn
 
 import time
 
@@ -37,6 +40,72 @@ def sg(algebraic_sampler, full):
     if np.around(np.real_if_close(w_ord[0]), decimals=5) != 1:
         raise Exception("no eval with value 1")
     return 1 - np.absolute(w_ord[1])
+
+def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/mjhmc'):
+    """ Generates the empirical spectral gap figure
+
+    Args:
+       max_ladders: (optional) max number of ladders to show - int
+         if left unset all ladders are shown
+       full: (optional) whether to include flips as separate states - bool
+       save_directory: (optional) save dir - str
+
+    Returns:
+       fig: the drawn figure
+    """
+    #TODO: only plot for certain hyperparameter settings, and distribution hashes
+    warn("WARNING: This method does not currently select for a single set of hyperparams!!!")
+    mjhmc_ladder_sizes = []
+    mjhmc_sgs = []
+    control_ladder_sizes = []
+    control_sgs = []
+    with tables.File(ladder_table_path(), 'r') as ladder_file:
+        metadata_table = ladder_file.root.ladder_metadata
+        ladder_group = ladder_file.ladders
+        print("Computing spectral gaps for MJHMC")
+        # where mjhmc column is True
+        for row_idx, metadata_row in enumerate(metadata_table.where('mjhmc')):
+            if max_ladders is not None and row_idx > max_ladders:
+                break
+            else:
+                # [ladder_size]
+                ladder = ladder_group.__getattr__('ladder_{}'.format(metadata_row['ladder_idx']))[:]
+                mjhmc_ladder_sizes.append(ladder.shape[0])
+                order = ladder.shape[0] * 2
+                ladder_sg = sg(AlgebraicReducedFlip(order, energies=ladder), full)
+                mjhmc_sgs.append(ladder_sg)
+
+        print("Computing spectral gaps for control")
+        # where mjhmc column is False
+        for row_idx, metadata_row in enumerate(metadata_table.where('~mjhmc')):
+            if max_ladders is not None and row_idx > max_ladders:
+                break
+            else:
+                # [ladder_size]
+                ladder = ladder_group.__getattr__('ladder_{}'.format(metadata_row['ladder_idx']))[:]
+                control_ladder_sizes.append(ladder.shape[0])
+                order = ladder.shape[0] * 2
+                ladder_sg = sg(AlgebraicHMC(order, energies=ladder), full)
+                control_sgs.append(ladder_sg)
+
+    print("Drawing plot")
+    fig = plt.Figure(figsize=(12, 8))
+    ax = plt.gca()
+    ax.scatter(mjhmc_ladder_sizes, mjhmc_sgs, label='MJHMC')
+    ax.scatter(control_ladder_sizes, control_sgs, label='Control')
+    ax.legend()
+    ax.set_xlabel('Ladder size')
+    ax.set_ylabel("Spectral gap")
+
+    formatted_time = time.strftime("%Y%m%d-%H%M%S")
+    if full:
+        full_str = 'full'
+    else:
+        full_str = 'half'
+
+    fig.savefig('{}/emp_sg_gap_{}_{}.pdf'.format(os.path.expanduser(save_directory),
+                                                 full_str, formatted_time))
+    return fig
 
 
 def plot_spectral_gaps(max_n_dims, n_trials=25,
@@ -266,8 +335,6 @@ def init_ladder_table():
         metadata_table.cols.num_leapfrog_steps.create_csindex()
         metadata_table.cols.beta.create_csindex()
         metadata_table.cols.distr_hash.create_csindex()
-
-
 
 
 
