@@ -131,29 +131,48 @@ def generate_sp_img_ladders(max_steps=int(1e5), has_gpu=True, verbose=True):
 
     control_params, mjhmc_params, _ = load_params(sp_img, update_best=True)
 
-    print("Collecting MJHMC ladders...")
-    mjhmc_ladder_itr = ladder_generator(MarkovJumpHMC,
-                                        sp_img,
-                                        mjhmc_params['epsilon'],
-                                        mjhmc_params['num_leapfrog_steps'],
-                                        mjhmc_params['beta'],
-                                        max_steps = max_steps
-    )
+    if control_params or mjhmc_params:
+        print("Collecting MJHMC ladders...")
+        mjhmc_ladder_itr = ladder_generator(MarkovJumpHMC,
+                                            sp_img,
+                                            max_steps = max_steps
+        )
 
-    insert_from_iterator(mjhmc_ladder_itr, True, hash(sp_img), verbose=verbose)
+        insert_from_iterator(mjhmc_ladder_itr, True, hash(sp_img), verbose=verbose)
 
 
 
-    print("Collecting control ladders...")
-    control_ladder_itr = ladder_generator(ControlHMC,
-                                          sp_img.reset(),
-                                          control_params['epsilon'],
-                                          control_params['num_leapfrog_steps'],
-                                          control_params['beta'],
-                                          max_steps = max_steps
-    )
+        print("Collecting control ladders...")
+        control_ladder_itr = ladder_generator(ControlHMC,
+                                              sp_img.reset(),
+                                              max_steps = max_steps
+        )
 
-    insert_from_iterator(control_ladder_itr, False, hash(sp_img), verbose=verbose)
+        insert_from_iterator(control_ladder_itr, False, hash(sp_img), verbose=verbose)
+    else:
+        print("Collecting MJHMC ladders...")
+        mjhmc_ladder_itr = ladder_generator(MarkovJumpHMC,
+                                            sp_img,
+                                            mjhmc_params['epsilon'],
+                                            mjhmc_params['num_leapfrog_steps'],
+                                            mjhmc_params['beta'],
+                                            max_steps = max_steps
+        )
+
+        insert_from_iterator(mjhmc_ladder_itr, True, hash(sp_img), verbose=verbose)
+
+
+
+        print("Collecting control ladders...")
+        control_ladder_itr = ladder_generator(ControlHMC,
+                                              sp_img.reset(),
+                                              control_params['epsilon'],
+                                              control_params['num_leapfrog_steps'],
+                                              control_params['beta'],
+                                              max_steps = max_steps
+        )
+
+        insert_from_iterator(control_ladder_itr, False, hash(sp_img), verbose=verbose)
 
 
 def insert_from_iterator(ladder_iterator, is_mjhmc, params, distr_hash, verbose=True):

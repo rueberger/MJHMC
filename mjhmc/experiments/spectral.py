@@ -65,7 +65,7 @@ def fit_inv_pdf(ladder_energies):
     bin_mdpts = np.concatenate([[zero_interp_mdpt], bin_mdpts])
     return UnivariateSpline(pdf, bin_mdpts, bbox=[0, 1], k=1)
 
-def ladder_generator(sampler_class, distribution, epsilon, num_leapfrog_steps, beta, max_steps=int(1e5)):
+def ladder_generator(sampler_class, distribution, epsilon=0.0001, num_leapfrog_steps=5, beta=0.3, max_steps=int(1e5)):
     """ Returns a generator over ladders encountered while sampling from
     the SparseImageCode distribution
 
