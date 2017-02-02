@@ -100,6 +100,7 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
     ax.legend()
     ax.set_xlabel('Ladder size')
     ax.set_ylabel("Spectral gap")
+    fig.set_canvas(plt.gcf().canvas)
 
     formatted_time = time.strftime("%Y%m%d-%H%M%S")
     if full:
