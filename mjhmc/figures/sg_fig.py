@@ -125,7 +125,7 @@ def generate_sp_img_ladders(max_steps=int(1e5), has_gpu=True, verbose=True):
         device_dict = {'grad': '/cpu:0',
                        'energy': '/gpu:0'}
 
-        sp_img = SparseImageCode(device=device_dict, nbatch=1)
+        sp_img = SparseImageCode(device=device_dict, n_batches=1)
     else:
         sp_img = SparseImageCode(nbatch=1)
 
