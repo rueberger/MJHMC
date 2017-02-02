@@ -61,7 +61,7 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
     control_sgs = []
     with tables.File(ladder_table_path(), 'r') as ladder_file:
         metadata_table = ladder_file.root.ladder_metadata
-        ladder_group = ladder_file.ladders
+        ladder_group = ladder_file.root.ladders
         print("Computing spectral gaps for MJHMC")
         # where mjhmc column is True
         for row_idx, metadata_row in enumerate(metadata_table.where('mjhmc')):
