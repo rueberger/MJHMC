@@ -193,7 +193,7 @@ def insert_from_iterator(ladder_iterator, is_mjhmc, params, distr_hash, verbose=
        distr_hash: hash of the distribution - int
        verbose: if True, print periodic updates - bool
     """
-    start_time = time.time()l
+    start_time = time.time()
     with tables.open_file(ladder_table_path(), mode='r+') as ladder_file:
         metadata_table = ladder_file.root.ladder_metadata
         metadata_table.autoindex = False
