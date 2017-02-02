@@ -6,6 +6,7 @@ import json
 
 #from LAHMC import LAHMC
 
+from warnings import warn
 from mjhmc.search.find_best_params import write_all
 
 # green blue palette
@@ -118,10 +119,22 @@ def load_params(distribution, update_best=False):
     file_name = "params.json"
     extension = dist_to_extension[type(distribution).__name__]
     prefix = package_path()
-    with open("{}/mjhmc/search/control_{}/{}".format(prefix, extension, file_name), 'r') as control:
-        control_params = json.load(control)
-    with open("{}/mjhmc/search/MJHMC_{}/{}".format(prefix, extension, file_name), 'r') as mjhmc:
-        mjhmc_params = json.load(mjhmc)
+    try:
+        with open("{}/mjhmc/search/control_{}/{}".format(prefix, extension, file_name), 'r') as control:
+            control_params = json.load(control)
+    except IOError as io_err:
+        print("Encountered error: {}"format(io_err))
+        control_params = None
+
+    try:
+        with open("{}/mjhmc/search/MJHMC_{}/{}".format(prefix, extension, file_name), 'r') as mjhmc:
+            mjhmc_params = json.load(mjhmc)
+    except IOError as io_err:
+        print("Encountered error: {}"format(io_err))
+        mjhmc_params = None
+
+
+
 #    with open("../search/LAHMC_{}/{}".format(extension, file_name), 'r') as lahmc:
  #       lahmc_params = json.load(lahmc)
     lahmc_params = None
