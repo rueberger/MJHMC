@@ -131,7 +131,7 @@ def generate_sp_img_ladders(max_steps=int(1e5), has_gpu=True, verbose=True):
 
     control_params, mjhmc_params, _ = load_params(sp_img, update_best=True)
 
-    if control_params or mjhmc_params:
+    if control_params is None or mjhmc_params is None:
         print("Collecting MJHMC ladders...")
         mjhmc_ladder_itr = ladder_generator(MarkovJumpHMC,
                                             sp_img,
