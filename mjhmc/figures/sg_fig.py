@@ -70,10 +70,12 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
             else:
                 # [ladder_size]
                 ladder = ladder_group.__getattr__('ladder_{}'.format(metadata_row['ladder_idx']))[:]
-                mjhmc_ladder_sizes.append(ladder.shape[0])
-                order = ladder.shape[0] * 2
-                ladder_sg = sg(AlgebraicReducedFlip(order, energies=ladder), full)
-                mjhmc_sgs.append(ladder_sg)
+                ladder_size = ladder.shape[0]
+                if ladder_size > 1:
+                    mjhmc_ladder_sizes.append(ladder_size)
+                    order = ladder.shape[0] * 2
+                    ladder_sg = sg(AlgebraicReducedFlip(order, energies=ladder), full)
+                    mjhmc_sgs.append(ladder_sg)
 
         print("Computing spectral gaps for control")
         # where mjhmc column is False
@@ -83,10 +85,12 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
             else:
                 # [ladder_size]
                 ladder = ladder_group.__getattr__('ladder_{}'.format(metadata_row['ladder_idx']))[:]
-                control_ladder_sizes.append(ladder.shape[0])
-                order = ladder.shape[0] * 2
-                ladder_sg = sg(AlgebraicHMC(order, energies=ladder), full)
-                control_sgs.append(ladder_sg)
+                ladder_size = ladder.shape[0]
+                if ladder_size > 1:
+                    control_ladder_sizes.append(ladder_size)
+                    order = ladder.shape[0] * 2
+                    ladder_sg = sg(AlgebraicHMC(order, energies=ladder), full)
+                    control_sgs.append(ladder_sg)
 
     print("Drawing plot")
     fig = plt.Figure(figsize=(12, 8))
