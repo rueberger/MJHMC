@@ -202,8 +202,11 @@ def insert_from_iterator(ladder_iterator, is_mjhmc, params, distr_hash, verbose=
         # list of ladder sizes for verbose mode
         encountered_ladder_sizes = []
 
-        #  smallest unused index
-        curr_lad_idx = np.max(metadata_table.cols.ladder_idx) + 1
+        # find smallest unused index
+        if len(metadata_table.cols.ladder_idx) != 0:
+            curr_lad_idx = np.max(metadata_table.cols.ladder_idx) + 1
+        else:
+            curr_lad_idx = 0
 
         if verbose:
             print("Starting ladder_idx: {}".format(curr_lad_idx))
