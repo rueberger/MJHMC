@@ -132,7 +132,7 @@ def generate_sp_img_ladders(max_steps=int(1e5), has_gpu=True, verbose=True):
     control_params, mjhmc_params, _ = load_params(sp_img, update_best=True)
 
     if control_params is None or mjhmc_params is None:
-        params = {'epsillon': 0.001,  'num_leapfrog_steps': 5, 'beta': 0.3}
+        params = {'epsilon': 0.001,  'num_leapfrog_steps': 5, 'beta': 0.3}
         print("Search params not found. Using {}".format(params))
         print("Collecting MJHMC ladders...")
         mjhmc_ladder_itr = ladder_generator(MarkovJumpHMC,
