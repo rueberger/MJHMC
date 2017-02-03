@@ -105,6 +105,7 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
     ax.set_ylabel("Spectral gap")
     if log:
         ax.set_yscale('log', nonposy='clip')
+        ax.set_xscale('log', nonposx='clip')
     fig.set_canvas(plt.gcf().canvas)
 
     formatted_time = time.strftime("%Y%m%d-%H%M%S")
