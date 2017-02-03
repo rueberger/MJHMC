@@ -42,7 +42,7 @@ def sg(algebraic_sampler, full):
     return 1 - np.absolute(w_ord[1])
 
 def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/mjhmc',
-                       log=True, min_ladder_size=1):
+                       log=True, min_ladder_size=3):
     """ Generates the empirical spectral gap figure
 
     Args:
@@ -86,6 +86,7 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
             if max_ladders is not None and row_idx > max_ladders:
                 break
             else:
+
                 # [ladder_size]
                 ladder = ladder_group.__getattr__('ladder_{}'.format(metadata_row['ladder_idx']))[:]
                 ladder_size = ladder.shape[0]
@@ -116,7 +117,13 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
 
     fig.savefig('{}/emp_sg_gap_{}_{}.pdf'.format(os.path.expanduser(save_directory),
                                                  full_str, formatted_time))
-    return fig
+    result_dict = {
+        'mjhmc_ladder_sizes': mjhmc_ladder_sizes,
+        'mjhmc_sgs': mjhmc_sgs,
+        'control_ladder_sizes': control_ladder_sizes,
+        'control_sgs': control_sgs
+    }
+    return fig, result_dict
 
 
 def plot_spectral_gaps(max_n_dims, n_trials=25,
