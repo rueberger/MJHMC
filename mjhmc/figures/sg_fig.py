@@ -41,7 +41,8 @@ def sg(algebraic_sampler, full):
         raise Exception("no eval with value 1")
     return 1 - np.absolute(w_ord[1])
 
-def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/mjhmc', log=True):
+def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/mjhmc',
+                       log=True, min_ladder_size=1):
     """ Generates the empirical spectral gap figure
 
     Args:
@@ -50,6 +51,7 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
        full: (optional) whether to include flips as separate states - bool
        save_directory: (optional) save dir - str
        log: (optional) use log scale for y axis
+       min_ladder_size: (optional) smallest ladder size to use - int
 
     Returns:
        fig: the drawn figure
@@ -72,7 +74,7 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
                 # [ladder_size]
                 ladder = ladder_group.__getattr__('ladder_{}'.format(metadata_row['ladder_idx']))[:]
                 ladder_size = ladder.shape[0]
-                if ladder_size > 1:
+                if ladder_size > min_ladder_size:
                     mjhmc_ladder_sizes.append(ladder_size)
                     order = ladder.shape[0] * 2
                     ladder_sg = sg(AlgebraicReducedFlip(order, energies=ladder), full)
@@ -87,7 +89,7 @@ def plot_empirical_sgs(max_ladders=None, full=False, save_directory='~/tmp/figs/
                 # [ladder_size]
                 ladder = ladder_group.__getattr__('ladder_{}'.format(metadata_row['ladder_idx']))[:]
                 ladder_size = ladder.shape[0]
-                if ladder_size > 1:
+                if ladder_size > min_ladder_size:
                     control_ladder_sizes.append(ladder_size)
                     order = ladder.shape[0] * 2
                     ladder_sg = sg(AlgebraicHMC(order, energies=ladder), full)
