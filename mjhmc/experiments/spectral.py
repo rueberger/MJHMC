@@ -68,9 +68,69 @@ def fit_inv_pdf(ladder_energies):
     bin_mdpts = np.concatenate([[zero_interp_mdpt], bin_mdpts])
     return UnivariateSpline(pdf, bin_mdpts, bbox=[0, 1], k=1)
 
+def ladder_heatmap(sampler_class, distribution, epsilon,
+                   num_leapfrog_steps, beta, max_steps=int(1e5)):
+        """ Computes a heatmap over ladder indices
+
+    Args:
+      sampler_class: sampler to use - sampler class, ie not an object, the initializer
+      distribution: the distribution to test. must have nbatch==1 - Distribution object
+      epsilon: integrator step size - float
+      num_leapfrog_steps: number of integrator steps per L application - int
+      beta: rate of momentum corruption - float
+      max_steps: number of sampling steps to run the generator for - int
+
+    Returns:
+      ladder_generator: next returns an array of ladder energies of length (order / 2)
+    """
+    from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
+    from mjhmc.samplers.algebraic_hmc import StateGroup
+    from mjhmc.misc.distributions import Distribution
+
+    # check that distribution is as required
+    assert isinstance(distribution, Distribution)
+    assert distribution.nbatch == 1
+
+    sampler = sampler_class(distribution=distribution,
+                            epsilon=epsilon,
+                            num_leapfrog_steps=num_leapfrog_steps,
+                            beta=beta)
+    last_r_count = 0
+    last_l_count = 0
+    last_f_count = 0
+    ladder_group = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
+    # initialized randomly otherwise
+    ladder_group.state = [0, 0]
+    ladder_group.energies[0] = np.squeeze(sampler.state.H())
+    node_visits = {}
+    for _ in range(max_steps):
+        sampler.sampling_iteration()
+        # last operator was R
+        if sampler.r_count != last_r_count:
+            # increment r count
+            last_r_count += 1
+            # reset ladder group
+            ladder_group = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
+            # initialized randomly otherwise
+            ladder_group.state = [0, 0]
+        # last operator was L
+        elif sampler.l_count != last_l_count:
+            last_l_count += 1
+            ladder_group.L()
+        # last operator was F
+        elif sampler.f_count != last_f_count:
+            last_f_count += 1
+            ladder_group.F()
+
+        current_node = ladder_group.full_idx()
+        try:
+            node_visits[current_node] += 1
+        except KeyError:
+            node_visits[current_node] = 1
+    return unwrap_heatmap(node_visits)
+
 def ladder_generator(sampler_class, distribution, epsilon=0.0001,
-                     num_leapfrog_steps=5, beta=0.3, max_steps=int(1e5),
-                     heatmap=False):
+                     num_leapfrog_steps=5, beta=0.3, max_steps=int(1e5)):
     """ Returns a generator over ladders encountered while sampling from
     the SparseImageCode distribution
 
@@ -81,9 +141,6 @@ def ladder_generator(sampler_class, distribution, epsilon=0.0001,
       num_leapfrog_steps: number of integrator steps per L application - int
       beta: rate of momentum corruption - float
       max_steps: number of sampling steps to run the generator for - int
-      heatmap: (optional) if True does something completely different and returns
-         a heatmap of ladder node visits instead of iterating over ladder energies
-         encoded in the standard scheme, but include negative L indices
 
     Returns:
       ladder_generator: next returns an array of ladder energies of length (order / 2)
@@ -109,7 +166,6 @@ def ladder_generator(sampler_class, distribution, epsilon=0.0001,
     # initialized randomly otherwise
     ladder_group.state = [0, 0]
     ladder_group.energies[0] = np.squeeze(sampler.state.H())
-    node_visits = {}
     for _ in range(max_steps):
         sampler.sampling_iteration()
         # last operator was R
@@ -132,8 +188,7 @@ def ladder_generator(sampler_class, distribution, epsilon=0.0001,
                 else:
                     break
             assert len(forward_energies) + len(backwards_energies) < (MAX_ORDER / 2)
-            if not heatmap:
-                yield np.array(backwards_energies[::-1] + forward_energies)
+            yield np.array(backwards_energies[::-1] + forward_energies)
 
             # reset ladder group
             ladder_group = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
@@ -150,14 +205,6 @@ def ladder_generator(sampler_class, distribution, epsilon=0.0001,
         elif sampler.f_count != last_f_count:
             last_f_count += 1
             ladder_group.F()
-        if heatmap:
-            current_node = ladder_group.full_idx()
-            try:
-                node_visits[current_node] += 1
-            except KeyError:
-                node_visits[current_node] = 1
-    if heatmap:
-        return unwrap_heatmap(node_visits)
 
 
 def unwrap_heatmap(node_visit_count):
