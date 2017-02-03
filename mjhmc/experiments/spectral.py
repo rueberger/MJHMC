@@ -70,7 +70,7 @@ def fit_inv_pdf(ladder_energies):
 
 def ladder_heatmap(sampler_class, distribution, epsilon,
                    num_leapfrog_steps, beta, max_steps=int(1e5)):
-        """ Computes a heatmap over ladder indices
+    """ Computes a heatmap over ladder indices
 
     Args:
       sampler_class: sampler to use - sampler class, ie not an object, the initializer
