@@ -8,6 +8,9 @@ from mjhmc.samplers.markov_jump_hmc import ControlHMC
 from mjhmc.misc.distributions import Gaussian
 
 
+MAX_ORDER = int(1e10)
+
+
 def ladder_numerical_err_hist(distr=None, n_steps=int(1e5)):
     """ Compute a histogram of the numerical integration error
     on the state ladder. Implicitly assumes that such a distribution exists
@@ -65,7 +68,9 @@ def fit_inv_pdf(ladder_energies):
     bin_mdpts = np.concatenate([[zero_interp_mdpt], bin_mdpts])
     return UnivariateSpline(pdf, bin_mdpts, bbox=[0, 1], k=1)
 
-def ladder_generator(sampler_class, distribution, epsilon=0.0001, num_leapfrog_steps=5, beta=0.3, max_steps=int(1e5)):
+def ladder_generator(sampler_class, distribution, epsilon=0.0001,
+                     num_leapfrog_steps=5, beta=0.3, max_steps=int(1e5),
+                     heatmap=False):
     """ Returns a generator over ladders encountered while sampling from
     the SparseImageCode distribution
 
@@ -76,6 +81,9 @@ def ladder_generator(sampler_class, distribution, epsilon=0.0001, num_leapfrog_s
       num_leapfrog_steps: number of integrator steps per L application - int
       beta: rate of momentum corruption - float
       max_steps: number of sampling steps to run the generator for - int
+      heatmap: (optional) if True does something completely different and returns
+         a heatmap of ladder node visits instead of iterating over ladder energies
+         encoded in the standard scheme, but include negative L indices
 
     Returns:
       ladder_generator: next returns an array of ladder energies of length (order / 2)
@@ -83,10 +91,6 @@ def ladder_generator(sampler_class, distribution, epsilon=0.0001, num_leapfrog_s
     from mjhmc.samplers.markov_jump_hmc import MarkovJumpHMC
     from mjhmc.samplers.algebraic_hmc import StateGroup
     from mjhmc.misc.distributions import Distribution
-
-    # max order for an individual ladder
-    # error is thrown if ever exceeded
-    MAX_ORDER = 100000
 
     # check that distribution is as required
     assert isinstance(distribution, Distribution)
@@ -105,6 +109,7 @@ def ladder_generator(sampler_class, distribution, epsilon=0.0001, num_leapfrog_s
     # initialized randomly otherwise
     ladder_group.state = [0, 0]
     ladder_group.energies[0] = np.squeeze(sampler.state.H())
+    node_visits = {}
     for _ in range(max_steps):
         sampler.sampling_iteration()
         # last operator was R
@@ -127,7 +132,8 @@ def ladder_generator(sampler_class, distribution, epsilon=0.0001, num_leapfrog_s
                 else:
                     break
             assert len(forward_energies) + len(backwards_energies) < (MAX_ORDER / 2)
-            yield np.array(backwards_energies[::-1] + forward_energies)
+            if not heatmap:
+                yield np.array(backwards_energies[::-1] + forward_energies)
 
             # reset ladder group
             ladder_group = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
@@ -144,6 +150,40 @@ def ladder_generator(sampler_class, distribution, epsilon=0.0001, num_leapfrog_s
         elif sampler.f_count != last_f_count:
             last_f_count += 1
             ladder_group.F()
+        if heatmap:
+            current_node = ladder_group.full_idx()
+            try:
+                node_visits[current_node] += 1
+            except KeyError:
+                node_visits[current_node] = 1
+    if heatmap:
+        return unwrap_heatmap(node_visits)
+
+
+def unwrap_heatmap(node_visit_count):
+    """ Unwraps the node visit count for easy plotting
+    """
+    from mjhmc.samplers.algebraic_hmc import StateGroup
+    idx_map = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2)).get_idx_map()
+    # node visits in [L_k, F_p] format
+    wrapped_counts = {tuple(idx_map(node_idx)): count for node_idx, count in node_visit_count.iteritems()}
+    # find partition index
+    # probably doesn't handle corner cases but that's fine, there's a vanishingly
+    # small chance that we ever have a ladder big enough for collision
+    k_idx_set = set(np.asarray(wrapped_counts.keys())[0])
+    for k_idx in range(MAX_ORDER / 2, 0, -1):
+        if k_idx not in k_idx_set:
+            # subtract 100 for good measure
+            partition_idx = k_idx - 100
+    unwrapped_counts = {}
+    for (k_idx, p_idx), count in wrapped_counts.iteritems():
+        if k_idx < partition_idx:
+            unwrapped_counts[(k_idx, p_idx)] = count
+        else:
+            unwrapped_counts[(k_idx - MAX_ORDER, p_idx)] = count
+    return unwrapped_counts
+
+
 
 def sp_img_ladder_generator(*args, **kwargs):
     from mjhmc.misc.tf_distributions import SparseImageCode
