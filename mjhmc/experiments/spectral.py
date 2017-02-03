@@ -215,10 +215,12 @@ def ladder_generator(sampler_class, distribution, epsilon=0.0001,
 def unwrap_heatmap(node_visit_count):
     """ Unwraps the node visit count for easy plotting
     """
+    print("Unwrapping heatmap")
     from mjhmc.samplers.algebraic_hmc import StateGroup
-    idx_map = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2)).get_idx_map()
+    idx_mapper = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
     # node visits in [L_k, F_p] format
-    wrapped_counts = {tuple(idx_map(node_idx)): count for node_idx, count in node_visit_count.iteritems()}
+    wrapped_counts = {idx_mapper.idx_to_kp(node_idx)[::-1]: count
+                      for node_idx, count in node_visit_count.iteritems()}
     # find partition index
     # probably doesn't handle corner cases but that's fine, there's a vanishingly
     # small chance that we ever have a ladder big enough for collision
