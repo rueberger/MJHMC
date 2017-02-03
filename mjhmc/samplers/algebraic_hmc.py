@@ -518,6 +518,17 @@ class StateGroup(object):
         """
         return (self.order / 2) * self.state[0] + self.state[1]
 
+    def idx_to_kp(self, idx):
+        """ Compute the (p, k) pair corresponding to idx
+        """
+        midpt = (self.order / 2)
+        if idx >= midpt:
+            return (1, idx - midpt)
+        else:
+            return (0, idx)
+
+
+
     def idx_of(self, state):
         """
         wrapper function that returns full idx of state
