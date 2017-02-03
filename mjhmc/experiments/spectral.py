@@ -103,7 +103,8 @@ def ladder_heatmap(sampler_class, distribution, epsilon,
     ladder_group.state = [0, 0]
     ladder_group.energies[0] = np.squeeze(sampler.state.H())
     node_visits = {}
-    for _ in range(max_steps):
+    print("Running chain...")
+    for idx in range(max_steps):
         sampler.sampling_iteration()
         # last operator was R
         if sampler.r_count != last_r_count:
@@ -127,6 +128,10 @@ def ladder_heatmap(sampler_class, distribution, epsilon,
             node_visits[current_node] += 1
         except KeyError:
             node_visits[current_node] = 1
+
+        if idx % 100 == 0:
+            print("{} steps, {} ladders, {} table entries".format(
+                idx, last_r_count, len(node_visits)))
     return unwrap_heatmap(node_visits)
 
 def ladder_generator(sampler_class, distribution, epsilon=0.0001,
