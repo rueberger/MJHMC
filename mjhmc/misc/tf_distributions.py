@@ -280,4 +280,5 @@ class SparseImageCode(TensorflowDistribution):
         return hash((hash(self.imgs.data),
                      hash(self.basis.data),
                      hash(self.lmbda),
-                     hash(self.n_patches)))
+                     hash(self.n_patches),
+                     self.n_coeffs))
