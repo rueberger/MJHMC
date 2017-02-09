@@ -205,7 +205,7 @@ class SparseImageCode(TensorflowDistribution):
     """ Distribution over the coefficients in an inference model of sparse coding on natural images a la Olshausen and Field
     """
 
-    def __init__(self, n_patches=9, n_batches=10, cauchy=True,**kwargs):
+    def __init__(self, n_patches=9, n_batches=10, cauchy=True, n_basis=1024, **kwargs):
         """ Construct a SparseImageCode object
 
         Args:
@@ -216,7 +216,8 @@ class SparseImageCode(TensorflowDistribution):
         self.max_n_particles = 50
         self.lmbda = 0.01
 
-        data_path = "{}/distr_data/dump.pkl".format(package_path())
+        assert n_basis in [1024, 512]
+        data_path = "{}/distr_data/dump_{}.pkl".format(package_path(), n_basis)
         with open(data_path, 'rb') as dump_file:
             data = pickle.load(dump_file)
             # [256, 1024]

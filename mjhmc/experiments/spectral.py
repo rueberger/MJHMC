@@ -218,9 +218,11 @@ def unwrap_heatmap(node_visit_count):
     print("Unwrapping heatmap")
     from mjhmc.samplers.algebraic_hmc import StateGroup
     idx_mapper = StateGroup(MAX_ORDER, np.zeros(MAX_ORDER / 2))
+    print("Converting to kp format")
     # node visits in [L_k, F_p] format
     wrapped_counts = {idx_mapper.idx_to_kp(node_idx)[::-1]: count
                       for node_idx, count in node_visit_count.iteritems()}
+    print("Computing partition idx")
     # find partition index
     # probably doesn't handle corner cases but that's fine, there's a vanishingly
     # small chance that we ever have a ladder big enough for collision
@@ -229,6 +231,7 @@ def unwrap_heatmap(node_visit_count):
         if k_idx not in k_idx_set:
             # subtract 100 for good measure
             partition_idx = k_idx - 100
+    print("Unwrapping counts")
     unwrapped_counts = {}
     for (k_idx, p_idx), count in wrapped_counts.iteritems():
         if k_idx < partition_idx:
